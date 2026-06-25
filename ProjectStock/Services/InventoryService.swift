@@ -104,15 +104,17 @@ struct InventoryService {
     }
 
     @discardableResult
-    func checkout(unit: StockUnit, actor: String, note: String = "",
-                  occurredAt: Date = Date(), in context: NSManagedObjectContext) -> InventoryEvent {
+    func checkout(unit: StockUnit, actor: String, borrower: String? = nil, dueAt: Date? = nil,
+                  note: String = "", occurredAt: Date = Date(),
+                  in context: NSManagedObjectContext) -> InventoryEvent {
         let from = unit.location
         unit.status = .checkedOut
         unit.touch()
         let event = makeEvent(type: .checkout, product: unit.product, unit: unit,
                               delta: 0, source: from, destination: nil,
                               actor: actor, note: note, occurredAt: occurredAt,
-                              isCorrection: false, corrects: nil, in: context)
+                              isCorrection: false, corrects: nil,
+                              borrower: borrower, dueAt: dueAt, in: context)
         if let product = unit.product { recompute(product: product) }
         return event
     }
@@ -270,6 +272,7 @@ struct InventoryService {
                            delta: Double, source: Location?, destination: Location?,
                            actor: String, note: String, occurredAt: Date,
                            isCorrection: Bool, corrects: InventoryEvent?,
+                           borrower: String? = nil, dueAt: Date? = nil,
                            in context: NSManagedObjectContext) -> InventoryEvent {
         let project = product?.project ?? unit?.project ?? source?.project ?? destination?.project
         let event = InventoryEvent(context: context)
@@ -282,6 +285,8 @@ struct InventoryService {
         event.actorDeviceID = device.deviceID
         event.note = note
         event.isCorrection = isCorrection
+        event.borrowerName = borrower
+        event.dueAt = dueAt
         event.project = project
         event.product = product
         event.unit = unit

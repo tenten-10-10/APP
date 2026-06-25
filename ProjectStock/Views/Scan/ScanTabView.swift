@@ -31,7 +31,11 @@ struct ScanTabView: View {
         .navigationTitle(NSLocalizedString("スキャン", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                NavigationLink(destination: LoansView()) {
+                    Label(NSLocalizedString("貸出中", comment: ""), systemImage: "person.crop.circle.badge.arrow.up")
+                }
+                .accessibilityIdentifier("loansButton")
                 NavigationLink(destination: StocktakeStartView()) {
                     Label(NSLocalizedString("棚卸し", comment: ""), systemImage: "list.clipboard")
                 }

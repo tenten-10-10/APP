@@ -55,6 +55,7 @@ private struct KnownTargetView: View {
     @ObservedObject var alias: CodeAlias
     @State private var amount = "1"
     @State private var showingMove = false
+    @State private var showingCheckout = false
     @State private var error: PresentableError?
 
     var body: some View {
@@ -76,6 +77,9 @@ private struct KnownTargetView: View {
             if let project = alias.project {
                 LocationPickerSheet(project: project, excluding: nil) { dest in moveProduct(to: dest) }
             }
+        }
+        .sheet(isPresented: $showingCheckout) {
+            if let unit = alias.unit { CheckoutSheet(unit: unit) }
         }
     }
 
@@ -118,10 +122,15 @@ private struct KnownTargetView: View {
                 }
             }
         }
+        if let loan = container.inventory.currentLoan(for: unit) {
+            Section(NSLocalizedString("貸出情報", comment: "")) {
+                LoanDetailRows(loan: loan)
+            }
+        }
         if container.sharing.canEdit(unit.project) {
             Section(NSLocalizedString("操作", comment: "")) {
                 if unit.status == .available {
-                    Button(NSLocalizedString("貸出", comment: "")) { unitChange(unit, .checkout) }
+                    Button(NSLocalizedString("貸出", comment: "")) { showingCheckout = true }
                 } else if unit.status == .checkedOut {
                     Button(NSLocalizedString("返却", comment: "")) { unitChange(unit, .returned) }
                 }
@@ -165,6 +174,7 @@ private struct KnownTargetView: View {
             else { container.inventory.returnUnit(u, to: u.location, actor: actor, in: ctx) }
         }
         Haptics.success()
+        container.refreshLoanNotifications()
     }
 
     private func moveProduct(to destination: Location) {

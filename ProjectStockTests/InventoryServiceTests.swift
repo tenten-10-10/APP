@@ -112,6 +112,34 @@ final class InventoryServiceTests: XCTestCase {
         XCTAssertEqual(product.currentQuantity, 1, accuracy: 0.0001)
     }
 
+    func testLoanTracksBorrowerDueDateAndOverdue() throws {
+        let container = TestSupport.makeContainer()
+        let ctx = container.viewContext
+        let project = TestSupport.makeProject(container)
+        let product = Product.make(in: ctx, name: "測定器", project: project, trackingMode: .individual)
+        container.router.assignChild(product, toSameStoreAs: project, in: ctx)
+        let unit = StockUnit.make(in: ctx, serialNumber: "M-01", product: product, project: project)
+        container.router.assignChild(unit, toSameStoreAs: project, in: ctx)
+        container.inventory.registerUnit(unit, location: nil, actor: "t", in: ctx)
+
+        let past = Date(timeIntervalSinceNow: -3600)
+        container.inventory.checkout(unit: unit, actor: "貸出担当", borrower: "佐藤", dueAt: past, in: ctx)
+        try ctx.save()
+
+        let loan = try XCTUnwrap(container.inventory.currentLoan(for: unit))
+        XCTAssertEqual(loan.borrower, "佐藤")
+        XCTAssertEqual(loan.dueAt?.timeIntervalSinceReferenceDate ?? 0,
+                       past.timeIntervalSinceReferenceDate, accuracy: 0.001)
+        XCTAssertTrue(loan.isOverdue, "期限を過ぎた貸出は overdue")
+        XCTAssertEqual(container.inventory.activeLoans(in: ctx).count, 1)
+        XCTAssertNotNil(loan.notice, "期限付き貸出は通知スナップショットを生成する")
+
+        container.inventory.returnUnit(unit, to: nil, actor: "t", in: ctx)
+        try ctx.save()
+        XCTAssertNil(container.inventory.currentLoan(for: unit), "返却後は貸出なし")
+        XCTAssertTrue(container.inventory.activeLoans(in: ctx).isEmpty)
+    }
+
     func testIndividualUnitStatusFlow() throws {
         let container = TestSupport.makeContainer()
         let ctx = container.viewContext

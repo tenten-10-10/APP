@@ -32,6 +32,7 @@ struct ProjectStockApp: App {
                     container.recomputeAllProjects()
                     container.qrExport.purgeOldExports()
                     container.syncMonitor.refreshAccountStatus()
+                    container.refreshLoanNotifications()
                 }
         }
     }

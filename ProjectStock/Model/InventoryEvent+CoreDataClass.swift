@@ -22,6 +22,8 @@ extension InventoryEvent {
     @NSManaged public var actorDeviceID: String?
     @NSManaged public var note: String?
     @NSManaged public var isCorrection: Bool
+    @NSManaged public var borrowerName: String?
+    @NSManaged public var dueAt: Date?
 
     @NSManaged public var project: Project?
     @NSManaged public var product: Product?
@@ -41,6 +43,12 @@ public extension InventoryEvent {
     var actorName: String {
         let trimmed = (actorDisplayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? NSLocalizedString("不明な操作者", comment: "") : trimmed
+    }
+
+    /// The borrower recorded on a checkout event, or `nil` when none was given.
+    var borrower: String? {
+        let trimmed = (borrowerName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     var correctionArray: [InventoryEvent] {

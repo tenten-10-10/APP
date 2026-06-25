@@ -58,6 +58,7 @@
 			isa = PBXGroup;
 			children = (
 				1B335609141E0E1922C2CFB3 /* AssignmentView.swift */,
+				0FEFD5DC0C3AF231D99254FB /* CheckoutSheet.swift */,
 				82B44E869DF98EFC2C186126 /* ScanResultSheet.swift */,
 				100F0900FCC00DE1DBAEF6E7 /* ScanTabView.swift */,
 				D5A263803EFE86562D6903D6 /* StocktakeView.swift */,
@@ -66,6 +67,7 @@
 			sourceTree = "<group>";
 		};
 		0F6D1AA1C7D2DF03FBE98A8F /* CameraPermission.swift in Build */ = {isa = PBXBuildFile; fileRef = 1F9357EF218178AEEAFD6A99 /* CameraPermission.swift */; };
+		0FEFD5DC0C3AF231D99254FB /* CheckoutSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckoutSheet.swift"; sourceTree = "<group>"; };
 		100F0900FCC00DE1DBAEF6E7 /* ScanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScanTabView.swift"; sourceTree = "<group>"; };
 		10FB1B4C7B39C64913ABA587 /* InventoryEvent+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryEvent+CoreDataClass.swift"; sourceTree = "<group>"; };
 		12FE5139392AFB0391C8A620 /* ProjectDetailView.swift in Build */ = {isa = PBXBuildFile; fileRef = E1CB06BAE8BBBACE102B4BFC /* ProjectDetailView.swift */; };
@@ -133,6 +135,7 @@
 		22651B4640558F9A54C3D3F3 /* ProjectStockUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProjectStockUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		235B1E95358DE378D5929FD0 /* PublicCodeGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PublicCodeGenerator.swift"; sourceTree = "<group>"; };
 		258A5CD80D314E911D60F819 /* ScanResultRouter.swift in Build */ = {isa = PBXBuildFile; fileRef = 7B422D2F2F3501ACADC0EE73 /* ScanResultRouter.swift */; };
+		27FBC10CCB64B00D2BE2E53D /* NotificationService.swift in Build */ = {isa = PBXBuildFile; fileRef = 64B6AFA92DB57B78E0BB7852 /* NotificationService.swift */; };
 		2A115A3CD8AD8C53ED7DD8DC /* ScannerView.swift in Build */ = {isa = PBXBuildFile; fileRef = 1FD2086F0F52FF283C1E74A1 /* ScannerView.swift */; };
 		2A44C54E23411059C3A1A1E1 = {
 			isa = PBXGroup;
@@ -223,6 +226,7 @@
 			children = (
 				A0C9AA6A797B705E9B62B65A /* Activity */,
 				52E077F3BBF536530C5D2FF6 /* Components */,
+				D3B431CBFA9CC4F1DD88B7C6 /* Loans */,
 				21659F0BD2399338AC169268 /* Onboarding */,
 				CA580F855F9B74F372AC0CE5 /* Products */,
 				7596F5C1DFA295EB8041CD3E /* Projects */,
@@ -351,6 +355,7 @@
 		5BDC9F27D7587A9BB0612926 /* Location+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 7BA4FC9383FAF88ECBC39F66 /* Location+CoreDataClass.swift */; };
 		5E3436B3EF604009ED3B99FE /* TestSupport.swift in Build */ = {isa = PBXBuildFile; fileRef = 5E657EFE9BD2CD27B246EBC2 /* TestSupport.swift */; };
 		5E657EFE9BD2CD27B246EBC2 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TestSupport.swift"; sourceTree = "<group>"; };
+		5F3E421052BB3AE7553F0210 /* Loans.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Loans.swift"; sourceTree = "<group>"; };
 		61C53EB744E963458EA4E635 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C61D360E969652A4ECD012CB /* Project object */;
@@ -359,10 +364,12 @@
 			remoteInfo = ProjectStock;
 		};
 		63E4207EF146D2153623957C /* QRRasterRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRRasterRenderer.swift"; sourceTree = "<group>"; };
+		64B6AFA92DB57B78E0BB7852 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationService.swift"; sourceTree = "<group>"; };
 		673610E2B25B7D5EE31A8218 /* QRLabelStudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRLabelStudioView.swift"; sourceTree = "<group>"; };
 		68979EB8BA71A1868D9994F7 /* LabelSheetRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = 7A9B28203BDB4907E4E64B88 /* LabelSheetRenderer.swift */; };
 		6C6711A660BBD9B293907778 /* ProjectService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectService.swift"; sourceTree = "<group>"; };
 		6C81F8D3649D2157C91CA88D /* DataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataExportService.swift"; sourceTree = "<group>"; };
+		6E321A06193EEBA18E431DCD /* LoansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoansView.swift"; sourceTree = "<group>"; };
 		6FE50AE458089BB9CA15834C /* PrePrintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrePrintView.swift"; sourceTree = "<group>"; };
 		7045F19802E60D5AC5063E48 /* BarcodeScannerController.swift in Build */ = {isa = PBXBuildFile; fileRef = C086FBA486D8D49EE642B89D /* BarcodeScannerController.swift */; };
 		737885C2CF1DD1C6C0F3C880 /* QREPSRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = D3344E5809B34A6995540E49 /* QREPSRenderer.swift */; };
@@ -519,6 +526,7 @@
 			path = "Activity";
 			sourceTree = "<group>";
 		};
+		A1D24936D4250D86F1A2C126 /* Loans.swift in Build */ = {isa = PBXBuildFile; fileRef = 5F3E421052BB3AE7553F0210 /* Loans.swift */; };
 		A5379C42971D75DC4D8B1603 /* ActivityView.swift in Build */ = {isa = PBXBuildFile; fileRef = 02CF958B7DFD2E466E54ABA1 /* ActivityView.swift */; };
 		A55526D008901855141CE566 /* CommonViews.swift in Build */ = {isa = PBXBuildFile; fileRef = 33961581B753CF5A907ABEE8 /* CommonViews.swift */; };
 		A612554AFBDBB78BBE69496E /* ProjectStock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProjectStock.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -558,6 +566,8 @@
 				6C81F8D3649D2157C91CA88D /* DataExportService.swift */,
 				C0B567F6AEE36C121864FCA1 /* HierarchyService.swift */,
 				FE1FBFA40F164EC01E7913F8 /* InventoryService.swift */,
+				5F3E421052BB3AE7553F0210 /* Loans.swift */,
+				64B6AFA92DB57B78E0BB7852 /* NotificationService.swift */,
 				6C6711A660BBD9B293907778 /* ProjectService.swift */,
 				235B1E95358DE378D5929FD0 /* PublicCodeGenerator.swift */,
 				A70882E988098D1FF19A4510 /* SampleDataBuilder.swift */,
@@ -567,6 +577,7 @@
 			path = "Services";
 			sourceTree = "<group>";
 		};
+		B53CBFDD304517E6686424E5 /* CheckoutSheet.swift in Build */ = {isa = PBXBuildFile; fileRef = 0FEFD5DC0C3AF231D99254FB /* CheckoutSheet.swift */; };
 		B69A98321A5E8B7CAE996BB1 /* InventoryService.swift in Build */ = {isa = PBXBuildFile; fileRef = FE1FBFA40F164EC01E7913F8 /* InventoryService.swift */; };
 		B8CF289CFABEF88FE89EFB97 /* ProjectFormView.swift in Build */ = {isa = PBXBuildFile; fileRef = 5AD5DB54B8B51DC6904C40C7 /* ProjectFormView.swift */; };
 		BA08C61BD86092C1802A3EA1 /* Documentation */ = {
@@ -603,6 +614,7 @@
 		};
 		BCBF739E288484C5B271BCE3 /* OnboardingView.swift in Build */ = {isa = PBXBuildFile; fileRef = 8D79AF1109876C7E947709B3 /* OnboardingView.swift */; };
 		BD5CF6B4A41B4783116D632A /* DeviceIdentity.swift in Build */ = {isa = PBXBuildFile; fileRef = 301338420154EFB84093E3EE /* DeviceIdentity.swift */; };
+		BD8E5950C35C658CA8262E0D /* LoansView.swift in Build */ = {isa = PBXBuildFile; fileRef = 6E321A06193EEBA18E431DCD /* LoansView.swift */; };
 		BDD8143442896E35CFFD3F61 /* Model */ = {
 			isa = PBXGroup;
 			children = (
@@ -708,6 +720,14 @@
 			defaultConfigurationName = Release;
 		};
 		D3344E5809B34A6995540E49 /* QREPSRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QREPSRenderer.swift"; sourceTree = "<group>"; };
+		D3B431CBFA9CC4F1DD88B7C6 /* Loans */ = {
+			isa = PBXGroup;
+			children = (
+				6E321A06193EEBA18E431DCD /* LoansView.swift */,
+			);
+			path = "Loans";
+			sourceTree = "<group>";
+		};
 		D58263D3D7FDF096152BE966 /* ProjectStock.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ProjectStock.entitlements"; sourceTree = "<group>"; };
 		D5A263803EFE86562D6903D6 /* StocktakeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StocktakeView.swift"; sourceTree = "<group>"; };
 		D5C1ADBE4945F52ACFF9371B /* QRCodeMatrix.swift in Build */ = {isa = PBXBuildFile; fileRef = E8C76217336722722FF57687 /* QRCodeMatrix.swift */; };
@@ -757,6 +777,8 @@
 				9B482ED06EEE6036F6924417 /* in Sources */,
 				553FA0C96E00D42384C5A40D /* in Sources */,
 				B69A98321A5E8B7CAE996BB1 /* in Sources */,
+				A1D24936D4250D86F1A2C126 /* in Sources */,
+				27FBC10CCB64B00D2BE2E53D /* in Sources */,
 				2BAF8741F0662FB1CA70B590 /* in Sources */,
 				3E16714FB763223B416DE6C4 /* in Sources */,
 				CBBE7876FDEF07C86FA3A956 /* in Sources */,
@@ -777,6 +799,7 @@
 				9214F5F598DB71B1BD6025D4 /* in Sources */,
 				A55526D008901855141CE566 /* in Sources */,
 				82FAE6A52E7F5D5E0C2AF6FD /* in Sources */,
+				BD8E5950C35C658CA8262E0D /* in Sources */,
 				BCBF739E288484C5B271BCE3 /* in Sources */,
 				CC7DA07507417302ED109CB5 /* in Sources */,
 				FAE1D4EEE246C0B65A91A691 /* in Sources */,
@@ -790,6 +813,7 @@
 				08223C81EC70703CC3C01A92 /* in Sources */,
 				CAE05AB800C300B6C8321E79 /* in Sources */,
 				F5676A9A6858602DD3A284F3 /* in Sources */,
+				B53CBFDD304517E6686424E5 /* in Sources */,
 				1E159BE8968219A70B42C3AC /* in Sources */,
 				7EED44E8439CFD433A536038 /* in Sources */,
 				3F8E40F116D41DDED8983E9E /* in Sources */,

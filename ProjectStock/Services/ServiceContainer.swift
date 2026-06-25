@@ -107,4 +107,16 @@ final class ServiceContainer: ObservableObject {
             if context.hasChanges { try? context.save() }
         }
     }
+
+    // MARK: - Loan notifications
+
+    /// Re-sync local notifications for outstanding loan due-dates with the
+    /// current ledger state (call on launch and after any checkout / return).
+    func refreshLoanNotifications() {
+        let context = viewContext
+        context.perform {
+            let notices = self.inventory.activeLoans(in: context).compactMap { $0.notice }
+            NotificationService.shared.sync(notices: notices)
+        }
+    }
 }

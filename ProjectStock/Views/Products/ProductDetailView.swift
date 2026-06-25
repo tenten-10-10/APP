@@ -10,6 +10,7 @@ struct ProductDetailView: View {
     @State private var showingEdit = false
     @State private var showingMove = false
     @State private var showingAddUnit = false
+    @State private var checkoutUnit: StockUnit?
     @State private var error: PresentableError?
     @State private var canEdit = true
 
@@ -47,6 +48,7 @@ struct ProductDetailView: View {
         .sheet(isPresented: $showingAddUnit) {
             if let project = product.project { AddUnitSheet(product: product, project: project) }
         }
+        .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
         .errorAlert($error)
     }
 
@@ -165,21 +167,37 @@ struct ProductDetailView: View {
                 Text(NSLocalizedString("個体がありません", comment: "")).foregroundColor(.secondary)
             }
             ForEach(product.unitArray) { unit in
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(unit.displaySerial)
-                        Text(unit.status.localizedTitle).font(.caption2).foregroundColor(.secondary)
+                unitRow(unit)
+            }
+        }
+    }
+
+    @ViewBuilder private func unitRow(_ unit: StockUnit) -> some View {
+        let loan = container.inventory.currentLoan(for: unit)
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(unit.displaySerial)
+                HStack(spacing: 6) {
+                    Text(unit.status.localizedTitle).font(.caption2).foregroundColor(.secondary)
+                    if let borrower = loan?.borrower {
+                        Text("· \(borrower)").font(.caption2).foregroundColor(.secondary).lineLimit(1)
                     }
-                    Spacer()
-                    if canEdit {
-                        if unit.status == .available {
-                            Button(NSLocalizedString("貸出", comment: "")) { unitAction(unit, .checkout) }
-                                .buttonStyle(.bordered).controlSize(.small)
-                        } else if unit.status == .checkedOut {
-                            Button(NSLocalizedString("返却", comment: "")) { unitAction(unit, .returned) }
-                                .buttonStyle(.bordered).controlSize(.small)
-                        }
-                    }
+                    if loan?.isOverdue == true { OverdueChip() }
+                }
+                if let due = loan?.dueAt {
+                    Text(String(format: NSLocalizedString("期限: %@", comment: ""), DateFormatters.dateTime.string(from: due)))
+                        .font(.caption2)
+                        .foregroundColor(loan?.isOverdue == true ? .red : .secondary)
+                }
+            }
+            Spacer()
+            if canEdit {
+                if unit.status == .available {
+                    Button(NSLocalizedString("貸出", comment: "")) { checkoutUnit = unit }
+                        .buttonStyle(.bordered).controlSize(.small)
+                } else if unit.status == .checkedOut {
+                    Button(NSLocalizedString("返却", comment: "")) { unitAction(unit, .returned) }
+                        .buttonStyle(.bordered).controlSize(.small)
                 }
             }
         }
@@ -260,6 +278,7 @@ struct ProductDetailView: View {
             default: break
             }
         }
+        container.refreshLoanNotifications()
     }
 }
 

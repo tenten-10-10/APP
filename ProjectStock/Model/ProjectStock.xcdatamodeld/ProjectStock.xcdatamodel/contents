@@ -28,7 +28,9 @@
     <entity name="InventoryEvent" representedClassName="InventoryEvent" syncable="YES" codeGenerationType="manual">
         <attribute name="actorDeviceID" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="actorDisplayName" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="borrowerName" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="dueAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="eventTypeRaw" optional="YES" attributeType="String" defaultValueString="create"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="isCorrection" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
