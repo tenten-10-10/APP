@@ -140,6 +140,33 @@ final class InventoryServiceTests: XCTestCase {
         XCTAssertTrue(container.inventory.activeLoans(in: ctx).isEmpty)
     }
 
+    func testLotQuantityIsSumOfLedgerPerLotAndProduct() throws {
+        let container = TestSupport.makeContainer()
+        let ctx = container.viewContext
+        let project = TestSupport.makeProject(container)
+        let product = Product.make(in: ctx, name: "接着剤", project: project, trackingMode: .lot)
+        container.router.assignChild(product, toSameStoreAs: project, in: ctx)
+
+        let lot = try XCTUnwrap(container.inventory.createLot(product: product, lotNumber: "L1",
+                                                              quantity: 10, expiresAt: nil,
+                                                              location: nil, actor: "t", in: ctx))
+        try ctx.save()
+        XCTAssertEqual(lot.lotQuantity, 10, accuracy: 0.0001)
+        XCTAssertEqual(product.currentQuantity, 10, accuracy: 0.0001)
+
+        container.inventory.consumeFromLot(lot, quantity: 3, actor: "t", in: ctx)
+        try ctx.save()
+        XCTAssertEqual(lot.lotQuantity, 7, accuracy: 0.0001)
+
+        let lot2 = try XCTUnwrap(container.inventory.createLot(product: product, lotNumber: "L2",
+                                                               quantity: 5, expiresAt: nil,
+                                                               location: nil, actor: "t", in: ctx))
+        try ctx.save()
+        XCTAssertEqual(lot2.lotQuantity, 5, accuracy: 0.0001)
+        XCTAssertEqual(product.currentQuantity, 12, accuracy: 0.0001, "製品合計は全ロットの合計")
+        XCTAssertEqual(product.lotArray.count, 2)
+    }
+
     func testIndividualUnitStatusFlow() throws {
         let container = TestSupport.makeContainer()
         let ctx = container.viewContext

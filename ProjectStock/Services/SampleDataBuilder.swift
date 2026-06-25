@@ -70,10 +70,26 @@ struct SampleDataBuilder {
             router.assignChild(unit, toSameStoreAs: project, in: context)
             inventory.registerUnit(unit, location: bench, actor: project.ownerDisplayName ?? "", in: context)
         }
-        // Check one out for the demo.
+        // Check one out for the demo, overdue, so the loans screen has content.
         if let firstUnit = driver.unitArray.first {
+            let due = Calendar.current.date(byAdding: .day, value: -2, to: Date())
             inventory.checkout(unit: firstUnit, actor: project.ownerDisplayName ?? "",
+                               borrower: NSLocalizedString("田中", comment: ""), dueAt: due,
                                note: NSLocalizedString("現場へ持ち出し", comment: ""), in: context)
+        }
+
+        // Lot-tracked product: two lots, one near expiry and one already expired.
+        let glue = makeProduct(NSLocalizedString("接着剤", comment: ""), sku: "GLUE-A",
+                               unit: NSLocalizedString("本", comment: ""), folder: parts,
+                               location: binB, in: project, context: context)
+        glue.trackingMode = .lot
+        let soon = Calendar.current.date(byAdding: .day, value: 20, to: Date())
+        let expired = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+        _ = inventory.createLot(product: glue, lotNumber: "LOT-2406", quantity: 12, expiresAt: soon,
+                                location: binB, actor: project.ownerDisplayName ?? "", in: context)
+        if let oldLot = inventory.createLot(product: glue, lotNumber: "LOT-2312", quantity: 5, expiresAt: expired,
+                                            location: binB, actor: project.ownerDisplayName ?? "", in: context) {
+            _ = try? aliases.createAlias(for: .unit(oldLot), in: project, context: context)
         }
 
         // Labels: a couple of pre-printed unassigned codes + bound ones.

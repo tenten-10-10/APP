@@ -54,6 +54,7 @@
 			name = Release;
 		};
 		0CDACFFDDBDABA4B6D5BF9D1 /* QRExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRExportService.swift"; sourceTree = "<group>"; };
+		0DEC791D52D1033C2F70F018 /* LotViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LotViews.swift"; sourceTree = "<group>"; };
 		0DF4FCA787FDE8B6393F1D78 /* Scan */ = {
 			isa = PBXGroup;
 			children = (
@@ -305,6 +306,7 @@
 		4FC59893EC69BF963F7B9F86 /* StoreRouter.swift in Build */ = {isa = PBXBuildFile; fileRef = D72B76FAE1538605277E54E6 /* StoreRouter.swift */; };
 		506255B93728ADA56BC2095D /* QRSVGRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRSVGRenderer.swift"; sourceTree = "<group>"; };
 		507DCE3AA98C5444C77BAC5F /* QRSVGRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = 506255B93728ADA56BC2095D /* QRSVGRenderer.swift */; };
+		50FC6B6EB523245D3FF4CFD0 /* LotViews.swift in Build */ = {isa = PBXBuildFile; fileRef = 0DEC791D52D1033C2F70F018 /* LotViews.swift */; };
 		52E077F3BBF536530C5D2FF6 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -681,6 +683,7 @@
 		CA580F855F9B74F372AC0CE5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				0DEC791D52D1033C2F70F018 /* LotViews.swift */,
 				08B4D9F0A303798CD546995E /* ProductDetailView.swift */,
 				A7A2194A0F6DA68E91E0FA2E /* ProductFormView.swift */,
 			);
@@ -801,6 +804,7 @@
 				82FAE6A52E7F5D5E0C2AF6FD /* in Sources */,
 				BD8E5950C35C658CA8262E0D /* in Sources */,
 				BCBF739E288484C5B271BCE3 /* in Sources */,
+				50FC6B6EB523245D3FF4CFD0 /* in Sources */,
 				CC7DA07507417302ED109CB5 /* in Sources */,
 				FAE1D4EEE246C0B65A91A691 /* in Sources */,
 				08E6B8231488C22B928BD72D /* in Sources */,

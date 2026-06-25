@@ -90,10 +90,23 @@ public extension Product {
     /// from the ledger by `InventoryService`).
     var currentQuantity: Double {
         switch trackingMode {
-        case .quantity:
+        case .quantity, .lot:
             return cachedQuantity
         case .individual:
             return Double(unitArray.filter { $0.status.isOnHand }.count)
+        }
+    }
+
+    /// Lots (batch units) sorted by soonest expiry, then creation. Only
+    /// meaningful for `.lot` products.
+    var lotArray: [StockUnit] {
+        unitArray.filter { $0.isLot }.sorted { lhs, rhs in
+            switch (lhs.expiresAt, rhs.expiresAt) {
+            case let (l?, r?): return l < r
+            case (_?, nil):    return true
+            case (nil, _?):    return false
+            case (nil, nil):   return (lhs.createdAt ?? .distantPast) < (rhs.createdAt ?? .distantPast)
+            }
         }
     }
 

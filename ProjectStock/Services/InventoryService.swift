@@ -159,6 +159,51 @@ struct InventoryService {
         return event
     }
 
+    // MARK: - Lot-mode operations
+
+    /// Create a new lot for a product with an initial quantity and optional
+    /// expiry. Returns the created lot (a `StockUnit` of kind `.lot`).
+    @discardableResult
+    func createLot(product: Product, lotNumber: String, quantity: Double, expiresAt: Date?,
+                   location: Location?, actor: String, note: String = "",
+                   occurredAt: Date = Date(), in context: NSManagedObjectContext) -> StockUnit? {
+        guard let project = product.project else { return nil }
+        let lot = StockUnit.makeLot(in: context, lotNumber: lotNumber, product: product,
+                                    project: project, location: location ?? product.defaultLocation,
+                                    expiresAt: expiresAt)
+        router.assignChild(lot, toSameStoreAs: project, in: context)
+        makeEvent(type: .create, product: product, unit: lot,
+                  delta: abs(quantity), source: nil, destination: lot.location,
+                  actor: actor, note: note, occurredAt: occurredAt,
+                  isCorrection: false, corrects: nil, in: context)
+        recompute(product: product)
+        return lot
+    }
+
+    /// Add stock to an existing lot (入庫).
+    @discardableResult
+    func receiveToLot(_ lot: StockUnit, quantity: Double, actor: String, note: String = "",
+                      occurredAt: Date = Date(), in context: NSManagedObjectContext) -> InventoryEvent {
+        let event = makeEvent(type: .receive, product: lot.product, unit: lot,
+                              delta: abs(quantity), source: nil, destination: lot.location,
+                              actor: actor, note: note, occurredAt: occurredAt,
+                              isCorrection: false, corrects: nil, in: context)
+        if let product = lot.product { recompute(product: product) }
+        return event
+    }
+
+    /// Consume stock from a lot (消費・出庫).
+    @discardableResult
+    func consumeFromLot(_ lot: StockUnit, quantity: Double, actor: String, note: String = "",
+                        occurredAt: Date = Date(), in context: NSManagedObjectContext) -> InventoryEvent {
+        let event = makeEvent(type: .consume, product: lot.product, unit: lot,
+                              delta: -abs(quantity), source: lot.location, destination: nil,
+                              actor: actor, note: note, occurredAt: occurredAt,
+                              isCorrection: false, corrects: nil, in: context)
+        if let product = lot.product { recompute(product: product) }
+        return event
+    }
+
     // MARK: - Corrections (append-only)
 
     /// Create a reversing correction for a prior event (逆仕訳). The original is
@@ -196,6 +241,13 @@ struct InventoryService {
             .reduce(0.0) { $0 + $1.quantityDelta }
     }
 
+    /// Sum of quantity-affecting deltas for a single lot (its own events).
+    func lotLedger(for lot: StockUnit) -> Double {
+        lot.eventArray
+            .filter { $0.eventType.affectsQuantityTotal }
+            .reduce(0.0) { $0 + $1.quantityDelta }
+    }
+
     /// Rebuild a single product's cached quantity from its ledger.
     func recompute(product: Product) {
         switch product.trackingMode {
@@ -203,6 +255,14 @@ struct InventoryService {
             product.cachedQuantity = ledgerQuantity(for: product)
         case .individual:
             product.cachedQuantity = Double(product.unitArray.filter { $0.status.isOnHand }.count)
+        case .lot:
+            // Each lot caches its own running total; the product total is the
+            // sum of every lot event (which also feeds the product ledger).
+            for lot in product.unitArray where lot.isLot {
+                lot.cachedQuantity = lotLedger(for: lot)
+                lot.touch()
+            }
+            product.cachedQuantity = ledgerQuantity(for: product)
         }
         product.updatedAt = Date()
     }

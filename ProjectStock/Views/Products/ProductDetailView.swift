@@ -10,6 +10,7 @@ struct ProductDetailView: View {
     @State private var showingEdit = false
     @State private var showingMove = false
     @State private var showingAddUnit = false
+    @State private var showingAddLot = false
     @State private var checkoutUnit: StockUnit?
     @State private var error: PresentableError?
     @State private var canEdit = true
@@ -23,6 +24,7 @@ struct ProductDetailView: View {
             infoSection
             labelsSection
             if product.trackingMode == .individual { unitsSection }
+            if product.trackingMode == .lot { lotsSection }
             historySection
         }
         .listStyle(.insetGrouped)
@@ -49,6 +51,9 @@ struct ProductDetailView: View {
             if let project = product.project { AddUnitSheet(product: product, project: project) }
         }
         .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
+        .sheet(isPresented: $showingAddLot) {
+            if let project = product.project { AddLotSheet(product: product, project: project) }
+        }
         .errorAlert($error)
     }
 
@@ -200,6 +205,39 @@ struct ProductDetailView: View {
                         .buttonStyle(.bordered).controlSize(.small)
                 }
             }
+        }
+    }
+
+    private var lotsSection: some View {
+        Section(NSLocalizedString("ロット", comment: "")) {
+            if product.lotArray.isEmpty {
+                Text(NSLocalizedString("ロットがありません", comment: "")).foregroundColor(.secondary)
+            }
+            ForEach(product.lotArray) { lot in
+                NavigationLink(destination: LotDetailView(lot: lot)) { lotRow(lot) }
+            }
+            if canEdit {
+                Button { showingAddLot = true } label: {
+                    Label(NSLocalizedString("ロットを追加", comment: ""), systemImage: "plus")
+                }
+                .accessibilityIdentifier("addLotButton")
+            }
+        }
+    }
+
+    @ViewBuilder private func lotRow(_ lot: StockUnit) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(lot.lotNumberDisplay)
+                if let expiry = lot.expiresAt {
+                    Text(String(format: NSLocalizedString("期限: %@", comment: ""), DateFormatters.day.string(from: expiry)))
+                        .font(.caption2).foregroundColor(lot.isExpired ? .red : .secondary)
+                }
+            }
+            Spacer()
+            ExpiryChip(unit: lot)
+            Text("\(lot.lotQuantity.quantityString) \(product.unitLabel)")
+                .font(.callout).foregroundColor(.secondary)
         }
     }
 

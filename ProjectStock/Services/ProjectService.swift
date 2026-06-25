@@ -108,6 +108,15 @@ struct ProjectService {
                                           actor: ownerDisplayName,
                                           note: NSLocalizedString("複製による初期在庫", comment: ""),
                                           in: context)
+            } else if product.trackingMode == .lot {
+                for lot in product.lotArray where lot.lotQuantity > 0 || lot.expiresAt != nil {
+                    _ = inventory.createLot(product: newProduct, lotNumber: lot.lotNumberDisplay,
+                                            quantity: lot.lotQuantity, expiresAt: lot.expiresAt,
+                                            location: lot.location.flatMap { locationMap[$0.objectID] },
+                                            actor: ownerDisplayName,
+                                            note: NSLocalizedString("複製による初期在庫", comment: ""),
+                                            in: context)
+                }
             } else {
                 for unit in product.unitArray where unit.status.isOnHand {
                     let newUnit = StockUnit.make(in: context, serialNumber: unit.displaySerial,

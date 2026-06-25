@@ -112,6 +112,46 @@ private struct KnownTargetView: View {
     }
 
     @ViewBuilder private func unitActions(_ unit: StockUnit) -> some View {
+        if unit.isLot { lotActions(unit) } else { serialUnitActions(unit) }
+    }
+
+    @ViewBuilder private func lotActions(_ lot: StockUnit) -> some View {
+        Section {
+            NavigationLink(destination: LotDetailView(lot: lot)) {
+                VStack(alignment: .leading) {
+                    Text(lot.lotNumberDisplay).font(.headline)
+                    Text("\(lot.lotQuantity.quantityString) \(lot.product?.unitLabel ?? "")")
+                        .foregroundColor(.secondary)
+                }
+            }
+            if let expiry = lot.expiresAt {
+                HStack {
+                    Text(NSLocalizedString("有効期限", comment: ""))
+                    Spacer()
+                    Text(DateFormatters.day.string(from: expiry)).foregroundColor(lot.isExpired ? .red : .secondary)
+                    ExpiryChip(unit: lot)
+                }
+            }
+        }
+        if container.sharing.canEdit(lot.project) {
+            Section(NSLocalizedString("数量", comment: "")) {
+                HStack {
+                    Text(NSLocalizedString("数量", comment: ""))
+                    Spacer()
+                    TextField("1", text: $amount).keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing).frame(maxWidth: 80)
+                }
+                HStack {
+                    Button { lotChange(lot, +1) } label: { Label(NSLocalizedString("入庫", comment: ""), systemImage: "plus.circle") }
+                        .buttonStyle(.borderedProminent)
+                    Button { lotChange(lot, -1) } label: { Label(NSLocalizedString("出庫", comment: ""), systemImage: "minus.circle") }
+                        .buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func serialUnitActions(_ unit: StockUnit) -> some View {
         Section {
             if let product = unit.product {
                 NavigationLink(destination: ProductDetailView(product: product)) {
@@ -161,6 +201,19 @@ private struct KnownTargetView: View {
             let location = loc.flatMap { try? ctx.existingObject(with: $0) as? Location }
             if sign > 0 { container.inventory.receive(product: p, quantity: value, location: location, actor: actor, in: ctx) }
             else { container.inventory.consume(product: p, quantity: value, location: location, actor: actor, in: ctx) }
+        }
+        Haptics.success()
+    }
+
+    private func lotChange(_ lot: StockUnit, _ sign: Double) {
+        let value = Double(amount) ?? 0
+        guard value > 0 else { return }
+        let lotID = lot.objectID
+        let actor = settings.effectiveOperatorName
+        _ = container.performWrite { ctx in
+            guard let l = try ctx.existingObject(with: lotID) as? StockUnit else { return }
+            if sign > 0 { container.inventory.receiveToLot(l, quantity: value, actor: actor, in: ctx) }
+            else { container.inventory.consumeFromLot(l, quantity: value, actor: actor, in: ctx) }
         }
         Haptics.success()
     }

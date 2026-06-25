@@ -100,8 +100,12 @@
         <relationship name="units" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="StockUnit" inverseName="project" inverseEntity="StockUnit"/>
     </entity>
     <entity name="StockUnit" representedClassName="StockUnit" syncable="YES" codeGenerationType="manual">
+        <attribute name="cachedQuantity" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="expiresAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="kindRaw" optional="YES" attributeType="String" defaultValueString="serial"/>
+        <attribute name="lotNumber" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="note" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="serialNumber" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="statusRaw" optional="YES" attributeType="String" defaultValueString="available"/>

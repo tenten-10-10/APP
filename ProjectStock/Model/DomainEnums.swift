@@ -14,6 +14,9 @@ public enum TrackingMode: String, CaseIterable, Identifiable {
     case quantity
     /// Individually tracked units, each with its own serial / status.
     case individual
+    /// Tracked by lot / batch: each lot carries its own quantity, QR label and
+    /// optional expiry date.
+    case lot
 
     public var id: String { rawValue }
 
@@ -25,6 +28,35 @@ public enum TrackingMode: String, CaseIterable, Identifiable {
         switch self {
         case .quantity:   return NSLocalizedString("数量管理", comment: "tracking mode")
         case .individual: return NSLocalizedString("個体管理", comment: "tracking mode")
+        case .lot:        return NSLocalizedString("ロット管理", comment: "tracking mode")
+        }
+    }
+
+    public var explanation: String {
+        switch self {
+        case .quantity:   return NSLocalizedString("まとめて数量で管理します。", comment: "")
+        case .individual: return NSLocalizedString("1点ずつシリアル番号で管理します。", comment: "")
+        case .lot:        return NSLocalizedString("ロット（製造単位）ごとに数量と期限を管理します。", comment: "")
+        }
+    }
+}
+
+/// Whether a `StockUnit` represents a single serialised item or a lot/batch
+/// carrying a quantity.
+public enum UnitKind: String, CaseIterable, Identifiable {
+    case serial
+    case lot
+
+    public var id: String { rawValue }
+
+    public init(raw: String?) {
+        self = UnitKind(rawValue: raw ?? "") ?? .serial
+    }
+
+    public var localizedTitle: String {
+        switch self {
+        case .serial: return NSLocalizedString("シリアル", comment: "unit kind")
+        case .lot:    return NSLocalizedString("ロット", comment: "unit kind")
         }
     }
 }
