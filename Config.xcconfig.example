@@ -1,0 +1,63 @@
+// =============================================================================
+// Config.xcconfig.example
+// -----------------------------------------------------------------------------
+// ProjectStock build configuration template.
+//
+// HOW TO USE
+//   1. Copy this file to `Config.xcconfig` (same directory):
+//          cp Config.xcconfig.example Config.xcconfig
+//   2. Fill in the values below with your own Apple Developer account details.
+//   3. `Config.xcconfig` is git-ignored so your team credentials never leak.
+//
+// The Xcode project references these values via build settings, and the
+// values are surfaced into Info.plist / the entitlements file through
+// `$(VARIABLE_NAME)` substitution. See ARCHITECTURE.md and CLOUDKIT_SETUP.md.
+//
+// NOTE: A value must NOT contain a `//` sequence; xcconfig treats it as a
+// comment. Bundle IDs / container IDs never contain `//`, so this is fine.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Identity — REQUIRED before you can run on a device or submit to App Store.
+// On the Simulator the defaults below are sufficient.
+// -----------------------------------------------------------------------------
+
+// Reverse-DNS bundle identifier for the app target.
+PRODUCT_BUNDLE_IDENTIFIER = com.example.projectstock
+
+// Human-readable name shown on the Home Screen (CFBundleDisplayName).
+APP_DISPLAY_NAME = ProjectStock
+
+// Your 10-character Apple Developer Team ID (Membership page).
+// Leave as the placeholder for Simulator-only builds.
+DEVELOPMENT_TEAM = ABCDE12345
+
+// Code signing style. "Automatic" lets Xcode manage profiles.
+CODE_SIGN_STYLE = Automatic
+
+// -----------------------------------------------------------------------------
+// CloudKit — REQUIRED for iCloud sync & sharing on a real device.
+// The container ID MUST match an iCloud container you created in the
+// Apple Developer portal / Signing & Capabilities. Convention: "iCloud." + a
+// reverse-DNS string. It does NOT have to equal the bundle identifier.
+// -----------------------------------------------------------------------------
+
+// Full CloudKit container identifier (including the "iCloud." prefix).
+CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.example.projectstock
+
+// -----------------------------------------------------------------------------
+// Versioning
+// -----------------------------------------------------------------------------
+
+// Marketing version (CFBundleShortVersionString), e.g. 1.0.0
+MARKETING_VERSION = 1.0.0
+
+// Build number (CFBundleVersion). Increment for every TestFlight upload.
+CURRENT_PROJECT_VERSION = 1
+
+// -----------------------------------------------------------------------------
+// Deployment
+// -----------------------------------------------------------------------------
+
+// Minimum supported OS. Keep at 15.0 to include iPhone SE (1st gen).
+IPHONEOS_DEPLOYMENT_TARGET = 15.0

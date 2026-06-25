@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21754" systemVersion="23A344" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="true" userDefinedModelVersionIdentifier="">
+    <entity name="CodeAlias" representedClassName="CodeAlias" syncable="YES" codeGenerationType="manual">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isActive" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="lastScannedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="publicCode" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="retiredAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="scanCount" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="targetTypeRaw" optional="YES" attributeType="String" defaultValueString="unassigned"/>
+        <relationship name="location" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Location" inverseName="labels" inverseEntity="Location"/>
+        <relationship name="product" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Product" inverseName="labels" inverseEntity="Product"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="labels" inverseEntity="Project"/>
+        <relationship name="unit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="StockUnit" inverseName="labels" inverseEntity="StockUnit"/>
+    </entity>
+    <entity name="Folder" representedClassName="Folder" syncable="YES" codeGenerationType="manual">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="sortIndex" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="children" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Folder" inverseName="parent" inverseEntity="Folder"/>
+        <relationship name="parent" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Folder" inverseName="children" inverseEntity="Folder"/>
+        <relationship name="products" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Product" inverseName="folder" inverseEntity="Product"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="folders" inverseEntity="Project"/>
+    </entity>
+    <entity name="InventoryEvent" representedClassName="InventoryEvent" syncable="YES" codeGenerationType="manual">
+        <attribute name="actorDeviceID" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="actorDisplayName" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="eventTypeRaw" optional="YES" attributeType="String" defaultValueString="create"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isCorrection" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="note" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="occurredAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="quantityDelta" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="correctedByEvents" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="InventoryEvent" inverseName="correctsEvent" inverseEntity="InventoryEvent"/>
+        <relationship name="correctsEvent" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="InventoryEvent" inverseName="correctedByEvents" inverseEntity="InventoryEvent"/>
+        <relationship name="destinationLocation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Location" inverseName="incomingEvents" inverseEntity="Location"/>
+        <relationship name="product" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Product" inverseName="events" inverseEntity="Product"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="events" inverseEntity="Project"/>
+        <relationship name="sourceLocation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Location" inverseName="outgoingEvents" inverseEntity="Location"/>
+        <relationship name="unit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="StockUnit" inverseName="events" inverseEntity="StockUnit"/>
+    </entity>
+    <entity name="Location" representedClassName="Location" syncable="YES" codeGenerationType="manual">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="kindRaw" optional="YES" attributeType="String" defaultValueString="container"/>
+        <attribute name="name" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="note" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="sortIndex" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="children" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Location" inverseName="parent" inverseEntity="Location"/>
+        <relationship name="incomingEvents" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="InventoryEvent" inverseName="destinationLocation" inverseEntity="InventoryEvent"/>
+        <relationship name="labels" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="CodeAlias" inverseName="location" inverseEntity="CodeAlias"/>
+        <relationship name="outgoingEvents" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="InventoryEvent" inverseName="sourceLocation" inverseEntity="InventoryEvent"/>
+        <relationship name="parent" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Location" inverseName="children" inverseEntity="Location"/>
+        <relationship name="products" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Product" inverseName="defaultLocation" inverseEntity="Product"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="locations" inverseEntity="Project"/>
+        <relationship name="units" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="StockUnit" inverseName="location" inverseEntity="StockUnit"/>
+    </entity>
+    <entity name="Product" representedClassName="Product" syncable="YES" codeGenerationType="manual">
+        <attribute name="cachedQuantity" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isArchived" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="minimumStock" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="note" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="photoData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="sku" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="trackingModeRaw" optional="YES" attributeType="String" defaultValueString="quantity"/>
+        <attribute name="unitName" optional="YES" attributeType="String" defaultValueString="pcs"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="defaultLocation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Location" inverseName="products" inverseEntity="Location"/>
+        <relationship name="events" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="InventoryEvent" inverseName="product" inverseEntity="InventoryEvent"/>
+        <relationship name="folder" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Folder" inverseName="products" inverseEntity="Folder"/>
+        <relationship name="labels" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="CodeAlias" inverseName="product" inverseEntity="CodeAlias"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="products" inverseEntity="Project"/>
+        <relationship name="units" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="StockUnit" inverseName="product" inverseEntity="StockUnit"/>
+    </entity>
+    <entity name="Project" representedClassName="Project" syncable="YES" codeGenerationType="manual">
+        <attribute name="archivedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="colorKey" optional="YES" attributeType="String" defaultValueString="blue"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isSample" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="note" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="ownerDisplayName" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="events" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="InventoryEvent" inverseName="project" inverseEntity="InventoryEvent"/>
+        <relationship name="folders" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Folder" inverseName="project" inverseEntity="Folder"/>
+        <relationship name="labels" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CodeAlias" inverseName="project" inverseEntity="CodeAlias"/>
+        <relationship name="locations" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Location" inverseName="project" inverseEntity="Location"/>
+        <relationship name="products" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Product" inverseName="project" inverseEntity="Product"/>
+        <relationship name="units" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="StockUnit" inverseName="project" inverseEntity="StockUnit"/>
+    </entity>
+    <entity name="StockUnit" representedClassName="StockUnit" syncable="YES" codeGenerationType="manual">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="note" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="serialNumber" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="statusRaw" optional="YES" attributeType="String" defaultValueString="available"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="events" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="InventoryEvent" inverseName="unit" inverseEntity="InventoryEvent"/>
+        <relationship name="labels" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="CodeAlias" inverseName="unit" inverseEntity="CodeAlias"/>
+        <relationship name="location" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Location" inverseName="units" inverseEntity="Location"/>
+        <relationship name="product" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Product" inverseName="units" inverseEntity="Product"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="units" inverseEntity="Project"/>
+    </entity>
+</model>

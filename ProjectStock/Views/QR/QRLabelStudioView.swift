@@ -1,0 +1,168 @@
+import SwiftUI
+
+/// QR Label Studio (spec §12.5): preview, size/format/DPI/ECC/background
+/// controls, scanability score, export to PNG/PDF/EPS/SVG, calibration sheet,
+/// and Share Sheet / Files saving.
+struct QRLabelStudioView: View {
+    @EnvironmentObject private var settings: AppSettings
+    @StateObject private var model: QRStudioViewModel
+
+    let projectName: String
+    let targetName: String
+
+    @State private var shareItem: ShareableFile?
+    @State private var error: PresentableError?
+
+    init(code: String, projectName: String, targetName: String) {
+        self.projectName = projectName
+        self.targetName = targetName
+        _model = StateObject(wrappedValue: QRStudioViewModel(code: code, settings: AppSettings.shared))
+    }
+
+    var body: some View {
+        List {
+            previewSection
+            scanabilitySection
+            sizeSection
+            optionsSection
+            exportSection
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle(NSLocalizedString("QRラベル", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $shareItem) { item in ShareSheet(items: [item.url]) }
+        .errorAlert($error)
+    }
+
+    private var previewSection: some View {
+        Section {
+            VStack(spacing: 8) {
+                if let image = model.previewImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .interpolation(.none)
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 220)
+                        .padding(8)
+                        .background(checkerboard)
+                        .accessibilityLabel(Text(String(format: NSLocalizedString("コード %@ のQRプレビュー", comment: ""), model.code)))
+                } else if let err = model.encodeError {
+                    Text(err).foregroundColor(.red)
+                } else {
+                    ProgressView()
+                }
+                Text(model.code).font(.system(.footnote, design: .monospaced)).foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private var scanabilitySection: some View {
+        Section(NSLocalizedString("読取評価 (QR Fit)", comment: "")) {
+            if let report = model.report {
+                HStack {
+                    ScanabilityChip(rating: report.rating)
+                    Spacer()
+                    Text("v\(report.version) · \(report.dataModuleCount)×\(report.dataModuleCount)")
+                        .font(.caption).foregroundColor(.secondary)
+                }
+                LabeledRow(title: NSLocalizedString("1モジュール", comment: ""),
+                           value: String(format: "%.3f mm (%.1f px)", report.moduleSizeMM, report.modulePixels))
+                LabeledRow(title: NSLocalizedString("Quiet Zone", comment: ""),
+                           value: String(format: "%d モジュール (%.2f mm)", report.quietZoneModules, report.quietZoneMM))
+                LabeledRow(title: NSLocalizedString("誤り訂正 / DPI", comment: ""),
+                           value: "\(report.errorCorrection.rawValue) / \(report.dpi)")
+                ForEach(report.warnings, id: \.self) { warning in
+                    Label(warning, systemImage: "info.circle")
+                        .font(.caption).foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
+    private var sizeSection: some View {
+        Section(NSLocalizedString("サイズ", comment: "")) {
+            Picker(NSLocalizedString("プリセット", comment: ""), selection: $model.sizePreset) {
+                ForEach(QRSizePreset.allCases) { Text($0.localizedTitle).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            if model.sizePreset == .custom {
+                VStack(alignment: .leading) {
+                    Text(String(format: NSLocalizedString("カスタム: %.0f mm", comment: ""), model.customMM))
+                    Slider(value: $model.customMM,
+                           in: QRSizePreset.customRange.lowerBound...QRSizePreset.customRange.upperBound,
+                           step: 1)
+                }
+            }
+            Text(String(format: NSLocalizedString("印刷サイズ（Quiet Zone含む）: 約 %.0f mm", comment: ""), model.totalSizeMM))
+                .font(.caption).foregroundColor(.secondary)
+            if model.totalSizeMM < 8 {
+                Label(NSLocalizedString("8mm未満です。校正シートで実機確認してください。", comment: ""), systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundColor(.orange)
+            }
+        }
+    }
+
+    private var optionsSection: some View {
+        Section(NSLocalizedString("オプション", comment: "")) {
+            Picker(NSLocalizedString("誤り訂正", comment: ""), selection: $model.errorCorrection) {
+                ForEach(QRErrorCorrectionLevel.allCases) { Text($0.localizedTitle).tag($0) }
+            }
+            Picker(NSLocalizedString("DPI", comment: ""), selection: $model.dpi) {
+                ForEach([300, 600, 1200], id: \.self) { Text("\($0)").tag($0) }
+            }
+            Picker(NSLocalizedString("背景", comment: ""), selection: $model.background) {
+                ForEach(QRBackgroundMode.allCases) { Text($0.localizedTitle).tag($0) }
+            }
+            if model.background == .fullyTransparent {
+                Label(NSLocalizedString("余白まで透過すると、背景によっては読み取れません。", comment: ""), systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundColor(.orange)
+            }
+        }
+    }
+
+    private var exportSection: some View {
+        Section(NSLocalizedString("書き出し", comment: "")) {
+            Picker(NSLocalizedString("形式", comment: ""), selection: $model.format) {
+                ForEach(QRExportFormat.allCases) { Text($0.localizedTitle).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            Button {
+                exportLabel()
+            } label: {
+                Label(NSLocalizedString("書き出して共有 / 保存", comment: ""), systemImage: "square.and.arrow.up")
+            }
+            .accessibilityIdentifier("exportQRButton")
+
+            Button {
+                exportCalibration()
+            } label: {
+                Label(NSLocalizedString("印刷校正シートを作成", comment: ""), systemImage: "printer")
+            }
+        } footer: {
+            Text(NSLocalizedString("PNGは透過対応、PDFとEPSはベクターです。ファイルは一時領域に作成され、一定時間後に自動削除されます。", comment: ""))
+                .font(.caption2)
+        }
+    }
+
+    private var checkerboard: some View {
+        // Visualizes transparency in the preview.
+        Color(.secondarySystemBackground)
+    }
+
+    private func exportLabel() {
+        do {
+            let url = try model.export(projectName: projectName, targetName: targetName)
+            shareItem = ShareableFile(url: url)
+        } catch { self.error = PresentableError(error) }
+    }
+
+    private func exportCalibration() {
+        do {
+            let url = try model.exportCalibrationSheet(projectName: projectName, targetName: targetName)
+            shareItem = ShareableFile(url: url)
+        } catch { self.error = PresentableError(error) }
+    }
+}
