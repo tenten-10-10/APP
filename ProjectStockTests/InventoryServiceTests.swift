@@ -70,6 +70,48 @@ final class InventoryServiceTests: XCTestCase {
         XCTAssertEqual(product.cachedQuantity, 42, accuracy: 0.0001, "台帳から再構築できる")
     }
 
+    func testCorrectingTransferDoesNotChangeTotal() throws {
+        let container = TestSupport.makeContainer()
+        let ctx = container.viewContext
+        let project = TestSupport.makeProject(container)
+        let product = Product.make(in: ctx, name: "部品", project: project)
+        container.router.assignChild(product, toSameStoreAs: project, in: ctx)
+        let locA = Location.make(in: ctx, name: "A", project: project)
+        let locB = Location.make(in: ctx, name: "B", project: project)
+
+        container.inventory.setInitialStock(product: product, quantity: 10, location: locA, actor: "t", in: ctx)
+        let move = container.inventory.transferQuantity(product: product, quantity: 10, from: locA, to: locB, actor: "t", in: ctx)
+        try ctx.save()
+        XCTAssertEqual(product.cachedQuantity, 10, accuracy: 0.0001)
+
+        // Correcting a transfer must not change on-hand total (it never moved stock).
+        container.inventory.reverse(event: move, actor: "t", note: "誤移動", in: ctx)
+        try ctx.save()
+        XCTAssertEqual(container.inventory.ledgerQuantity(for: product), 10, accuracy: 0.0001)
+        XCTAssertEqual(product.cachedQuantity, 10, accuracy: 0.0001)
+    }
+
+    func testCorrectingCheckoutRestoresUnit() throws {
+        let container = TestSupport.makeContainer()
+        let ctx = container.viewContext
+        let project = TestSupport.makeProject(container)
+        let product = Product.make(in: ctx, name: "工具", project: project, trackingMode: .individual)
+        container.router.assignChild(product, toSameStoreAs: project, in: ctx)
+        let unit = StockUnit.make(in: ctx, serialNumber: "S1", product: product, project: project)
+        container.router.assignChild(unit, toSameStoreAs: project, in: ctx)
+        container.inventory.registerUnit(unit, location: nil, actor: "t", in: ctx)
+        let checkout = container.inventory.checkout(unit: unit, actor: "t", in: ctx)
+        try ctx.save()
+        XCTAssertEqual(unit.status, .checkedOut)
+        XCTAssertEqual(product.currentQuantity, 0, accuracy: 0.0001)
+
+        // Correcting the checkout must actually undo it.
+        container.inventory.reverse(event: checkout, actor: "t", note: "誤貸出", in: ctx)
+        try ctx.save()
+        XCTAssertEqual(unit.status, .available, "訂正で個体の状態が戻る")
+        XCTAssertEqual(product.currentQuantity, 1, accuracy: 0.0001)
+    }
+
     func testIndividualUnitStatusFlow() throws {
         let container = TestSupport.makeContainer()
         let ctx = container.viewContext

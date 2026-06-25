@@ -100,17 +100,21 @@ struct StocktakeView: View {
         let outcome = container.scanRouter.route(rawValue: raw, in: container.viewContext)
         switch outcome {
         case .known(let alias):
-            if let product = alias.product {
-                stocktake.record(product: product)
-                Haptics.tap()
-                message = String(format: NSLocalizedString("%@ をカウント", comment: ""), product.displayName)
-            } else if let unit = alias.unit, let product = unit.product {
-                stocktake.record(product: product, unitCode: alias.code)
-                Haptics.tap()
-                message = String(format: NSLocalizedString("%@ をカウント", comment: ""), product.displayName)
-            } else {
+            // The scanner resolves aliases across ALL local projects, so a label
+            // from another project must not be counted into this session.
+            guard let product = alias.product ?? alias.unit?.product else {
                 message = NSLocalizedString("カウント対象ではありません", comment: "")
+                return
             }
+            guard product.project?.objectID == project.objectID else {
+                Haptics.warning()
+                message = NSLocalizedString("別のプロジェクトの製品です", comment: "")
+                return
+            }
+            let unitCode = alias.targetType == .unit ? alias.code : nil
+            stocktake.record(product: product, unitCode: unitCode)
+            Haptics.tap()
+            message = String(format: NSLocalizedString("%@ をカウント", comment: ""), product.displayName)
         default:
             Haptics.warning()
             message = NSLocalizedString("この製品はこのプロジェクトにありません", comment: "")

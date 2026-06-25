@@ -162,15 +162,25 @@ struct InventoryService {
     /// Create a reversing correction for a prior event (逆仕訳). The original is
     /// left untouched; the new event negates its quantity delta and swaps
     /// source/destination, and links back via `correctsEvent`.
+    ///
+    /// The reversal only mirrors the quantity delta when the original event
+    /// actually affected the on-hand total — otherwise a `.transfer` (which
+    /// moves location but not stock) would be subtracted from the total. For
+    /// unit status events, the unit's status is restored once the original is
+    /// marked corrected.
     @discardableResult
     func reverse(event original: InventoryEvent, actor: String, note: String,
                  occurredAt: Date = Date(), in context: NSManagedObjectContext) -> InventoryEvent {
+        let reversalDelta = original.eventType.affectsQuantityTotal ? -original.quantityDelta : 0
         let event = makeEvent(type: .correction, product: original.product, unit: original.unit,
-                              delta: -original.quantityDelta,
+                              delta: reversalDelta,
                               source: original.destinationLocation,
                               destination: original.sourceLocation,
                               actor: actor, note: note, occurredAt: occurredAt,
                               isCorrection: true, corrects: original, in: context)
+        // The original is now linked as corrected, so status resolution will
+        // ignore it and fall back to the previous status event.
+        if let unit = original.unit { applyResolvedStatus(to: unit) }
         if let product = original.product { recompute(product: product) }
         return event
     }
@@ -211,9 +221,12 @@ struct InventoryService {
 
     /// The status implied by the most recent status-changing event, using a
     /// stable tiebreaker (occurredAt, then createdAt, then id) so two devices
-    /// converge on the same answer.
+    /// converge on the same answer. Events that have since been corrected
+    /// (reversed) are ignored, so a corrected checkout/retire is undone.
     func resolvedStatus(for unit: StockUnit) -> UnitStatus {
-        let statusEvents = unit.eventArray.filter { statusImplied(by: $0.eventType) != nil }
+        let statusEvents = unit.eventArray.filter {
+            statusImplied(by: $0.eventType) != nil && $0.correctionArray.isEmpty
+        }
         guard let latest = statusEvents.max(by: { lhs, rhs in
             lhs.orderingKey < rhs.orderingKey
         }) else {
