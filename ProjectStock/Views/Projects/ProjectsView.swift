@@ -24,6 +24,24 @@ struct ProjectsView: View {
     }
 
     var body: some View {
+        content
+            .navigationTitle(NSLocalizedString("プロジェクト", comment: ""))
+            .toolbar { toolbarContent }
+            .sheet(isPresented: $showingCreate) {
+                ProjectFormView()
+            }
+            .errorAlert($error)
+    }
+
+    @ViewBuilder private var content: some View {
+        if projects.isEmpty {
+            hero
+        } else {
+            projectList
+        }
+    }
+
+    private var projectList: some View {
         List {
             Section {
                 ForEach(filtered) { project in
@@ -33,16 +51,65 @@ struct ProjectsView: View {
                 }
             } footer: {
                 if filtered.isEmpty {
-                    EmptyStateView(systemImage: "folder.badge.plus",
-                                   title: NSLocalizedString("プロジェクトがありません", comment: ""),
-                                   message: NSLocalizedString("右上の＋で作成するか、サンプルを生成してください。", comment: ""))
+                    EmptyStateView(systemImage: "magnifyingglass",
+                                   title: NSLocalizedString("該当するプロジェクトがありません", comment: ""),
+                                   message: NSLocalizedString("検索条件を変えるか、アーカイブの表示を切り替えてください。", comment: ""))
                 }
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(NSLocalizedString("プロジェクト", comment: ""))
         .searchable(text: $searchText, prompt: NSLocalizedString("名称で検索", comment: ""))
-        .toolbar {
+    }
+
+    /// First-launch hero shown when there are no projects at all.
+    private var hero: some View {
+        VStack(spacing: 22) {
+            Spacer()
+            ZStack {
+                Circle()
+                    .fill(Brand.gradient)
+                    .frame(width: 128, height: 128)
+                    .shadow(color: Brand.primary.opacity(0.35), radius: 16, y: 8)
+                Image(systemName: "folder.fill.badge.plus")
+                    .font(.system(size: 54, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .accessibilityHidden(true)
+            VStack(spacing: 10) {
+                Text(NSLocalizedString("最初のプロジェクトを作成", comment: ""))
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+                Text(NSLocalizedString("在庫を整理するプロジェクトを作成するか、サンプルで使い方を試してみましょう。", comment: ""))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            VStack(spacing: 12) {
+                Button {
+                    showingCreate = true
+                } label: {
+                    Label(NSLocalizedString("プロジェクトを作成", comment: ""), systemImage: "plus")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .accessibilityIdentifier("heroCreateProjectButton")
+
+                Button {
+                    createSample()
+                } label: {
+                    Label(NSLocalizedString("サンプルを生成", comment: ""), systemImage: "wand.and.stars")
+                }
+                .font(.subheadline.weight(.medium))
+            }
+            Spacer()
+            Spacer()
+        }
+        .padding(.horizontal, 40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+    }
+
+    @ToolbarContentBuilder private var toolbarContent: some ToolbarContent {
             ToolbarItem(placement: .navigationBarLeading) {
                 SyncStatusBadge(state: syncMonitor.syncState)
             }
@@ -66,11 +133,6 @@ struct ProjectsView: View {
                 }
                 .accessibilityIdentifier("createProjectButton")
             }
-        }
-        .sheet(isPresented: $showingCreate) {
-            ProjectFormView()
-        }
-        .errorAlert($error)
     }
 
     private func createSample() {

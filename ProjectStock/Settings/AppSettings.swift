@@ -18,6 +18,7 @@ final class AppSettings: ObservableObject {
         self.defaultDPI = defaults.object(forKey: Keys.dpi) as? Int ?? 600
         self.defaultErrorCorrectionRaw = defaults.string(forKey: Keys.ecc) ?? QRErrorCorrectionLevel.medium.rawValue
         self.continuousScanByDefault = defaults.object(forKey: Keys.continuousScan) as? Bool ?? false
+        self.hasCompletedOnboarding = defaults.bool(forKey: Keys.onboarded)
     }
 
     @Published var operatorDisplayName: String {
@@ -42,6 +43,11 @@ final class AppSettings: ObservableObject {
 
     @Published var continuousScanByDefault: Bool {
         didSet { defaults.set(continuousScanByDefault, forKey: Keys.continuousScan) }
+    }
+
+    /// `true` once the first-run welcome flow has been dismissed.
+    @Published var hasCompletedOnboarding: Bool {
+        didSet { defaults.set(hasCompletedOnboarding, forKey: Keys.onboarded) }
     }
 
     // Convenience typed accessors
@@ -69,5 +75,6 @@ final class AppSettings: ObservableObject {
         static let dpi = "settings.defaultDPI"
         static let ecc = "settings.defaultECC"
         static let continuousScan = "settings.continuousScan"
+        static let onboarded = "settings.hasCompletedOnboarding"
     }
 }

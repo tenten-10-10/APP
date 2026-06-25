@@ -103,7 +103,7 @@ ProjectStock/
   Utilities/      設定読取 / 画像縮小 / 触覚 / 色
   ViewModels/     QR Studio など
   Views/          SwiftUI 画面群（Projects / Products / Scan / QR / Activity / Settings）
-  Resources/      Assets.xcassets（AppIcon プレースホルダ / AccentColor / Launch色）
+  Resources/      Assets.xcassets（AppIcon 1024px / AccentColor / Launch色）
 ProjectStockTests/      Unit テスト
 ProjectStockUITests/    UI テスト
 Scripts/                pbxproj ジェネレータ
@@ -116,9 +116,11 @@ docs/                   App Store 用文言など
 
 ## 既知の制限 / 警告について
 
-- **App Icon は 1024pt のプレースホルダ枠のみ**です（画像未配置）。差し替え手順は
-  `APP_STORE_CHECKLIST.md` に記載。Simulator ビルドは警告（アイコン未設定）が出ますが
-  ビルドは通ります。
+- **App Icon は 1024px の生成済みアイコンを同梱**しています（ブランドQRモチーフ／透過なし）。
+  `python3 Scripts/generate_app_icon.py` で再生成でき、独自デザインに差し替える場合は
+  `APP_STORE_CHECKLIST.md` を参照してください。
+- **初回起動時のオンボーディング**を実装済み（4ページのウェルカム＋サンプル生成）。
+  設定 →「使い方をもう一度見る」で再表示できます。
 - CloudKit 本番スキーマの Deploy、TestFlight での 2 Apple ID 共有、実機での印刷読取
   などは Apple Developer アカウント / 実機が必要です。手順は各ドキュメントに記載しています。
 - 数量は精度よりも実装簡潔性を優先して `Double` で保持しています（仕様で許容）。

@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var deviceName = DeviceIdentity.shared.displayName
     @State private var shareItem: ShareableFile?
     @State private var confirmingExport = false
+    @State private var showTutorial = false
     @State private var error: PresentableError?
 
     var body: some View {
@@ -63,6 +64,11 @@ struct SettingsView: View {
             }
 
             Section(NSLocalizedString("情報", comment: "")) {
+                Button {
+                    showTutorial = true
+                } label: {
+                    Label(NSLocalizedString("使い方をもう一度見る", comment: ""), systemImage: "questionmark.circle")
+                }
                 NavigationLink(NSLocalizedString("プライバシーポリシー", comment: "")) { PrivacyPolicyView() }
                 LabeledRow(title: NSLocalizedString("バージョン", comment: ""), value: "\(AppConfig.marketingVersion) (\(AppConfig.buildNumber))")
             }
@@ -75,6 +81,9 @@ struct SettingsView: View {
             Text(NSLocalizedString("すべてのプロジェクトの在庫データをJSONファイルに書き出します。", comment: ""))
         }
         .sheet(item: $shareItem) { item in ShareSheet(items: [item.url]) }
+        .fullScreenCover(isPresented: $showTutorial) {
+            OnboardingView(isPresented: $showTutorial)
+        }
         .errorAlert($error)
     }
 

@@ -116,6 +116,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		21659F0BD2399338AC169268 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				8D79AF1109876C7E947709B3 /* OnboardingView.swift */,
+			);
+			path = "Onboarding";
+			sourceTree = "<group>";
+		};
 		21B5C1F9E896CBC3F1DF92D2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 1EAF6B1C573B98DE03975706 /* ProjectStock */;
@@ -215,6 +223,7 @@
 			children = (
 				A0C9AA6A797B705E9B62B65A /* Activity */,
 				52E077F3BBF536530C5D2FF6 /* Components */,
+				21659F0BD2399338AC169268 /* Onboarding */,
 				CA580F855F9B74F372AC0CE5 /* Products */,
 				7596F5C1DFA295EB8041CD3E /* Projects */,
 				E5B24E0C916D48FC654C816C /* QR */,
@@ -296,6 +305,7 @@
 			isa = PBXGroup;
 			children = (
 				548173F6BAC801D43B72D723 /* Badges.swift */,
+				94A4667D2D598AF06D98F43A /* BrandKit.swift */,
 				33961581B753CF5A907ABEE8 /* CommonViews.swift */,
 				3B5CC7EE02412CD4481C3536 /* PhotoPicker.swift */,
 			);
@@ -427,7 +437,9 @@
 			name = Release;
 		};
 		8C574E02E3F1F5E8CFD7E6E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
+		8D79AF1109876C7E947709B3 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView.swift"; sourceTree = "<group>"; };
 		8EDDCCAC8C5805D13B447CB7 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DiagnosticsView.swift"; sourceTree = "<group>"; };
+		9214F5F598DB71B1BD6025D4 /* BrandKit.swift in Build */ = {isa = PBXBuildFile; fileRef = 94A4667D2D598AF06D98F43A /* BrandKit.swift */; };
 		929B4F3ADEE074A2048A5C9B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -445,6 +457,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		94A4667D2D598AF06D98F43A /* BrandKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BrandKit.swift"; sourceTree = "<group>"; };
 		9558662E3E69AE860271A4F4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -588,6 +601,7 @@
 			target = 1EAF6B1C573B98DE03975706 /* ProjectStock */;
 			targetProxy = 61C53EB744E963458EA4E635 /* PBXContainerItemProxy */;
 		};
+		BCBF739E288484C5B271BCE3 /* OnboardingView.swift in Build */ = {isa = PBXBuildFile; fileRef = 8D79AF1109876C7E947709B3 /* OnboardingView.swift */; };
 		BD5CF6B4A41B4783116D632A /* DeviceIdentity.swift in Build */ = {isa = PBXBuildFile; fileRef = 301338420154EFB84093E3EE /* DeviceIdentity.swift */; };
 		BDD8143442896E35CFFD3F61 /* Model */ = {
 			isa = PBXGroup;
@@ -760,8 +774,10 @@
 				A5379C42971D75DC4D8B1603 /* in Sources */,
 				00675D811ADFAEEAA4A911A3 /* in Sources */,
 				EFC02E419493B77ACF117E1C /* in Sources */,
+				9214F5F598DB71B1BD6025D4 /* in Sources */,
 				A55526D008901855141CE566 /* in Sources */,
 				82FAE6A52E7F5D5E0C2AF6FD /* in Sources */,
+				BCBF739E288484C5B271BCE3 /* in Sources */,
 				CC7DA07507417302ED109CB5 /* in Sources */,
 				FAE1D4EEE246C0B65A91A691 /* in Sources */,
 				08E6B8231488C22B928BD72D /* in Sources */,

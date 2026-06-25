@@ -3,6 +3,8 @@ import SwiftUI
 /// Four-tab root (spec §12.1).
 struct RootTabView: View {
     @EnvironmentObject private var container: ServiceContainer
+    @EnvironmentObject private var settings: AppSettings
+    @State private var showOnboarding = false
 
     var body: some View {
         TabView {
@@ -29,6 +31,14 @@ struct RootTabView: View {
             }
             .navigationViewStyle(.stack)
             .tabItem { Label(NSLocalizedString("設定", comment: ""), systemImage: "gearshape") }
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(isPresented: $showOnboarding)
+        }
+        .onAppear {
+            if !settings.hasCompletedOnboarding && !AppConfig.isUITesting {
+                showOnboarding = true
+            }
         }
     }
 }

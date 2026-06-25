@@ -2,12 +2,12 @@
 
 ## 1. アセット / 表示
 
-- [ ] **App Icon を差し替える**
-  - 現状は `ProjectStock/Resources/Assets.xcassets/AppIcon.appiconset/` に
-    1024×1024 の単一スロット枠のみ（画像未配置）。
-  - 1024×1024 の PNG（角丸・透過なし）を用意し、`AppIcon.appiconset` にドラッグ。
-    Xcode 14+ の単一サイズ App Icon に対応しています。
-  - Simulator ビルドはアイコン未設定の警告が出ますが、ビルド自体は通ります。
+- [x] **App Icon を同梱済み**
+  - `ProjectStock/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png`
+    に 1024×1024（RGB・透過なし）の生成済みアイコンを配置しています。
+  - 再生成・微調整は `python3 Scripts/generate_app_icon.py`（要 Pillow）。
+  - [ ] 独自デザインに差し替える場合は、同じ 1024×1024 PNG（角丸・透過なし）で
+    `AppIcon.png` を上書きしてください（Xcode 14+ の単一サイズ App Icon）。
 - [x] Launch Screen（`Info.plist` の `UILaunchScreen`、`LaunchBackground` 色を使用）
 - [x] Accent Color（`AccentColor` カラーセット）
 - [ ] スクリーンショット（iPhone 6.7" / 6.5" / 5.5" など各サイズ）を撮影
