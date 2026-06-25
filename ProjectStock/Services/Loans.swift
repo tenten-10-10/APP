@@ -64,4 +64,36 @@ extension InventoryService {
             }
         }
     }
+
+    // MARK: - Expiry lots
+
+    /// All lot units that have a future `expiresAt` date, ordered soonest-expiry
+    /// first. Used by `ServiceContainer.refreshExpiryNotifications()` to build
+    /// notification payloads. Lots that are already expired are included so that
+    /// outstanding (delivered) notifications can be removed; the notification
+    /// service filters past dates before scheduling.
+    func expiringLots(in context: NSManagedObjectContext) -> [StockUnit] {
+        let request = StockUnit.fetchRequest()
+        // Fetch all lots that have any expiresAt — we filter in Swift so that
+        // both future and already-expired lots are covered (lets syncExpiry
+        // clean up stale notifications for expired lots too).
+        request.predicate = NSPredicate(format: "kindRaw == %@ AND expiresAt != nil",
+                                        UnitKind.lot.rawValue)
+        request.sortDescriptors = [NSSortDescriptor(key: "expiresAt", ascending: true)]
+        return (try? context.fetch(request)) ?? []
+    }
+
+    /// Build a `LoanNotice` (reusing the same value type) for a lot's expiry
+    /// date. Returns `nil` if the lot has no id or no expiry date.
+    func expiryNotice(for lot: StockUnit) -> LoanNotice? {
+        guard let unitID = lot.id, let expiry = lot.expiresAt else { return nil }
+        let productName = lot.product?.displayName ?? NSLocalizedString("製品", comment: "")
+        return LoanNotice(
+            identifier: NotificationService.expiryIdentifier(unitID: unitID),
+            title: NSLocalizedString("ロット有効期限", comment: ""),
+            body: String(format: NSLocalizedString("「%@」ロット %@ の有効期限が近づいています。", comment: ""),
+                         productName, lot.lotNumberDisplay),
+            due: expiry
+        )
+    }
 }

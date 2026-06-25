@@ -94,12 +94,83 @@ def make_datamodel(dir_abs, dir_rel, name):
     ))
     return gid
 
+def make_variant_group(dir_abs, dir_rel, strings_name):
+    """
+    Collect all <lang>.lproj/<strings_name> files under dir_abs and emit a
+    PBXVariantGroup named strings_name.  Returns the variant-group id so the
+    caller can add it to a PBXResourcesBuildPhase.
+    """
+    lang_entries = []
+    for entry in sorted(os.listdir(dir_abs)):
+        if not entry.endswith(".lproj"):
+            continue
+        abs_lproj = os.path.join(dir_abs, entry)
+        if not os.path.isdir(abs_lproj):
+            continue
+        strings_path = os.path.join(abs_lproj, strings_name)
+        if not os.path.isfile(strings_path):
+            continue
+        lang = entry[:-len(".lproj")]          # e.g. "ja", "en", "Base"
+        rel_strings = os.path.join(dir_rel, entry, strings_name)
+        fid = oid("fileref", rel_strings)
+        add_object(fid, (
+            f"{fid} /* {lang} */ = {{isa = PBXFileReference; "
+            f"lastKnownFileType = text.plist.strings; "
+            f"name = \"{lang}\"; "
+            f"path = \"{entry}/{strings_name}\"; "
+            f"sourceTree = \"<group>\"; }};"
+        ))
+        lang_entries.append((fid, lang))
+
+    if not lang_entries:
+        return None
+
+    vgid = oid("variantgroup", os.path.join(dir_rel, strings_name))
+    kids = "\n\t\t\t\t".join(f"{fid} /* {lang} */," for fid, lang in lang_entries)
+    add_object(vgid, (
+        f"{vgid} /* {strings_name} */ = {{\n"
+        f"\t\t\tisa = PBXVariantGroup;\n"
+        f"\t\t\tchildren = (\n\t\t\t\t{kids}\n\t\t\t);\n"
+        f"\t\t\tname = \"{strings_name}\";\n"
+        f"\t\t\tsourceTree = \"<group>\";\n"
+        f"\t\t}};"
+    ))
+    return vgid
+
+
 def build_group(dir_abs, dir_rel, target):
     """Recursively create a PBXGroup for a directory; returns (group_id, name)."""
     name = os.path.basename(dir_rel)
     children = []
+
+    # --- Pre-scan: collect all *.strings files living inside *.lproj dirs,
+    #     grouped by their basename, so we can emit one PBXVariantGroup each. ---
+    lproj_strings = set()   # basenames like "Localizable.strings"
+    lproj_dirs = set()      # entry names like "en.lproj"
+    for entry in os.listdir(dir_abs):
+        if entry.endswith(".lproj") and os.path.isdir(os.path.join(dir_abs, entry)):
+            lproj_dirs.add(entry)
+            lproj_abs = os.path.join(dir_abs, entry)
+            for f in os.listdir(lproj_abs):
+                if f.endswith(".strings"):
+                    lproj_strings.add(f)
+
+    # Emit one PBXVariantGroup per distinct strings filename, add to resources.
+    variant_group_ids = {}   # strings_name -> vgid
+    for sname in sorted(lproj_strings):
+        vgid = make_variant_group(dir_abs, dir_rel, sname)
+        if vgid:
+            variant_group_ids[sname] = vgid
+            children.append((vgid, sname))
+            if target == "app":
+                bid = make_build_file(vgid, sname, "app-res-variant-" + sname)
+                app_resources.append(bid)
+
     for entry in sorted(os.listdir(dir_abs)):
         if entry.startswith("."):
+            continue
+        # Skip .lproj dirs — already handled above as variant groups.
+        if entry in lproj_dirs:
             continue
         abs_e = os.path.join(dir_abs, entry)
         rel_e = os.path.join(dir_rel, entry)

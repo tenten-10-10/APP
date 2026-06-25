@@ -95,7 +95,17 @@ struct AddLotSheet: View {
                                               expiresAt: due, location: loc, actor: actor, in: ctx)
         }
         switch result {
-        case .success: Haptics.success(); dismiss()
+        case .success:
+            Haptics.success()
+            // A new lot with an expiry date should (re)schedule its reminder.
+            if hasExpiry {
+                NotificationService.shared.requestAuthorization { _ in
+                    container.refreshExpiryNotifications()
+                }
+            } else {
+                container.refreshExpiryNotifications()
+            }
+            dismiss()
         case .failure(let err): error = PresentableError(err)
         }
     }

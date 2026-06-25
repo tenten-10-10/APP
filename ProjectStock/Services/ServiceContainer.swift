@@ -119,4 +119,18 @@ final class ServiceContainer: ObservableObject {
             NotificationService.shared.sync(notices: notices)
         }
     }
+
+    // MARK: - Expiry notifications
+
+    /// Re-sync local notifications for lot expiry dates with the current
+    /// inventory state (call on launch and after any lot is created/updated).
+    /// Uses the "expiry-" prefix so it never clobbers loan notifications.
+    func refreshExpiryNotifications() {
+        let context = viewContext
+        context.perform {
+            let notices = self.inventory.expiringLots(in: context)
+                .compactMap { self.inventory.expiryNotice(for: $0) }
+            NotificationService.shared.syncExpiry(notices: notices)
+        }
+    }
 }

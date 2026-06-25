@@ -33,6 +33,7 @@ struct ProjectStockApp: App {
                     container.qrExport.purgeOldExports()
                     container.syncMonitor.refreshAccountStatus()
                     container.refreshLoanNotifications()
+                    container.refreshExpiryNotifications()
                 }
         }
     }

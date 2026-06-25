@@ -13,19 +13,29 @@ struct LoanNotice {
     let due: Date
 }
 
-/// Schedules local notifications for loan due-dates. Each loan maps to at most
-/// one pending notification, keyed by the unit id, so re-syncing is idempotent.
+/// Schedules local notifications for loan due-dates and lot expiry.
+/// Each loan/lot maps to at most one pending notification, keyed by the unit
+/// id, so re-syncing is idempotent.
 ///
 /// All public methods operate on value types (`LoanNotice`) or plain strings so
 /// they can be called from any thread — managed objects are converted to
 /// `LoanNotice` on their own context queue by the caller.
+///
+/// IMPORTANT: Loan and expiry notifications use distinct identifier prefixes
+/// ("loan-" and "expiry-"). Each `sync` call only removes stale notifications
+/// whose identifier starts with the supplied prefix, ensuring the two sets
+/// never clobber each other.
 final class NotificationService {
 
     static let shared = NotificationService()
 
-    private static let prefix = "loan-"
+    // MARK: - Identifier prefixes (one per domain)
 
-    static func loanIdentifier(unitID: UUID) -> String { prefix + unitID.uuidString }
+    private static let loanPrefix   = "loan-"
+    private static let expiryPrefix = "expiry-"
+
+    static func loanIdentifier(unitID: UUID)   -> String { loanPrefix   + unitID.uuidString }
+    static func expiryIdentifier(unitID: UUID) -> String { expiryPrefix + unitID.uuidString }
 
     /// Notifications are pointless (and the API is unavailable) during tests.
     private var isAvailable: Bool { !AppConfig.isRunningTests }
@@ -41,11 +51,33 @@ final class NotificationService {
         #endif
     }
 
+    // MARK: - Loan notifications
+
     /// Reconcile the set of pending loan notifications with `notices`: schedule
-    /// each future notice and remove any stale loan notification (returned or
+    /// each future notice and remove any stale *loan* notification (returned or
     /// corrected loans). Past-due notices are not scheduled — the UI surfaces
     /// those as overdue badges instead.
+    /// Only identifiers with prefix "loan-" are touched; expiry notifications
+    /// are left completely unchanged.
     func sync(notices: [LoanNotice]) {
+        syncNotices(notices, prefix: Self.loanPrefix)
+    }
+
+    // MARK: - Expiry notifications
+
+    /// Reconcile pending lot-expiry notifications with `notices`.
+    /// Only identifiers with prefix "expiry-" are touched; loan notifications
+    /// are left completely unchanged.
+    func syncExpiry(notices: [LoanNotice]) {
+        syncNotices(notices, prefix: Self.expiryPrefix)
+    }
+
+    // MARK: - Shared sync implementation
+
+    /// Generic sync scoped to a single prefix: schedules future notices and
+    /// removes stale pending notifications whose identifier starts with
+    /// `prefix` and is not in the new `notices` set.
+    private func syncNotices(_ notices: [LoanNotice], prefix: String) {
         guard isAvailable else { return }
         #if canImport(UserNotifications)
         let center = UNUserNotificationCenter.current()
@@ -54,12 +86,14 @@ final class NotificationService {
         let wanted = Set(future.map(\.identifier))
         center.getPendingNotificationRequests { pending in
             let stale = pending.map(\.identifier)
-                .filter { $0.hasPrefix(Self.prefix) && !wanted.contains($0) }
+                .filter { $0.hasPrefix(prefix) && !wanted.contains($0) }
             if !stale.isEmpty { center.removePendingNotificationRequests(withIdentifiers: stale) }
             for notice in future { center.add(Self.makeRequest(notice)) }
         }
         #endif
     }
+
+    // MARK: - Cancel single
 
     func cancel(identifier: String) {
         guard isAvailable else { return }
@@ -67,6 +101,8 @@ final class NotificationService {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
         #endif
     }
+
+    // MARK: - Request builder
 
     #if canImport(UserNotifications)
     private static func makeRequest(_ notice: LoanNotice) -> UNNotificationRequest {

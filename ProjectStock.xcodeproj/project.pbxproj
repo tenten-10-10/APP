@@ -221,12 +221,14 @@
 		3F8E40F116D41DDED8983E9E /* StocktakeView.swift in Build */ = {isa = PBXBuildFile; fileRef = D5A263803EFE86562D6903D6 /* StocktakeView.swift */; };
 		3F9E53719A5BC855DC409096 /* DomainEnums.swift in Build */ = {isa = PBXBuildFile; fileRef = 4F6E1630A9D88DA85A6CAA72 /* DomainEnums.swift */; };
 		407B570EBDA549651966AA27 /* QRVectorPDFRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRVectorPDFRenderer.swift"; sourceTree = "<group>"; };
+		40BFFC13B06F980820E6DC32 /* Localizable.strings in Build */ = {isa = PBXBuildFile; fileRef = 81B9F5EBAD0AF480E0751D49 /* Localizable.strings */; };
 		40EF28810BB4D71B22AC76FB /* ColorPalette.swift in Build */ = {isa = PBXBuildFile; fileRef = F4AD3F5C053625C76B1D92BC /* ColorPalette.swift */; };
 		4109A1D048AB8F7DD86DD334 /* Views */ = {
 			isa = PBXGroup;
 			children = (
 				A0C9AA6A797B705E9B62B65A /* Activity */,
 				52E077F3BBF536530C5D2FF6 /* Components */,
+				6900D240C39881C135902A9C /* Home */,
 				D3B431CBFA9CC4F1DD88B7C6 /* Loans */,
 				21659F0BD2399338AC169268 /* Onboarding */,
 				CA580F855F9B74F372AC0CE5 /* Products */,
@@ -289,6 +291,7 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		49C5DF7BB47E346A767D5080 /* QRStudioViewModel.swift in Build */ = {isa = PBXBuildFile; fileRef = EC58975C86C9F69794242674 /* QRStudioViewModel.swift */; };
+		4A87321DDE4D36ED3C91C77A /* SearchView.swift in Build */ = {isa = PBXBuildFile; fileRef = 56C743D058A2D7F9A3A94CA0 /* SearchView.swift */; };
 		4B042F840393C54F49759230 /* QRVectorPDFRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = 407B570EBDA549651966AA27 /* QRVectorPDFRenderer.swift */; };
 		4BD23E98C5CB3245CFAFA51E /* QRRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRRenderingTests.swift"; sourceTree = "<group>"; };
 		4C6A847261A6671743808C36 /* AppSettings.swift in Build */ = {isa = PBXBuildFile; fileRef = AE105ADF2FFC5292443E243D /* AppSettings.swift */; };
@@ -332,6 +335,7 @@
 			sourceTree = "<group>";
 		};
 		553FA0C96E00D42384C5A40D /* HierarchyService.swift in Build */ = {isa = PBXBuildFile; fileRef = C0B567F6AEE36C121864FCA1 /* HierarchyService.swift */; };
+		56C743D058A2D7F9A3A94CA0 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SearchView.swift"; sourceTree = "<group>"; };
 		580AE74C05712666C66BC0DC /* QR */ = {
 			isa = PBXGroup;
 			children = (
@@ -351,6 +355,7 @@
 			sourceTree = "<group>";
 		};
 		589EDCB99A93C603592817C1 /* StockUnit+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StockUnit+CoreDataClass.swift"; sourceTree = "<group>"; };
+		591C707EFD2E3A4206606D07 /* HomeView.swift in Build */ = {isa = PBXBuildFile; fileRef = C90D27C779893F6E8923207E /* HomeView.swift */; };
 		594EED101777AAF04A268E6E /* Haptics.swift in Build */ = {isa = PBXBuildFile; fileRef = BA2CA92378F434FC0B44F37E /* Haptics.swift */; };
 		5ABF8D3A27C87DFD881993B0 /* Product+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 1BB270D5DCB07FE4ED7F4CDB /* Product+CoreDataClass.swift */; };
 		5AD5DB54B8B51DC6904C40C7 /* ProjectFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectFormView.swift"; sourceTree = "<group>"; };
@@ -369,6 +374,15 @@
 		64B6AFA92DB57B78E0BB7852 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationService.swift"; sourceTree = "<group>"; };
 		673610E2B25B7D5EE31A8218 /* QRLabelStudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRLabelStudioView.swift"; sourceTree = "<group>"; };
 		68979EB8BA71A1868D9994F7 /* LabelSheetRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = 7A9B28203BDB4907E4E64B88 /* LabelSheetRenderer.swift */; };
+		6900D240C39881C135902A9C /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				C90D27C779893F6E8923207E /* HomeView.swift */,
+				56C743D058A2D7F9A3A94CA0 /* SearchView.swift */,
+			);
+			path = "Home";
+			sourceTree = "<group>";
+		};
 		6C6711A660BBD9B293907778 /* ProjectService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectService.swift"; sourceTree = "<group>"; };
 		6C81F8D3649D2157C91CA88D /* DataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataExportService.swift"; sourceTree = "<group>"; };
 		6E321A06193EEBA18E431DCD /* LoansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoansView.swift"; sourceTree = "<group>"; };
@@ -411,9 +425,19 @@
 		8016773C9B22E7F23760430A /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				81B9F5EBAD0AF480E0751D49 /* Localizable.strings */,
 				DCD88AE75B994D598470D9B1 /* Assets.xcassets */,
 			);
 			path = "Resources";
+			sourceTree = "<group>";
+		};
+		81B9F5EBAD0AF480E0751D49 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				D594A053C8F3533785FA773B /* en */,
+				DCC848E2CFBDB65D354F64C0 /* ja */,
+			);
+			name = "Localizable.strings";
 			sourceTree = "<group>";
 		};
 		82B44E869DF98EFC2C186126 /* ScanResultSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScanResultSheet.swift"; sourceTree = "<group>"; };
@@ -471,6 +495,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				40BFFC13B06F980820E6DC32 /* in Resources */,
 				38BA126DB47C579F73618776 /* in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -679,6 +704,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		C90D27C779893F6E8923207E /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeView.swift"; sourceTree = "<group>"; };
 		C9D9EC54CE8BCC2FC03531EF /* CodeAliasService.swift in Build */ = {isa = PBXBuildFile; fileRef = 7E970E6C3318D3CF09C55406 /* CodeAliasService.swift */; };
 		CA580F855F9B74F372AC0CE5 /* Products */ = {
 			isa = PBXGroup;
@@ -732,12 +758,14 @@
 			sourceTree = "<group>";
 		};
 		D58263D3D7FDF096152BE966 /* ProjectStock.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ProjectStock.entitlements"; sourceTree = "<group>"; };
+		D594A053C8F3533785FA773B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "en.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		D5A263803EFE86562D6903D6 /* StocktakeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StocktakeView.swift"; sourceTree = "<group>"; };
 		D5C1ADBE4945F52ACFF9371B /* QRCodeMatrix.swift in Build */ = {isa = PBXBuildFile; fileRef = E8C76217336722722FF57687 /* QRCodeMatrix.swift */; };
 		D6C9E62686840913BD81724A /* LocationFormView.swift in Build */ = {isa = PBXBuildFile; fileRef = 207889D659156760DDFA56E4 /* LocationFormView.swift */; };
 		D6DF8741F7D4BC5B2A5DBC19 /* ServiceContainer.swift in Build */ = {isa = PBXBuildFile; fileRef = F7F844BE5A7004DEA811A03B /* ServiceContainer.swift */; };
 		D72B76FAE1538605277E54E6 /* StoreRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StoreRouter.swift"; sourceTree = "<group>"; };
 		D87478A81EECC12D21C73A12 /* QRScanabilityEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRScanabilityEvaluator.swift"; sourceTree = "<group>"; };
+		DCC848E2CFBDB65D354F64C0 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		DCD88AE75B994D598470D9B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 		DEA36C0A5C8E11E294C56C48 /* ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "ARCHITECTURE.md"; sourceTree = "<group>"; };
 		E1CB06BAE8BBBACE102B4BFC /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectDetailView.swift"; sourceTree = "<group>"; };
@@ -802,6 +830,8 @@
 				9214F5F598DB71B1BD6025D4 /* in Sources */,
 				A55526D008901855141CE566 /* in Sources */,
 				82FAE6A52E7F5D5E0C2AF6FD /* in Sources */,
+				591C707EFD2E3A4206606D07 /* in Sources */,
+				4A87321DDE4D36ED3C91C77A /* in Sources */,
 				BD8E5950C35C658CA8262E0D /* in Sources */,
 				BCBF739E288484C5B271BCE3 /* in Sources */,
 				50FC6B6EB523245D3FF4CFD0 /* in Sources */,

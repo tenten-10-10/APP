@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Four-tab root (spec §12.1).
+/// Five-tab root: Home · Projects · Scan · Activity · Settings.
 struct RootTabView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
@@ -8,6 +8,12 @@ struct RootTabView: View {
 
     var body: some View {
         TabView {
+            NavigationView {
+                HomeView()
+            }
+            .navigationViewStyle(.stack)
+            .tabItem { Label(NSLocalizedString("ホーム", comment: ""), systemImage: "house") }
+
             NavigationView {
                 ProjectsView()
             }
