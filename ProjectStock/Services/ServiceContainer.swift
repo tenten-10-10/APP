@@ -101,7 +101,7 @@ final class ServiceContainer: ObservableObject {
             let request: NSFetchRequest<Project> = Project.fetchRequest()
             request.fetchLimit = 1
             if ((try? ctx.count(for: request)) ?? 0) > 0 { return }
-            _ = try self.sampleData.makeSampleProject(in: ctx)
+            _ = try self.sampleData.makeShowcaseProjects(in: ctx)
         }
         recomputeAllProjects()
     }
