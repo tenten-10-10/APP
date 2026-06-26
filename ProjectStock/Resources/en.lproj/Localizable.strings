@@ -434,3 +434,8 @@
 "QRラベルを先に印刷" = "Print QR Labels First";
 "詳細設定" = "Advanced Settings";
 "誤り訂正・解像度・背景・読み取り評価などの詳細です。通常は変更不要です。" = "Error correction, resolution, background, and readability details. Usually no need to change.";
+"はじめてガイド" = "Getting Started";
+"プロジェクトを作る" = "Create a project";
+"最初の製品を追加" = "Add your first product";
+"QRラベルを作る" = "Create a QR label";
+"製品を追加する" = "Add a product";

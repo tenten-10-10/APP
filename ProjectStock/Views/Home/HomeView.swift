@@ -34,6 +34,10 @@ struct HomeView: View {
     ) private var checkedOutUnits: FetchedResults<StockUnit>
 
     @State private var showSearch = false
+    @State private var showCreateProject = false
+    @State private var routedProject: Project?
+    @State private var routedProduct: Product?
+    @AppStorage("hideFirstRunGuide") private var hideSetupGuide = false
 
     // MARK: - Derived
 
@@ -60,10 +64,31 @@ struct HomeView: View {
         !lowStockProducts.isEmpty || !overdueLoans.isEmpty || !expiringLots.isEmpty
     }
 
+    // MARK: - First-run guide
+
+    private var hasProject: Bool { !projects.isEmpty }
+    private var hasProduct: Bool { !products.isEmpty }
+    private var hasLabel: Bool { products.contains { !$0.labelArray.isEmpty } }
+    private var setupComplete: Bool { hasProject && hasProduct && hasLabel }
+    private var showGuide: Bool { !hideSetupGuide && !setupComplete }
+
+    private var nextStepTitle: String {
+        if !hasProject { return NSLocalizedString("プロジェクトを作る", comment: "") }
+        if !hasProduct { return NSLocalizedString("製品を追加する", comment: "") }
+        return NSLocalizedString("QRラベルを作る", comment: "")
+    }
+
+    private func advanceGuide() {
+        if !hasProject { showCreateProject = true }
+        else if !hasProduct { routedProject = projects.first }
+        else { routedProduct = products.first }
+    }
+
     // MARK: - Body
 
     var body: some View {
         List {
+            if showGuide { setupGuideSection }
             summaryCard
             if hasAlerts {
                 lowStockSection
@@ -88,6 +113,63 @@ struct HomeView: View {
         .sheet(isPresented: $showSearch) {
             SearchView()
         }
+        .sheet(isPresented: $showCreateProject) {
+            ProjectFormView(onCreated: { routedProject = $0 })
+        }
+        .background(setupGuideLinks)
+    }
+
+    // MARK: - First-run guide card
+
+    private var setupGuideSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 12) {
+                guideStep(index: 1, title: NSLocalizedString("プロジェクトを作る", comment: ""), done: hasProject)
+                guideStep(index: 2, title: NSLocalizedString("最初の製品を追加", comment: ""), done: hasProduct)
+                guideStep(index: 3, title: NSLocalizedString("QRラベルを作る", comment: ""), done: hasLabel)
+                Button { advanceGuide() } label: {
+                    Text(nextStepTitle).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .accessibilityIdentifier("setupGuideNext")
+            }
+            .padding(.vertical, 4)
+        } header: {
+            HStack {
+                Label(NSLocalizedString("はじめてガイド", comment: ""), systemImage: "sparkles")
+                Spacer()
+                Button(NSLocalizedString("閉じる", comment: "")) { hideSetupGuide = true }
+                    .font(.caption)
+            }
+        }
+    }
+
+    private func guideStep(index: Int, title: String, done: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: done ? "checkmark.circle.fill" : "\(index).circle")
+                .font(.title3)
+                .foregroundColor(done ? .green : Brand.primary)
+            Text(title)
+                .strikethrough(done)
+                .foregroundColor(done ? .secondary : .primary)
+            Spacer()
+        }
+        .font(.subheadline)
+    }
+
+    /// Hidden links so the guide can push straight to the next screen.
+    @ViewBuilder private var setupGuideLinks: some View {
+        NavigationLink(isActive: Binding(get: { routedProject != nil },
+                                         set: { if !$0 { routedProject = nil } })) {
+            if let project = routedProject { ProjectDetailView(project: project) }
+        } label: { EmptyView() }
+        .opacity(0)
+
+        NavigationLink(isActive: Binding(get: { routedProduct != nil },
+                                         set: { if !$0 { routedProduct = nil } })) {
+            if let product = routedProduct { ProductDetailView(product: product) }
+        } label: { EmptyView() }
+        .opacity(0)
     }
 
     // MARK: - Summary card
