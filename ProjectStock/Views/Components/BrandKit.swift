@@ -6,17 +6,19 @@ enum Brand {
     /// The app's accent (matches `AccentColor` / the app icon).
     static let primary = Color.accentColor
 
-    /// Diagonal brand gradient used behind hero artwork and the app icon.
+    /// Diagonal brand gradient (dark olive) used behind hero artwork.
     static var gradient: LinearGradient {
         LinearGradient(
-            colors: [
-                Color(red: 46 / 255, green: 134 / 255, blue: 230 / 255),
-                Color(red: 20 / 255, green: 84 / 255, blue: 184 / 255),
-            ],
+            colors: [gradientStart, gradientEnd],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
+
+    /// Lighter olive used at the gradient's top-leading corner.
+    static let gradientStart = Color(red: 110 / 255, green: 124 / 255, blue: 72 / 255)
+    /// Deep olive used at the gradient's bottom-trailing corner.
+    static let gradientEnd = Color(red: 60 / 255, green: 72 / 255, blue: 38 / 255)
 }
 
 /// Full-width filled primary button (brand colour, white label).

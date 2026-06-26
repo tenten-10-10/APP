@@ -179,7 +179,7 @@ struct HomeView: View {
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Brand.gradient)
-                    .shadow(color: Color(red: 20/255, green: 84/255, blue: 184/255).opacity(0.3),
+                    .shadow(color: Brand.gradientEnd.opacity(0.3),
                             radius: 10, y: 4)
 
                 HStack(spacing: 0) {
