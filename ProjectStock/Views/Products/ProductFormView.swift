@@ -113,7 +113,11 @@ struct ProductFormView: View {
     }
 
     private func load() {
-        guard let editing else { return }
+        guard let editing else {
+            // New product: start in the project's preferred tracking mode.
+            trackingMode = project.defaultTrackingMode
+            return
+        }
         name = editing.displayName
         sku = editing.sku ?? ""
         unitName = editing.unitLabel

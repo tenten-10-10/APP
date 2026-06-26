@@ -110,16 +110,30 @@ struct ProjectDetailView: View {
     // MARK: - Sections
 
     @ViewBuilder private var productsSection: some View {
-        if canEdit {
-            Button { showingAddProduct = true } label: {
-                Label(NSLocalizedString("製品を追加", comment: ""), systemImage: "plus")
-            }
-            .accessibilityIdentifier("addProductButton")
-        }
         let products = project.productArray.filter { !$0.isArchived }
         if products.isEmpty {
-            EmptyStateView(systemImage: "shippingbox", title: NSLocalizedString("製品がありません", comment: ""))
+            VStack(spacing: 14) {
+                EmptyStateView(systemImage: project.defaultTrackingMode.systemImageName,
+                               title: NSLocalizedString("最初の製品を追加しましょう", comment: ""),
+                               message: project.defaultTrackingMode.explanation)
+                if canEdit {
+                    Button { showingAddProduct = true } label: {
+                        Label(NSLocalizedString("製品を追加", comment: ""), systemImage: "plus")
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .accessibilityIdentifier("addProductButton")
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .listRowBackground(Color.clear)
         } else {
+            if canEdit {
+                Button { showingAddProduct = true } label: {
+                    Label(NSLocalizedString("製品を追加", comment: ""), systemImage: "plus")
+                }
+                .accessibilityIdentifier("addProductButton")
+            }
             ForEach(products) { product in
                 NavigationLink(destination: ProductDetailView(product: product)) {
                     ProductRow(product: product)

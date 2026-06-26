@@ -39,6 +39,14 @@ public enum TrackingMode: String, CaseIterable, Identifiable {
         case .lot:        return NSLocalizedString("ロット（製造単位）ごとに数量と期限を管理します。", comment: "")
         }
     }
+
+    public var systemImageName: String {
+        switch self {
+        case .quantity:   return "number.square"
+        case .individual: return "barcode"
+        case .lot:        return "square.stack.3d.up"
+        }
+    }
 }
 
 /// Whether a `StockUnit` represents a single serialised item or a lot/batch

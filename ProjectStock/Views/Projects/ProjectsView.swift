@@ -14,6 +14,7 @@ struct ProjectsView: View {
     @State private var searchText = ""
     @State private var showArchived = false
     @State private var showingCreate = false
+    @State private var createdProject: Project?
     @State private var error: PresentableError?
 
     private var filtered: [Project] {
@@ -28,9 +29,23 @@ struct ProjectsView: View {
             .navigationTitle(NSLocalizedString("プロジェクト", comment: ""))
             .toolbar { toolbarContent }
             .sheet(isPresented: $showingCreate) {
-                ProjectFormView()
+                ProjectFormView(onCreated: { createdProject = $0 })
             }
+            .background(newProjectLink)
             .errorAlert($error)
+    }
+
+    /// Hidden link that pushes the just-created project so the user lands
+    /// straight inside it, ready to add the first product.
+    @ViewBuilder private var newProjectLink: some View {
+        NavigationLink(
+            isActive: Binding(get: { createdProject != nil },
+                              set: { if !$0 { createdProject = nil } })
+        ) {
+            if let createdProject { ProjectDetailView(project: createdProject) }
+        } label: { EmptyView() }
+        .opacity(0)
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder private var content: some View {

@@ -411,3 +411,6 @@
 "青" = "Blue";
 "青緑" = "Teal";
 "非推奨" = "Not Recommended";
+"主に扱うもの" = "Mainly tracking";
+"新しい製品の初期値になります。製品ごとにあとで変更できます。" = "Used as the default for new products; you can change it per product later.";
+"最初の製品を追加しましょう" = "Add your first product";

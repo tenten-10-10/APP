@@ -12,7 +12,8 @@ public class Project: NSManagedObject {
                             name: String,
                             ownerDisplayName: String,
                             color: ProjectColor = .blue,
-                            isSample: Bool = false) -> Project {
+                            isSample: Bool = false,
+                            defaultMode: TrackingMode = .quantity) -> Project {
         let project = Project(context: context)
         let now = Date()
         project.id = UUID()
@@ -23,6 +24,7 @@ public class Project: NSManagedObject {
         project.updatedAt = now
         project.ownerDisplayName = ownerDisplayName
         project.isSample = isSample
+        project.defaultTrackingModeRaw = defaultMode.rawValue
         return project
     }
 }
@@ -41,6 +43,7 @@ extension Project {
     @NSManaged public var archivedAt: Date?
     @NSManaged public var ownerDisplayName: String?
     @NSManaged public var isSample: Bool
+    @NSManaged public var defaultTrackingModeRaw: String?
 
     @NSManaged public var folders: NSSet?
     @NSManaged public var products: NSSet?
@@ -61,6 +64,13 @@ public extension Project {
     var color: ProjectColor {
         get { ProjectColor(raw: colorKey) }
         set { colorKey = newValue.rawValue }
+    }
+
+    /// The tracking mode pre-selected when adding a new product to this project.
+    /// A convenience default only — individual products may still use any mode.
+    var defaultTrackingMode: TrackingMode {
+        get { TrackingMode(raw: defaultTrackingModeRaw) }
+        set { defaultTrackingModeRaw = newValue.rawValue }
     }
 
     var isArchived: Bool { archivedAt != nil }

@@ -8,10 +8,14 @@ struct ProjectFormView: View {
     @Environment(\.dismiss) private var dismiss
 
     var project: Project?
+    /// Called with the freshly created project so the caller can navigate
+    /// straight into it (only fired on create, not edit).
+    var onCreated: ((Project) -> Void)? = nil
 
     @State private var name: String = ""
     @State private var note: String = ""
     @State private var color: ProjectColor = .blue
+    @State private var defaultMode: TrackingMode = .quantity
     @State private var error: PresentableError?
 
     private var isEditing: Bool { project != nil }
@@ -42,6 +46,34 @@ struct ProjectFormView: View {
                     }
                     .padding(.vertical, 4)
                 }
+
+                if !isEditing {
+                    Section {
+                        ForEach(TrackingMode.allCases) { mode in
+                            Button { defaultMode = mode } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: mode.systemImageName)
+                                        .font(.title3).frame(width: 28)
+                                        .foregroundColor(defaultMode == mode ? Brand.primary : .secondary)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(mode.localizedTitle).foregroundColor(.primary)
+                                        Text(mode.explanation).font(.caption).foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: defaultMode == mode ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(defaultMode == mode ? Brand.primary : Color(.tertiaryLabel))
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("projectMode_\(mode.rawValue)")
+                            .accessibilityAddTraits(defaultMode == mode ? [.isSelected] : [])
+                        }
+                    } header: {
+                        Text(NSLocalizedString("主に扱うもの", comment: ""))
+                    } footer: {
+                        Text(NSLocalizedString("新しい製品の初期値になります。製品ごとにあとで変更できます。", comment: ""))
+                    }
+                }
             }
             .navigationTitle(isEditing ? NSLocalizedString("プロジェクトを編集", comment: "") : NSLocalizedString("新規プロジェクト", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
@@ -71,9 +103,11 @@ struct ProjectFormView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNote = note
         let chosen = color
+        let mode = defaultMode
         let owner = settings.effectiveOperatorName
         let editingID = project?.objectID
 
+        var createdID: NSManagedObjectID?
         let result = container.performWrite { ctx in
             if let editingID, let existing = try? ctx.existingObject(with: editingID) as? Project {
                 existing.name = trimmedName
@@ -82,12 +116,19 @@ struct ProjectFormView: View {
                 existing.touch()
             } else {
                 let created = container.projects.createProject(name: trimmedName, ownerDisplayName: owner,
-                                                               color: chosen, in: ctx)
+                                                               color: chosen, defaultMode: mode, in: ctx)
                 created.note = trimmedNote
+                try ctx.obtainPermanentIDs(for: [created])
+                createdID = created.objectID
             }
         }
         switch result {
-        case .success: dismiss()
+        case .success:
+            dismiss()
+            if let createdID, let onCreated,
+               let proj = try? container.viewContext.existingObject(with: createdID) as? Project {
+                onCreated(proj)
+            }
         case .failure(let err): error = PresentableError(err)
         }
     }
