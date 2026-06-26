@@ -457,3 +457,11 @@
 "新しいフォルダ" = "New Folder";
 "新しい場所" = "New Location";
 "場所の名前" = "Location name";
+"追加する数: %d" = "Number to add: %d";
+"名前・番号（任意）" = "Name / number (optional)";
+"追加すると、1つずつにQRラベルが自動で発行されます。スキャンすればその1個がすぐ分かります。" = "When you add them, a QR label is issued automatically for each one. Scan it to identify that exact item instantly.";
+"1つずつにQRラベルが付きます。QRをタップすると印刷・メール送信できます。" = "Each one gets its own QR label. Tap a QR to print or email it.";
+"渡した" = "Gave away";
+"手渡し・配布" = "Handed over / distributed";
+"社内コード（任意）" = "Internal code (optional)";
+"同じ社内コードの製品が既にあります" = "A product with the same internal code already exists";

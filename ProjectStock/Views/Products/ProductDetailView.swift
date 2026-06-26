@@ -13,6 +13,7 @@ struct ProductDetailView: View {
     @State private var showingAddUnit = false
     @State private var showingAddLot = false
     @State private var checkoutUnit: StockUnit?
+    @State private var qrUnit: StockUnit?
     @State private var error: PresentableError?
     @State private var canEdit = true
 
@@ -23,7 +24,9 @@ struct ProductDetailView: View {
             headerSection
             if canEdit { quickActionsSection }
             infoSection
-            labelsSection
+            // Individual & lot products carry their QR on each unit/lot, so the
+            // product-level label section is only for quantity products.
+            if product.trackingMode == .quantity { labelsSection }
             if product.trackingMode == .individual { unitsSection }
             if product.trackingMode == .lot { lotsSection }
             historySection
@@ -58,6 +61,7 @@ struct ProductDetailView: View {
             if let project = product.project { AddUnitSheet(product: product, project: project) }
         }
         .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
+        .sheet(item: $qrUnit) { unit in unitQRStudio(unit) }
         .sheet(isPresented: $showingAddLot) {
             if let project = product.project { AddLotSheet(product: product, project: project) }
         }
@@ -197,45 +201,63 @@ struct ProductDetailView: View {
     }
 
     private var unitsSection: some View {
-        Section(NSLocalizedString("個体", comment: "")) {
+        Section {
             if product.unitArray.isEmpty {
                 Text(NSLocalizedString("個体がありません", comment: "")).foregroundColor(.secondary)
             }
             ForEach(product.unitArray) { unit in
                 unitRow(unit)
             }
+        } header: {
+            Text(NSLocalizedString("個体", comment: ""))
+        } footer: {
+            Text(NSLocalizedString("1つずつにQRラベルが付きます。QRをタップすると印刷・メール送信できます。", comment: ""))
         }
     }
 
     @ViewBuilder private func unitRow(_ unit: StockUnit) -> some View {
         let loan = container.inventory.currentLoan(for: unit)
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(unit.displaySerial)
-                HStack(spacing: 6) {
-                    Text(unit.status.localizedTitle).font(.caption2).foregroundColor(.secondary)
-                    if let borrower = loan?.borrower {
-                        Text("· \(borrower)").font(.caption2).foregroundColor(.secondary).lineLimit(1)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(unit.displaySerial)
+                    HStack(spacing: 6) {
+                        Text(unit.status.localizedTitle).font(.caption2).foregroundColor(.secondary)
+                        if let borrower = loan?.borrower {
+                            Text("· \(borrower)").font(.caption2).foregroundColor(.secondary).lineLimit(1)
+                        }
+                        if loan?.isOverdue == true { OverdueChip() }
                     }
-                    if loan?.isOverdue == true { OverdueChip() }
+                    if let due = loan?.dueAt {
+                        Text(String(format: NSLocalizedString("期限: %@", comment: ""), DateFormatters.dateTime.string(from: due)))
+                            .font(.caption2)
+                            .foregroundColor(loan?.isOverdue == true ? .red : .secondary)
+                    }
                 }
-                if let due = loan?.dueAt {
-                    Text(String(format: NSLocalizedString("期限: %@", comment: ""), DateFormatters.dateTime.string(from: due)))
-                        .font(.caption2)
-                        .foregroundColor(loan?.isOverdue == true ? .red : .secondary)
+                Spacer()
+                if unit.labelArray.first != nil {
+                    Button { qrUnit = unit } label: {
+                        Image(systemName: "qrcode").font(.title2)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(NSLocalizedString("QRラベル", comment: "")))
                 }
             }
-            Spacer()
             if canEdit {
-                if unit.status == .available {
-                    Button(NSLocalizedString("貸出", comment: "")) { checkoutUnit = unit }
-                        .buttonStyle(.bordered).controlSize(.small)
-                } else if unit.status == .checkedOut {
-                    Button(NSLocalizedString("返却", comment: "")) { unitAction(unit, .returned) }
-                        .buttonStyle(.bordered).controlSize(.small)
+                HStack(spacing: 10) {
+                    if unit.status == .available {
+                        Button(NSLocalizedString("貸出", comment: "")) { checkoutUnit = unit }
+                            .buttonStyle(.bordered).controlSize(.small)
+                        Button(NSLocalizedString("渡した", comment: "")) { giveAway(unit) }
+                            .buttonStyle(.bordered).controlSize(.small).tint(.secondary)
+                    } else if unit.status == .checkedOut {
+                        Button(NSLocalizedString("返却", comment: "")) { unitAction(unit, .returned) }
+                            .buttonStyle(.bordered).controlSize(.small)
+                    }
                 }
             }
         }
+        .padding(.vertical, 2)
     }
 
     private var lotsSection: some View {
@@ -373,6 +395,33 @@ struct ProductDetailView: View {
         }
         container.refreshLoanNotifications()
     }
+
+    /// Hand a sample over for good (given to a client / consumed) — leaves on-hand stock.
+    private func giveAway(_ unit: StockUnit) {
+        let unitID = unit.objectID
+        let actor = settings.effectiveOperatorName
+        _ = container.performWrite { ctx in
+            guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
+            container.inventory.retireUnit(u, actor: actor, note: NSLocalizedString("手渡し・配布", comment: ""), in: ctx)
+        }
+        Haptics.success()
+    }
+
+    /// The QR studio for a single unit's bound label (1 unit = 1 QR).
+    @ViewBuilder private func unitQRStudio(_ unit: StockUnit) -> some View {
+        if let code = unit.labelArray.first?.code {
+            NavigationView {
+                QRLabelStudioView(code: code,
+                                  projectName: product.project?.displayName ?? "",
+                                  targetName: "\(product.displayName) \(unit.displaySerial)")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(NSLocalizedString("閉じる", comment: "")) { qrUnit = nil }
+                        }
+                    }
+            }
+        }
+    }
 }
 
 /// Adds an individually-tracked unit to a product.
@@ -382,14 +431,24 @@ struct AddUnitSheet: View {
     @Environment(\.dismiss) private var dismiss
     let product: Product
     let project: Project
+    @State private var count = 1
     @State private var serial = ""
     @State private var error: PresentableError?
 
     var body: some View {
         NavigationView {
             Form {
-                TextField(NSLocalizedString("シリアル番号", comment: ""), text: $serial)
-                    .accessibilityIdentifier("serialField")
+                Section {
+                    Stepper(value: $count, in: 1...50) {
+                        Text(String(format: NSLocalizedString("追加する数: %d", comment: ""), count))
+                    }
+                    if count == 1 {
+                        TextField(NSLocalizedString("名前・番号（任意）", comment: ""), text: $serial)
+                            .accessibilityIdentifier("serialField")
+                    }
+                } footer: {
+                    Text(NSLocalizedString("追加すると、1つずつにQRラベルが自動で発行されます。スキャンすればその1個がすぐ分かります。", comment: ""))
+                }
             }
             .navigationTitle(NSLocalizedString("個体を追加", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
@@ -397,7 +456,6 @@ struct AddUnitSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(NSLocalizedString("追加", comment: "")) { add() }
-                        .disabled(serial.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .errorAlert($error)
@@ -406,15 +464,22 @@ struct AddUnitSheet: View {
 
     private func add() {
         let trimmed = serial.trimmingCharacters(in: .whitespacesAndNewlines)
+        let n = count
         let productID = product.objectID
         let projectID = project.objectID
         let actor = settings.effectiveOperatorName
         let result = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: productID) as? Product,
                   let proj = try ctx.existingObject(with: projectID) as? Project else { return }
-            let unit = StockUnit.make(in: ctx, serialNumber: trimmed, product: p, project: proj, location: p.defaultLocation)
-            container.router.assignChild(unit, toSameStoreAs: proj, in: ctx)
-            container.inventory.registerUnit(unit, location: p.defaultLocation, actor: actor, in: ctx)
+            let start = p.unitArray.count
+            for i in 0..<n {
+                let label = (n == 1 && !trimmed.isEmpty) ? trimmed : "#\(start + i + 1)"
+                let unit = StockUnit.make(in: ctx, serialNumber: label, product: p, project: proj, location: p.defaultLocation)
+                container.router.assignChild(unit, toSameStoreAs: proj, in: ctx)
+                container.inventory.registerUnit(unit, location: p.defaultLocation, actor: actor, in: ctx)
+                // 1 unit = 1 QR: bind a fresh QR label to this exact item.
+                _ = try container.aliases.createAlias(for: .unit(unit), in: proj, context: ctx)
+            }
         }
         switch result {
         case .success: dismiss()

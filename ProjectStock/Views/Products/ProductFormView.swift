@@ -80,11 +80,11 @@ struct ProductFormView: View {
 
                 Section {
                     DisclosureGroup(isExpanded: $showDetails) {
-                        TextField(NSLocalizedString("SKU（任意）", comment: ""), text: $sku)
+                        TextField(NSLocalizedString("社内コード（任意）", comment: ""), text: $sku)
                             .autocorrectionDisabled()
                             .onChange(of: sku) { _ in checkSKU() }
                         if skuWarning {
-                            Label(NSLocalizedString("同じSKUの製品が既にあります", comment: ""), systemImage: "exclamationmark.triangle")
+                            Label(NSLocalizedString("同じ社内コードの製品が既にあります", comment: ""), systemImage: "exclamationmark.triangle")
                                 .font(.caption).foregroundColor(.orange)
                         }
                         TextField(NSLocalizedString("単位（例: 個, 本）", comment: ""), text: $unitName)
