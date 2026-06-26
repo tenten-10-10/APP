@@ -6,10 +6,9 @@ name: TestFlight
 on:
   push:
     branches: [ claude/confident-rubin-0np4rh ]
-  workflow_dispatch:
-  push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 concurrency:
   group: testflight-${{ github.ref }}
