@@ -41,16 +41,26 @@ platform :ios do
       export_method:    "app-store",
       output_directory: "build",
       clean:            true,
-      # Passing api_key makes gym hand the App Store Connect API key to BOTH the
-      # archive and the export (-exportArchive) xcodebuild invocations. The
-      # export step is where cloud signing must create the distribution profile;
-      # raw -authenticationKey* xcargs only reached the archive call, which is
-      # why export failed with "Cloud signing permission error / No profiles".
-      api_key:          api_key,
+      export_team_id:   team_id,
+      # gym 2.236.x has no `api_key` option, so authenticate xcodebuild for cloud
+      # signing by passing the App Store Connect API key flags to BOTH the archive
+      # (xcargs) and the export -exportArchive (export_xcargs) invocations.
+      # NOTE: this only works if the API key has a role that can manage signing
+      # (Admin). An App Manager key uploads fine but yields
+      # "exportArchive Cloud signing permission error" here.
       xcargs: [
         "-allowProvisioningUpdates",
+        "-authenticationKeyPath", "'#{ENV.fetch("ASC_KEY_PATH")}'",
+        "-authenticationKeyID", ENV.fetch("ASC_KEY_ID"),
+        "-authenticationKeyIssuerID", ENV.fetch("ASC_ISSUER_ID"),
         "DEVELOPMENT_TEAM=#{team_id}",
         "CURRENT_PROJECT_VERSION=#{next_build}"
+      ].join(" "),
+      export_xcargs: [
+        "-allowProvisioningUpdates",
+        "-authenticationKeyPath", "'#{ENV.fetch("ASC_KEY_PATH")}'",
+        "-authenticationKeyID", ENV.fetch("ASC_KEY_ID"),
+        "-authenticationKeyIssuerID", ENV.fetch("ASC_ISSUER_ID")
       ].join(" ")
     )
 

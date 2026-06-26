@@ -1,10 +1,9 @@
 name: TestFlight
 
-# push されるたびに自動でビルド → TestFlight へアップロード。手動実行も可能。
+# 手動実行（Actions タブ → "Run workflow"）でのみ実行 → TestFlight へアップロード。
+# 残課題は API キーのロール: cloud signing には Admin が必要（App Manager は不可）。
+# Admin キー＋Secret 更新後に手動実行。push 毎の自動実行に戻すには push: を再追加。
 on:
-  push:
-    branches:
-      - claude/confident-rubin-0np4rh
   workflow_dispatch:
 
 concurrency:
