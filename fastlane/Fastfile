@@ -97,7 +97,8 @@ platform :ios do
       automatic_release:     false,   # release manually after approval
       force:                 true,    # skip the interactive HTML preview (CI)
       skip_binary_upload:    true,    # the build comes from the `beta` lane
-      skip_screenshots:      true,    # already uploaded by the `screenshots` lane
+      skip_screenshots:      false,   # upload the framed marketing screenshots
+      overwrite_screenshots: true,    # replace whatever is on the version
       # Age rating is set once in App Store Connect (Apple's 2025 questionnaire
       # added required keys that the old rating_config.json doesn't cover).
       precheck_include_in_app_purchases: false,
