@@ -8,6 +8,14 @@ on:
     branches: [ claude/confident-rubin-0np4rh ]
     tags:
       - "v*"
+    # Don't burn a full signed TestFlight build (and a new signing cert) on
+    # docs / metadata / CI / markdown-only commits.
+    paths-ignore:
+      - 'docs/**'
+      - 'fastlane/metadata/**'
+      - 'fastlane/Snapfile'
+      - '**/*.md'
+      - '.github/**'
   workflow_dispatch:
 
 concurrency:
