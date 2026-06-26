@@ -1,0 +1,59 @@
+name: App Store Release
+
+# 手動実行のみ（Actions → "Run workflow"）。
+# App Store のメタデータ（説明文・キーワード等）をアップロードし、
+# 処理済みの最新ビルドを App Store 審査に提出します（バイナリは beta レーンが投入）。
+#
+# 事前条件（App Store Connect 側で一度だけ必要）:
+#   * beta ワークフローでビルドが TestFlight に上がり、処理が完了していること
+#   * 必要なサイズのスクリーンショットが登録済みであること
+#   * fastlane/metadata/ja-JP の Support / Privacy URL を実在のURLに差し替え済み
+#   * 年齢レーティングの質問に回答済み
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Write App Store Connect API key (.p8)
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Write fastlane/.env
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TANAMIRU_TEAM_ID: ${{ secrets.TANAMIRU_TEAM_ID }}
+        run: |
+          cat > fastlane/.env <<EOF
+          ASC_KEY_ID=${ASC_KEY_ID}
+          ASC_ISSUER_ID=${ASC_ISSUER_ID}
+          ASC_KEY_PATH=${HOME}/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          TANAMIRU_TEAM_ID=${TANAMIRU_TEAM_ID}
+          EOF
+
+      - name: Install Ruby dependencies
+        run: |
+          rm -f Gemfile.lock
+          bundle install
+
+      - name: Upload metadata & submit for review
+        run: bundle exec fastlane release

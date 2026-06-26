@@ -69,4 +69,43 @@ platform :ios do
 
     UI.success("Uploaded build #{next_build} to TestFlight 🚀")
   end
+
+  # Push App Store metadata (text) and submit the latest processed build for
+  # App Store review. The binary itself is uploaded by the `beta` lane, so this
+  # lane uploads metadata only and then submits for review.
+  #
+  # Prerequisites that must be in place on App Store Connect first (these cannot
+  # be fully automated without assets / one-time answers):
+  #   * At least one build finished processing (run the `beta` lane).
+  #   * Screenshots for the required device sizes (add in ASC, or drop PNGs in
+  #     fastlane/screenshots/ja-JP and set skip_screenshots: false below).
+  #   * Real Support URL / Privacy Policy URL in fastlane/metadata/ja-JP
+  #     (the committed values are placeholders).
+  #   * Age rating questionnaire answered once on App Store Connect.
+  desc "Upload App Store metadata and submit the latest build for review"
+  lane :release do
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    deliver(
+      api_key:               api_key,
+      app_identifier:        APP_ID,
+      submit_for_review:     true,
+      automatic_release:     false,   # release manually after approval
+      force:                 true,    # skip the interactive HTML preview (CI)
+      skip_binary_upload:    true,    # the build comes from the `beta` lane
+      skip_screenshots:      true,    # manage screenshots on ASC for now
+      precheck_include_in_app_purchases: false,
+      submission_information: {
+        add_id_info_uses_idfa:                       false,
+        export_compliance_uses_encryption:           false,
+        content_rights_contains_third_party_content: false
+      }
+    )
+
+    UI.success("Submitted the latest build for App Store review 🚀")
+  end
 end
