@@ -24,9 +24,28 @@ struct ProjectFormView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(NSLocalizedString("基本情報", comment: "")) {
+                if !isEditing {
+                    Section {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label(NSLocalizedString("プロジェクトとは?", comment: ""), systemImage: "lightbulb.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(Brand.primary)
+                            Text(NSLocalizedString("在庫を管理する「場所・目的」のまとまりです。倉庫・工房・店舗・現場など、単位ごとに1つ作ります。あとから製品やQRラベルを追加していきます。", comment: ""))
+                                .font(.caption).foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+                Section {
                     TextField(NSLocalizedString("プロジェクト名", comment: ""), text: $name)
                         .accessibilityIdentifier("projectNameField")
+                } header: {
+                    Text(NSLocalizedString("基本情報", comment: ""))
+                } footer: {
+                    if !isEditing {
+                        Text(NSLocalizedString("例: 第1倉庫 / 試作品置き場 / 〇〇店バックヤード", comment: ""))
+                    }
                 }
                 Section(NSLocalizedString("メモ", comment: "")) {
                     MultilineTextField(text: $note,

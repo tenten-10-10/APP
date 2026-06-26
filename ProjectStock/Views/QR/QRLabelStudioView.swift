@@ -12,6 +12,7 @@ struct QRLabelStudioView: View {
 
     @State private var shareItem: ShareableFile?
     @State private var mailItem: ShareableFile?
+    @State private var showAdvanced = false
     @State private var error: PresentableError?
 
     init(code: String, projectName: String, targetName: String) {
@@ -23,10 +24,9 @@ struct QRLabelStudioView: View {
     var body: some View {
         List {
             previewSection
-            scanabilitySection
             sizeSection
-            optionsSection
             exportSection
+            advancedSection
         }
         .listStyle(.insetGrouped)
         .navigationTitle(NSLocalizedString("QRラベル", comment: ""))
@@ -65,26 +65,49 @@ struct QRLabelStudioView: View {
         }
     }
 
-    private var scanabilitySection: some View {
-        Section(NSLocalizedString("読取評価 (QR Fit)", comment: "")) {
-            if let report = model.report {
-                HStack {
-                    ScanabilityChip(rating: report.rating)
-                    Spacer()
+    /// Power-user controls collapsed by default so the common flow stays simple.
+    /// The readability chip stays visible on the row so anyone gets a go/no-go
+    /// signal without opening it.
+    private var advancedSection: some View {
+        Section {
+            DisclosureGroup(isExpanded: $showAdvanced) {
+                Picker(NSLocalizedString("誤り訂正", comment: ""), selection: $model.errorCorrection) {
+                    ForEach(QRErrorCorrectionLevel.allCases) { Text($0.localizedTitle).tag($0) }
+                }
+                Picker(NSLocalizedString("DPI", comment: ""), selection: $model.dpi) {
+                    ForEach([300, 600, 1200], id: \.self) { Text("\($0)").tag($0) }
+                }
+                Picker(NSLocalizedString("背景", comment: ""), selection: $model.background) {
+                    ForEach(QRBackgroundMode.allCases) { Text($0.localizedTitle).tag($0) }
+                }
+                if model.background == .fullyTransparent {
+                    Label(NSLocalizedString("余白まで透過すると、背景によっては読み取れません。", comment: ""), systemImage: "exclamationmark.triangle")
+                        .font(.caption).foregroundColor(.orange)
+                }
+                if let report = model.report {
+                    LabeledRow(title: NSLocalizedString("1モジュール", comment: ""),
+                               value: String(format: "%.3f mm (%.1f px)", report.moduleSizeMM, report.modulePixels))
+                    LabeledRow(title: NSLocalizedString("Quiet Zone", comment: ""),
+                               value: String(format: "%d モジュール (%.2f mm)", report.quietZoneModules, report.quietZoneMM))
+                    LabeledRow(title: NSLocalizedString("誤り訂正 / DPI", comment: ""),
+                               value: "\(report.errorCorrection.rawValue) / \(report.dpi)")
                     Text("v\(report.version) · \(report.dataModuleCount)×\(report.dataModuleCount)")
                         .font(.caption).foregroundColor(.secondary)
+                    ForEach(report.warnings, id: \.self) { warning in
+                        Label(warning, systemImage: "info.circle")
+                            .font(.caption).foregroundColor(.secondary)
+                    }
                 }
-                LabeledRow(title: NSLocalizedString("1モジュール", comment: ""),
-                           value: String(format: "%.3f mm (%.1f px)", report.moduleSizeMM, report.modulePixels))
-                LabeledRow(title: NSLocalizedString("Quiet Zone", comment: ""),
-                           value: String(format: "%d モジュール (%.2f mm)", report.quietZoneModules, report.quietZoneMM))
-                LabeledRow(title: NSLocalizedString("誤り訂正 / DPI", comment: ""),
-                           value: "\(report.errorCorrection.rawValue) / \(report.dpi)")
-                ForEach(report.warnings, id: \.self) { warning in
-                    Label(warning, systemImage: "info.circle")
-                        .font(.caption).foregroundColor(.secondary)
+            } label: {
+                HStack {
+                    Label(NSLocalizedString("詳細設定", comment: ""), systemImage: "slider.horizontal.3")
+                    Spacer()
+                    if let report = model.report { ScanabilityChip(rating: report.rating) }
                 }
             }
+        } footer: {
+            Text(NSLocalizedString("誤り訂正・解像度・背景・読み取り評価などの詳細です。通常は変更不要です。", comment: ""))
+                .font(.caption2)
         }
     }
 
@@ -112,23 +135,7 @@ struct QRLabelStudioView: View {
         }
     }
 
-    private var optionsSection: some View {
-        Section(NSLocalizedString("オプション", comment: "")) {
-            Picker(NSLocalizedString("誤り訂正", comment: ""), selection: $model.errorCorrection) {
-                ForEach(QRErrorCorrectionLevel.allCases) { Text($0.localizedTitle).tag($0) }
-            }
-            Picker(NSLocalizedString("DPI", comment: ""), selection: $model.dpi) {
-                ForEach([300, 600, 1200], id: \.self) { Text("\($0)").tag($0) }
-            }
-            Picker(NSLocalizedString("背景", comment: ""), selection: $model.background) {
-                ForEach(QRBackgroundMode.allCases) { Text($0.localizedTitle).tag($0) }
-            }
-            if model.background == .fullyTransparent {
-                Label(NSLocalizedString("余白まで透過すると、背景によっては読み取れません。", comment: ""), systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundColor(.orange)
-            }
-        }
-    }
+    // Error-correction / DPI / background controls live in `advancedSection`.
 
     private var exportSection: some View {
         Section {

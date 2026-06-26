@@ -4,6 +4,7 @@ import UIKit
 struct ProductDetailView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var product: Product
 
     @State private var stepAmount: String = "1"
@@ -31,8 +32,14 @@ struct ProductDetailView: View {
         .navigationTitle(product.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
                 if canEdit {
+                    Menu {
+                        Button { duplicateProduct() } label: {
+                            Label(NSLocalizedString("この製品を複製", comment: ""), systemImage: "plus.square.on.square")
+                        }
+                    } label: { Image(systemName: "ellipsis.circle") }
+                        .accessibilityIdentifier("productMenuButton")
                     Button { showingEdit = true } label: { Image(systemName: "pencil") }
                         .accessibilityIdentifier("editProductButton")
                 }
@@ -140,7 +147,16 @@ struct ProductDetailView: View {
     }
 
     private var labelsSection: some View {
-        Section(NSLocalizedString("QRラベル", comment: "")) {
+        Section {
+            if product.labelArray.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(NSLocalizedString("QRラベルはまだありません", comment: "")).font(.subheadline)
+                    Text(NSLocalizedString("QRラベルを作ってこの製品に貼ると、スキャンするだけで入庫・出庫・移動ができます。", comment: ""))
+                        .font(.caption).foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.vertical, 2)
+            }
             ForEach(product.labelArray) { alias in
                 NavigationLink(destination: studio(for: alias.code)) {
                     HStack {
@@ -159,9 +175,16 @@ struct ProductDetailView: View {
             }
             if canEdit {
                 Button { createLabel() } label: {
-                    Label(NSLocalizedString("ラベルを作成", comment: ""), systemImage: "plus")
+                    Label(product.labelArray.isEmpty ? NSLocalizedString("QRラベルを作成", comment: "") : NSLocalizedString("QRラベルを追加", comment: ""),
+                          systemImage: "qrcode")
                 }
                 .accessibilityIdentifier("createLabelButton")
+            }
+        } header: {
+            Text(NSLocalizedString("QRラベル", comment: ""))
+        } footer: {
+            if !product.labelArray.isEmpty {
+                Text(NSLocalizedString("ラベルを開くと、メール送信・印刷ができます。", comment: ""))
             }
         }
     }
@@ -303,6 +326,31 @@ struct ProductDetailView: View {
             _ = try container.aliases.createAlias(for: .product(p), in: project, context: ctx)
         }
         if case .failure(let err) = result { error = PresentableError(err) }
+    }
+
+    /// Create a new product like this one (same settings, no stock or history),
+    /// then return to the list where the copy appears. Speeds up adding similar items.
+    private func duplicateProduct() {
+        let productID = product.objectID
+        let result = container.performWrite { ctx in
+            guard let src = try ctx.existingObject(with: productID) as? Product,
+                  let project = src.project else { return }
+            let copy = Product.make(in: ctx,
+                                    name: String(format: NSLocalizedString("%@ のコピー", comment: ""), src.displayName),
+                                    project: project,
+                                    sku: "",
+                                    unitName: src.unitLabel,
+                                    trackingMode: src.trackingMode)
+            copy.note = src.note
+            copy.minimumStock = src.minimumStock
+            copy.folder = src.folder
+            copy.defaultLocation = src.defaultLocation
+            container.router.assignChild(copy, toSameStoreAs: project, in: ctx)
+        }
+        switch result {
+        case .success: Haptics.success(); dismiss()
+        case .failure(let err): error = PresentableError(err)
+        }
     }
 
     private func unitAction(_ unit: StockUnit, _ type: InventoryEventType) {
