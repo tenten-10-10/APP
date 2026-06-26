@@ -40,3 +40,5 @@ xcuserdata/
 *.xcscmblueprint
 timeline.xctimeline
 playground.xcworkspace
+fastlane/.env
+*.p8

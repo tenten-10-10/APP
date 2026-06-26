@@ -13,6 +13,7 @@
 			children = (
 				F661437FD299A78F03EC7C3E /* AppDelegate.swift */,
 				8C574E02E3F1F5E8CFD7E6E3 /* Info.plist */,
+				D2EDD3C4C960969AE2AB8E6E /* ProjectStock-Release.entitlements */,
 				D58263D3D7FDF096152BE966 /* ProjectStock.entitlements */,
 				FF2678239DCB14A96EAE3F69 /* ProjectStockApp.swift */,
 			);
@@ -748,6 +749,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		D2EDD3C4C960969AE2AB8E6E /* ProjectStock-Release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ProjectStock-Release.entitlements"; sourceTree = "<group>"; };
 		D3344E5809B34A6995540E49 /* QREPSRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QREPSRenderer.swift"; sourceTree = "<group>"; };
 		D3B431CBFA9CC4F1DD88B7C6 /* Loans */ = {
 			isa = PBXGroup;
@@ -915,7 +917,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.tenten.tanamiru;
-				CODE_SIGN_ENTITLEMENTS = ProjectStock/App/ProjectStock.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ProjectStock/App/ProjectStock-Release.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";

@@ -401,6 +401,14 @@ APP_COMMON = {
     "TARGETED_DEVICE_FAMILY": "1",
 }
 
+# Debug keeps aps-environment=development (CloudKit Development);
+# Release (archive / TestFlight / App Store) uses a production-aps entitlements
+# file so push-driven CloudKit sync works against the Production environment.
+APP_DEBUG = dict(APP_COMMON)
+APP_RELEASE = dict(APP_COMMON, **{
+    "CODE_SIGN_ENTITLEMENTS": "ProjectStock/App/ProjectStock-Release.entitlements",
+})
+
 TEST_COMMON = {
     "BUNDLE_LOADER": "\"$(TEST_HOST)\"",
     "CODE_SIGN_STYLE": "Automatic",
@@ -430,8 +438,8 @@ UITEST_COMMON = {
 
 cfg_proj_debug = oid("cfg", "proj-debug"); build_config(cfg_proj_debug, "Debug", PROJECT_DEBUG)
 cfg_proj_release = oid("cfg", "proj-release"); build_config(cfg_proj_release, "Release", PROJECT_RELEASE)
-cfg_app_debug = oid("cfg", "app-debug"); build_config(cfg_app_debug, "Debug", APP_COMMON)
-cfg_app_release = oid("cfg", "app-release"); build_config(cfg_app_release, "Release", APP_COMMON)
+cfg_app_debug = oid("cfg", "app-debug"); build_config(cfg_app_debug, "Debug", APP_DEBUG)
+cfg_app_release = oid("cfg", "app-release"); build_config(cfg_app_release, "Release", APP_RELEASE)
 cfg_test_debug = oid("cfg", "test-debug"); build_config(cfg_test_debug, "Debug", TEST_COMMON)
 cfg_test_release = oid("cfg", "test-release"); build_config(cfg_test_release, "Release", TEST_COMMON)
 cfg_uitest_debug = oid("cfg", "uitest-debug"); build_config(cfg_uitest_debug, "Debug", UITEST_COMMON)
