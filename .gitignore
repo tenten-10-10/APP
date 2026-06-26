@@ -31,6 +31,8 @@ Config.xcconfig
 fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
+# …but DO track the finished App Store marketing screenshots (ja).
+!fastlane/screenshots/ja/*.png
 fastlane/test_output
 
 # Misc
