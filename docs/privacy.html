@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>プライバシーポリシー｜タナミル</title>
+<style>
+  :root { --olive: #4c5a2e; --ink: #1d2417; --muted: #5b6450; --paper: #fbfbf7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+         color: var(--ink); background: var(--paper); line-height: 1.8; }
+  header { background: var(--olive); color: #fff; padding: 28px 20px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+  header .wrap { padding: 0 20px; }
+  h1 { margin: 0; font-size: 22px; }
+  header p { margin: 6px 0 0; opacity: .85; font-size: 14px; }
+  main { padding: 28px 0 64px; }
+  h2 { color: var(--olive); font-size: 17px; margin-top: 32px; border-bottom: 2px solid #e6e8dd; padding-bottom: 6px; }
+  code { background: #eef0e6; padding: 1px 6px; border-radius: 4px; font-size: .92em; }
+  a { color: var(--olive); }
+  .muted { color: var(--muted); font-size: 14px; }
+  footer { border-top: 1px solid #e6e8dd; padding: 24px 0; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>プライバシーポリシー</h1><p>タナミル（QR 在庫管理アプリ）</p></div></header>
+<main class="wrap">
+  <p class="muted">最終更新日: 2026-06-26</p>
+  <p>タナミル（以下「本アプリ」）は、利用者のプライバシーを尊重し、収集する情報を最小限に保つよう設計されています。本アプリは外部の運営者サーバーを持たず、独自のログインや会員登録を必要としません。</p>
+
+  <h2>1. 収集・保存する情報</h2>
+  <p>本アプリが扱うデータ（プロジェクト、フォルダ、製品、保管場所、在庫イベント、QRラベル、製品写真、貸出先（借り手名）、ロット番号・有効期限など）は、次のいずれかに保存されます。貸出先などの入力欄は利用者が任意に入力する自由記述であり、入力された内容も下記の保存先以外（開発者サーバー等）へ送信されることはありません。</p>
+  <ul>
+    <li><strong>お使いの端末内</strong>（オフライン時もすべて閲覧・編集できます）</li>
+    <li><strong>お使いの iCloud アカウント</strong>（Apple の CloudKit。プライベートデータベース、および共有した場合は共有データベース）</li>
+  </ul>
+  <p>これらのデータは <strong>本アプリの開発者のサーバーには送信されません。</strong> iCloud 上のデータの取り扱いは Apple のプライバシーポリシーに従います。</p>
+
+  <h2>2. カメラ</h2>
+  <p>QRコードの読み取りにのみカメラを使用します。<strong>カメラ映像を保存・送信することはありません。</strong> カメラの利用を拒否しても、在庫の閲覧・編集や QR ラベルの書き出しなど、スキャン以外の機能は利用できます。</p>
+
+  <h2>3. 写真</h2>
+  <p>製品に写真を添付する場合のみ、写真ライブラリへアクセスします。選択した写真は縮小・圧縮のうえ、上記のデータと同じく端末内および iCloud に保存されます。</p>
+
+  <h2>4. QRコードの内容</h2>
+  <p>本アプリが生成する QR コードには、<strong>商品名・数量・価格・利用者名・CloudKit Record ID などは一切含まれません。</strong> 短い不透明な識別子（<code>IQ</code> で始まる18文字）のみが格納され、その識別子と対象物の対応は端末内 / iCloud のデータベースでのみ解決されます。</p>
+
+  <h2>5. 端末識別子</h2>
+  <p>在庫イベントの操作端末を区別するため、本アプリは<strong>アプリ内で生成した UUID</strong> を端末識別子として使用します。<strong>広告識別子（IDFA）等は使用しません。</strong> この UUID は端末内（必要に応じて Keychain）に保存され、外部送信されません。</p>
+
+  <h2>6. 解析・広告</h2>
+  <p>本アプリは<strong>第三者の解析 SDK・広告 SDK・トラッキングを一切使用していません。</strong> 利用状況の収集やプロファイリングも行いません。</p>
+
+  <h2>7. iCloud 共有</h2>
+  <p>プロジェクトを iCloud 共有した場合、招待した相手は当該プロジェクトのデータを権限（閲覧のみ / 編集可）に応じて参照・編集できます。共有は CloudKit の仕組みを利用し、共有相手の Apple ID とのみ行われます。</p>
+
+  <h2>8. データの書き出し</h2>
+  <p>利用者の操作で在庫データを JSON 等に書き出せます。書き出したファイルは一時領域に作成され、共有後に一定時間で自動削除されます。診断ログには製品名やメモを含めません。</p>
+
+  <h2>9. データの削除</h2>
+  <p>プロジェクトや製品を削除すると、関連データは端末および iCloud から削除されます（同期反映には時間がかかる場合があります）。アプリの削除や iCloud からのサインアウトによってもローカルデータは失われます。重要なデータは事前に書き出してください。</p>
+
+  <h2>10. 通知</h2>
+  <p>返却期限や有効期限のお知らせには、<strong>端末内で完結するローカル通知</strong>のみを使用します。通知のスケジュールや内容が外部へ送信されることはありません。通知の許可は任意で、許可しなくても本アプリのすべての機能を利用できます。</p>
+
+  <h2>11. お問い合わせ</h2>
+  <p>本ポリシーに関するお問い合わせは下記までご連絡ください。</p>
+  <ul>
+    <li>連絡先: <a href="mailto:h0301m@gmail.com">h0301m@gmail.com</a></li>
+  </ul>
+</main>
+<footer class="wrap">© 2026 tenten — タナミル</footer>
+</body>
+</html>
