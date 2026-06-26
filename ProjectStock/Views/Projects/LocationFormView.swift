@@ -1,3 +1,4 @@
+import CoreData
 import SwiftUI
 
 /// Create / edit a `Location` with a parent picker that rejects cycles

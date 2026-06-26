@@ -1,0 +1,68 @@
+name: TestFlight
+
+# push されるたびに自動でビルド → TestFlight へアップロード。
+# 手動実行（Actions タブの Run workflow）も可能。
+on:
+  push:
+    branches:
+      - claude/confident-rubin-0np4rh
+  workflow_dispatch:
+
+concurrency:
+  group: testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Generate Config.xcconfig
+        run: |
+          cp Config.xcconfig.example Config.xcconfig
+          /usr/bin/sed -i '' 's/^PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru/' Config.xcconfig
+          /usr/bin/sed -i '' 's/^APP_DISPLAY_NAME = .*/APP_DISPLAY_NAME = タナミル/' Config.xcconfig
+          /usr/bin/sed -i '' "s/^DEVELOPMENT_TEAM = .*/DEVELOPMENT_TEAM = ${{ secrets.TANAMIRU_TEAM_ID }}/" Config.xcconfig
+          /usr/bin/sed -i '' 's#^CLOUDKIT_CONTAINER_IDENTIFIER = .*#CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.tenten.tanamiru#' Config.xcconfig
+          echo "--- Config.xcconfig ---"
+          grep -E 'PRODUCT_BUNDLE_IDENTIFIER|APP_DISPLAY_NAME|CLOUDKIT_CONTAINER_IDENTIFIER' Config.xcconfig
+
+      - name: Generate Xcode project
+        run: python3 Scripts/generate_pbxproj.py
+
+      - name: Write App Store Connect API key (.p8)
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Write fastlane/.env
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TANAMIRU_TEAM_ID: ${{ secrets.TANAMIRU_TEAM_ID }}
+        run: |
+          cat > fastlane/.env <<EOF
+          ASC_KEY_ID=${ASC_KEY_ID}
+          ASC_ISSUER_ID=${ASC_ISSUER_ID}
+          ASC_KEY_PATH=${HOME}/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          TANAMIRU_TEAM_ID=${TANAMIRU_TEAM_ID}
+          EOF
+
+      - name: Install Ruby dependencies
+        run: |
+          gem install bundler --no-document || true
+          bundle install
+
+      - name: Build & upload to TestFlight
+        run: bundle exec fastlane beta

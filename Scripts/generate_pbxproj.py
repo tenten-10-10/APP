@@ -391,7 +391,7 @@ APP_COMMON = {
     "ENABLE_PREVIEWS": "YES",
     "GENERATE_INFOPLIST_FILE": "NO",
     "INFOPLIST_FILE": "ProjectStock/App/Info.plist",
-    "APP_DISPLAY_NAME": "タナミル",
+    "APP_DISPLAY_NAME": "\"タナミル\"",
     "CLOUDKIT_CONTAINER_IDENTIFIER": "iCloud.com.tenten.tanamiru",
     "LD_RUNPATH_SEARCH_PATHS": ["$(inherited)", "@executable_path/Frameworks"],
     "MARKETING_VERSION": "1.0.0",

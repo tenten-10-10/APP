@@ -131,7 +131,7 @@ struct QRLabelStudioView: View {
     }
 
     private var exportSection: some View {
-        Section(NSLocalizedString("書き出し", comment: "")) {
+        Section {
             Picker(NSLocalizedString("形式", comment: ""), selection: $model.format) {
                 ForEach(QRExportFormat.allCases) { Text($0.localizedTitle).tag($0) }
             }
@@ -156,6 +156,8 @@ struct QRLabelStudioView: View {
             } label: {
                 Label(NSLocalizedString("印刷校正シートを作成", comment: ""), systemImage: "printer")
             }
+        } header: {
+            Text(NSLocalizedString("書き出し", comment: ""))
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
                 Text(NSLocalizedString("メールに添付したり「ファイル」に保存すると、Windowsパソコンでも開けます。", comment: ""))

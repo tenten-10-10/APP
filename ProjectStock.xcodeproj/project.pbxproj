@@ -296,6 +296,7 @@
 		4B042F840393C54F49759230 /* QRVectorPDFRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = 407B570EBDA549651966AA27 /* QRVectorPDFRenderer.swift */; };
 		4BD23E98C5CB3245CFAFA51E /* QRRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRRenderingTests.swift"; sourceTree = "<group>"; };
 		4C6A847261A6671743808C36 /* AppSettings.swift in Build */ = {isa = PBXBuildFile; fileRef = AE105ADF2FFC5292443E243D /* AppSettings.swift */; };
+		4E4D7B5F4B6592BF354451F7 /* CI_SETUP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "CI_SETUP.md"; sourceTree = "<group>"; };
 		4EAAD2C8E59A0A960E4D3E35 /* EventViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EventViews.swift"; sourceTree = "<group>"; };
 		4F12A09D5F2B80578227B814 /* QRRenderingTests.swift in Build */ = {isa = PBXBuildFile; fileRef = 4BD23E98C5CB3245CFAFA51E /* QRRenderingTests.swift */; };
 		4F6E1630A9D88DA85A6CAA72 /* DomainEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DomainEnums.swift"; sourceTree = "<group>"; };
@@ -613,6 +614,7 @@
 			children = (
 				76A02939E567ECD31C7CA5F4 /* APP_STORE_CHECKLIST.md */,
 				DEA36C0A5C8E11E294C56C48 /* ARCHITECTURE.md */,
+				4E4D7B5F4B6592BF354451F7 /* CI_SETUP.md */,
 				C17796EEE71FBD023FA4645B /* CLOUDKIT_SETUP.md */,
 				D0AF020FA16FA78B165A35EB /* Config.xcconfig.example */,
 				AA835F5C292BFE90045E60EF /* PRIVACY_POLICY_JA.md */,
@@ -913,7 +915,7 @@
 		EB16527FA7D608C5AAEC5B15 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				APP_DISPLAY_NAME = タナミル;
+				APP_DISPLAY_NAME = "タナミル";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.tenten.tanamiru;
@@ -972,7 +974,7 @@
 		FE670B5A992BF50BB2E08E71 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				APP_DISPLAY_NAME = タナミル;
+				APP_DISPLAY_NAME = "タナミル";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.tenten.tanamiru;

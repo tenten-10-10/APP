@@ -1,3 +1,4 @@
+import CoreData
 import SwiftUI
 
 /// Small pill showing a lot's expiry state.

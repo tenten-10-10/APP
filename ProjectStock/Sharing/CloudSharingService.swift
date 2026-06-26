@@ -142,7 +142,7 @@ final class CloudSharingService: ObservableObject {
             completion(.failure(AppError.shareCreationFailed(NSLocalizedString("共有ストアが利用できません。", comment: ""))))
             return
         }
-        persistence.container.acceptShareInvitations(from: [metadata], into: sharedStore) { _, _, error in
+        persistence.container.acceptShareInvitations(from: [metadata], into: sharedStore) { _, error in
             DispatchQueue.main.async {
                 if let error = error { completion(.failure(error)) }
                 else { completion(.success(())) }

@@ -31,8 +31,8 @@ struct ProductDetailView: View {
         .navigationTitle(product.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if canEdit {
-                ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if canEdit {
                     Button { showingEdit = true } label: { Image(systemName: "pencil") }
                         .accessibilityIdentifier("editProductButton")
                 }

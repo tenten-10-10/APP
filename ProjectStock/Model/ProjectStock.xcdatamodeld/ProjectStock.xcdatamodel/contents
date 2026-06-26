@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21754" systemVersion="23A344" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="true" userDefinedModelVersionIdentifier="">
-    <entity name="CodeAlias" representedClassName="CodeAlias" syncable="YES" codeGenerationType="manual">
+    <entity name="CodeAlias" representedClassName="CodeAlias" syncable="YES">
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="isActive" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
@@ -14,7 +14,7 @@
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="labels" inverseEntity="Project"/>
         <relationship name="unit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="StockUnit" inverseName="labels" inverseEntity="StockUnit"/>
     </entity>
-    <entity name="Folder" representedClassName="Folder" syncable="YES" codeGenerationType="manual">
+    <entity name="Folder" representedClassName="Folder" syncable="YES">
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" optional="YES" attributeType="String" defaultValueString=""/>
@@ -25,7 +25,7 @@
         <relationship name="products" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Product" inverseName="folder" inverseEntity="Product"/>
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="folders" inverseEntity="Project"/>
     </entity>
-    <entity name="InventoryEvent" representedClassName="InventoryEvent" syncable="YES" codeGenerationType="manual">
+    <entity name="InventoryEvent" representedClassName="InventoryEvent" syncable="YES">
         <attribute name="actorDeviceID" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="actorDisplayName" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="borrowerName" optional="YES" attributeType="String" defaultValueString=""/>
@@ -45,7 +45,7 @@
         <relationship name="sourceLocation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Location" inverseName="outgoingEvents" inverseEntity="Location"/>
         <relationship name="unit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="StockUnit" inverseName="events" inverseEntity="StockUnit"/>
     </entity>
-    <entity name="Location" representedClassName="Location" syncable="YES" codeGenerationType="manual">
+    <entity name="Location" representedClassName="Location" syncable="YES">
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="kindRaw" optional="YES" attributeType="String" defaultValueString="container"/>
@@ -62,7 +62,7 @@
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="locations" inverseEntity="Project"/>
         <relationship name="units" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="StockUnit" inverseName="location" inverseEntity="StockUnit"/>
     </entity>
-    <entity name="Product" representedClassName="Product" syncable="YES" codeGenerationType="manual">
+    <entity name="Product" representedClassName="Product" syncable="YES">
         <attribute name="cachedQuantity" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
@@ -82,7 +82,7 @@
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="products" inverseEntity="Project"/>
         <relationship name="units" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="StockUnit" inverseName="product" inverseEntity="StockUnit"/>
     </entity>
-    <entity name="Project" representedClassName="Project" syncable="YES" codeGenerationType="manual">
+    <entity name="Project" representedClassName="Project" syncable="YES">
         <attribute name="archivedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="colorKey" optional="YES" attributeType="String" defaultValueString="blue"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -100,7 +100,7 @@
         <relationship name="products" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Product" inverseName="project" inverseEntity="Product"/>
         <relationship name="units" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="StockUnit" inverseName="project" inverseEntity="StockUnit"/>
     </entity>
-    <entity name="StockUnit" representedClassName="StockUnit" syncable="YES" codeGenerationType="manual">
+    <entity name="StockUnit" representedClassName="StockUnit" syncable="YES">
         <attribute name="cachedQuantity" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="expiresAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>

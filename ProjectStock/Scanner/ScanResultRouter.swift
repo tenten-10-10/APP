@@ -18,7 +18,7 @@ public struct ScanResultRouter {
 
     let aliases: CodeAliasService
 
-    public init(aliases: CodeAliasService) {
+    init(aliases: CodeAliasService) {
         self.aliases = aliases
     }
 

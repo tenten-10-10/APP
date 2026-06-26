@@ -1,3 +1,4 @@
+import CoreData
 import SwiftUI
 
 /// Assigns a freshly-scanned unassigned label to a target (spec §4.2): a new or
