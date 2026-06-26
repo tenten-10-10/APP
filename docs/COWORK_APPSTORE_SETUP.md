@@ -57,7 +57,8 @@ Chrome で Apple のサイトを操作し、TestFlight にビルドを上げら�
 ### 手順C. App Store Connect API キー(fastlane アップロード用)
 14. 「**Users and Access**」→ タブ「**Integrations**」(古い UI では「Keys」)→ 「**App Store Connect API**」→ 「**Team Keys**」。
 15. 初回で「Request Access / Enable」が出たら有効化する。
-16. 「**+**(Generate API Key / キーを生成)」→ Name: `fastlane`、Access(Role): **App Manager** → Generate。
+16. 「**+**(Generate API Key / キーを生成)」→ Name: `fastlane`、Access(Role): **Admin** → Generate。
+   - ※ **Admin が必須**。App Manager だと TestFlight アップロードはできても、CI でのクラウド署名(配布証明書/プロファイルの自動生成)が「Cloud signing permission error」で失敗します。
 17. 生成された行の「**Download API Key**」を押し、**.p8 ファイルをこの Mac にダウンロード**(1回限り)。保存先パスを控える。
 18. ページ上部の **Issuer ID**、キー行の **Key ID** を控える。
 

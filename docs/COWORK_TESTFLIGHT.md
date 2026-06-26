@@ -35,7 +35,8 @@
 **3. App Store Connect API キーを作成**
 1. `appstoreconnect.apple.com` → **Users and Access** → タブ **Integrations**（または Keys）→ **App Store Connect API** → **Team Keys**。
 2. 初回は有効化（Request Access / Enable）。
-3. **+ (Generate API Key)** → Name `fastlane`、Access(Role) **App Manager** → Generate。
+3. **+ (Generate API Key)** → Name `fastlane`、Access(Role) **Admin** → Generate。
+   - ※ クラウド署名(配布証明書/プロファイルの自動生成)には **Admin** が必要。App Manager だと「Cloud signing permission error」になります。
 4. 生成行の **Download API Key** で **.p8 を Mac に保存**（1回限り）。保存先パスを控える（例 `~/private_keys/AuthKey_XXXXXXXXXX.p8`）。
 5. **Issuer ID**（ページ上部）と **Key ID**（キー行）を控える。
 

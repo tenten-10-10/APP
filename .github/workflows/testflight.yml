@@ -1,11 +1,9 @@
 name: TestFlight
 
-# push されるたびに自動でビルド → TestFlight へアップロード。
-# 手動実行（Actions タブの Run workflow）も可能。
+# 手動実行（Actions タブの "Run workflow"）でのみ実行 → TestFlight へアップロード。
+# API キーを Admin に直すまで、export 署名で必ず失敗するため push 自動実行は無効化。
+# push 毎の自動実行に戻すには、下に push: branches: [...] を再追加してください。
 on:
-  push:
-    branches:
-      - claude/confident-rubin-0np4rh
   workflow_dispatch:
 
 concurrency:
