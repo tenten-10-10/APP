@@ -41,12 +41,16 @@ platform :ios do
       export_method:    "app-store",
       output_directory: "build",
       clean:            true,
-      # Authenticate xcodebuild for automatic cloud signing with the App Store
-      # Connect API key. gym appends xcargs to both the archive and the export
-      # invocations. NOTE: cloud signing (creating the distribution profile)
-      # requires the API key to have a role that can manage signing — an Admin
-      # key. An App Manager key uploads fine but fails export with
-      # "Cloud signing permission error".
+      # Make the export step do automatic cloud signing explicitly (creates the
+      # app-store distribution profile via the Admin API key).
+      export_options: {
+        signingStyle: "automatic",
+        teamID:       team_id
+      },
+      # Authenticate xcodebuild for cloud signing with the App Store Connect API
+      # key. gym appends xcargs to BOTH the archive and the export invocations,
+      # so do NOT also set export_xcargs — that duplicates -authenticationKeyPath
+      # and makes xcodebuild fail with exit 64 (usage error).
       xcargs: [
         "-allowProvisioningUpdates",
         "-authenticationKeyPath", ENV.fetch("ASC_KEY_PATH"),
