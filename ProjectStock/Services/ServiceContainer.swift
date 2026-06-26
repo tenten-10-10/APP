@@ -94,6 +94,18 @@ final class ServiceContainer: ObservableObject {
         try? context.existingObject(with: object.objectID) as? T
     }
 
+    /// Seed the demo project once for App Store screenshot runs (`-snapshotData`).
+    /// No-op if any project already exists so reruns stay idempotent.
+    func seedSnapshotDataIfNeeded() {
+        _ = performWrite(author: "snapshot") { ctx in
+            let request: NSFetchRequest<Project> = Project.fetchRequest()
+            request.fetchLimit = 1
+            if ((try? ctx.count(for: request)) ?? 0) > 0 { return }
+            _ = try self.sampleData.makeSampleProject(in: ctx)
+        }
+        recomputeAllProjects()
+    }
+
     // MARK: - Recompute on launch / remote change (spec §11)
 
     func recomputeAllProjects() {

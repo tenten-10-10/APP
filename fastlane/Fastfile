@@ -108,4 +108,32 @@ platform :ios do
 
     UI.success("Submitted the latest build for App Store review 🚀")
   end
+
+  # Capture App Store screenshots on a simulator (no signing needed) and upload
+  # them to App Store Connect. Uses the seeded demo project so screens look
+  # representative. See fastlane/Snapfile and ProjectStockUITests/ScreenshotUITests.
+  desc "Capture simulator screenshots and upload them to App Store Connect"
+  lane :screenshots do
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    capture_screenshots # reads fastlane/Snapfile
+
+    upload_to_app_store(
+      api_key:               api_key,
+      app_identifier:        APP_ID,
+      skip_binary_upload:    true,
+      skip_metadata:         true,
+      skip_screenshots:      false,
+      overwrite_screenshots: true,
+      submit_for_review:     false,
+      force:                 true,
+      run_precheck_before_submit: false
+    )
+
+    UI.success("Captured and uploaded App Store screenshots 📸")
+  end
 end

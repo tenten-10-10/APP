@@ -27,6 +27,8 @@ struct ProjectStockApp: App {
                 .environmentObject(settings)
                 .environment(\.managedObjectContext, container.viewContext)
                 .task {
+                    // Seed a populated demo project for App Store screenshot runs.
+                    if AppConfig.isSnapshot { container.seedSnapshotDataIfNeeded() }
                     // Rebuild quantity caches from the ledger and tidy temp
                     // export files on launch (spec §11, §16).
                     container.recomputeAllProjects()

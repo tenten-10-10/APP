@@ -45,4 +45,10 @@ enum AppConfig {
     static var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains("-uiTesting")
     }
+
+    /// App Store screenshot runs pass `-snapshotData` (alongside `-uiTesting`)
+    /// to seed a populated demo project so captures look representative.
+    static var isSnapshot: Bool {
+        ProcessInfo.processInfo.arguments.contains("-snapshotData")
+    }
 }

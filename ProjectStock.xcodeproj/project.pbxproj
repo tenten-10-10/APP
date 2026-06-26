@@ -7,6 +7,7 @@
 	objects = {
 		00675D811ADFAEEAA4A911A3 /* EventViews.swift in Build */ = {isa = PBXBuildFile; fileRef = 4EAAD2C8E59A0A960E4D3E35 /* EventViews.swift */; };
 		01DFB7B036CA68D0721D8E21 /* Folder+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 324AFBF9D1CAC788A2735F87 /* Folder+CoreDataClass.swift */; };
+		02A5CDBA8DCCFB5C5BEE5A9C /* SnapshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SnapshotHelper.swift"; sourceTree = "<group>"; };
 		02CF958B7DFD2E466E54ABA1 /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ActivityView.swift"; sourceTree = "<group>"; };
 		045508FEA8C0C3EDF01BF73C /* App */ = {
 			isa = PBXGroup;
@@ -117,6 +118,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				1E5E0121AE1A2DD71A0960F0 /* in Sources */,
+				BB075B36262D6624559B7190 /* in Sources */,
+				D7885388650754E165EAA81A /* in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,6 +167,8 @@
 			isa = PBXGroup;
 			children = (
 				AD7BC2A2BF509346CF9A8A94 /* ProjectStockUITests.swift */,
+				F92304794AEBD33195E199A6 /* ScreenshotUITests.swift */,
+				02A5CDBA8DCCFB5C5BEE5A9C /* SnapshotHelper.swift */,
 			);
 			path = "ProjectStockUITests";
 			sourceTree = "<group>";
@@ -628,6 +633,7 @@
 		BA95E1F09C24939C87F963AD /* PersistenceController.swift in Build */ = {isa = PBXBuildFile; fileRef = 4255A66D40383C2F4D16F847 /* PersistenceController.swift */; };
 		BAC66355F56A787C630A6C7F /* QRExportService.swift in Build */ = {isa = PBXBuildFile; fileRef = 0CDACFFDDBDABA4B6D5BF9D1 /* QRExportService.swift */; };
 		BAD63926AE612F4253C6D079 /* SettingsView.swift in Build */ = {isa = PBXBuildFile; fileRef = 21EE42B93A3FD0AE50D31E7A /* SettingsView.swift */; };
+		BB075B36262D6624559B7190 /* ScreenshotUITests.swift in Build */ = {isa = PBXBuildFile; fileRef = F92304794AEBD33195E199A6 /* ScreenshotUITests.swift */; };
 		BB33686D42DB52E6DE14D89D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -768,6 +774,7 @@
 		D6C9E62686840913BD81724A /* LocationFormView.swift in Build */ = {isa = PBXBuildFile; fileRef = 207889D659156760DDFA56E4 /* LocationFormView.swift */; };
 		D6DF8741F7D4BC5B2A5DBC19 /* ServiceContainer.swift in Build */ = {isa = PBXBuildFile; fileRef = F7F844BE5A7004DEA811A03B /* ServiceContainer.swift */; };
 		D72B76FAE1538605277E54E6 /* StoreRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StoreRouter.swift"; sourceTree = "<group>"; };
+		D7885388650754E165EAA81A /* SnapshotHelper.swift in Build */ = {isa = PBXBuildFile; fileRef = 02A5CDBA8DCCFB5C5BEE5A9C /* SnapshotHelper.swift */; };
 		D87478A81EECC12D21C73A12 /* QRScanabilityEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRScanabilityEvaluator.swift"; sourceTree = "<group>"; };
 		DCC848E2CFBDB65D354F64C0 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		DCD88AE75B994D598470D9B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
@@ -969,6 +976,7 @@
 		F7BC71521D3A80CFFE77F637 /* PublicCodeGeneratorTests.swift in Build */ = {isa = PBXBuildFile; fileRef = AA6BA31B3A78BCD5DF5AE338 /* PublicCodeGeneratorTests.swift */; };
 		F7F844BE5A7004DEA811A03B /* ServiceContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceContainer.swift"; sourceTree = "<group>"; };
 		F8E25F2F821F1D5ED351D4F7 /* QRTypes.swift in Build */ = {isa = PBXBuildFile; fileRef = A0A15E3D84EB83A5A84D44F3 /* QRTypes.swift */; };
+		F92304794AEBD33195E199A6 /* ScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotUITests.swift"; sourceTree = "<group>"; };
 		FAE1D4EEE246C0B65A91A691 /* ProductFormView.swift in Build */ = {isa = PBXBuildFile; fileRef = A7A2194A0F6DA68E91E0FA2E /* ProductFormView.swift */; };
 		FE1FBFA40F164EC01E7913F8 /* InventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryService.swift"; sourceTree = "<group>"; };
 		FE670B5A992BF50BB2E08E71 /* Debug */ = {
