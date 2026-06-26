@@ -414,3 +414,8 @@
 "主に扱うもの" = "Mainly tracking";
 "新しい製品の初期値になります。製品ごとにあとで変更できます。" = "Used as the default for new products; you can change it per product later.";
 "最初の製品を追加しましょう" = "Add your first product";
+"メールで送る" = "Email it";
+"共有・ファイルに保存" = "Share / Save to Files";
+"メールに添付したり「ファイル」に保存すると、Windowsパソコンでも開けます。" = "Attach it to an email or save it to Files to open it on a Windows PC, too.";
+"QRラベル: %@ / %@" = "QR label: %@ / %@";
+"QRラベルを添付します。印刷してご利用ください。" = "A QR label is attached. Print and use it.";

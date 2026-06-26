@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import MessageUI
 
 /// Generic empty-state placeholder.
 struct EmptyStateView: View {
@@ -86,6 +87,53 @@ struct ShareSheet: UIViewControllerRepresentable {
 struct ShareableFile: Identifiable {
     let id = UUID()
     let url: URL
+}
+
+/// `MFMailComposeViewController` wrapper for emailing an exported file straight
+/// out of the app — the simplest way to get a QR label onto a Windows PC.
+/// Check `MailComposeView.canSend` before presenting; fall back to `ShareSheet`
+/// when no Mail account is configured.
+struct MailComposeView: UIViewControllerRepresentable {
+    let subject: String
+    let body: String
+    var attachmentURL: URL? = nil
+    var onFinish: () -> Void = {}
+
+    static var canSend: Bool { MFMailComposeViewController.canSendMail() }
+
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let vc = MFMailComposeViewController()
+        vc.mailComposeDelegate = context.coordinator
+        vc.setSubject(subject)
+        vc.setMessageBody(body, isHTML: false)
+        if let url = attachmentURL, let data = try? Data(contentsOf: url) {
+            vc.addAttachmentData(data, mimeType: Self.mimeType(for: url), fileName: url.lastPathComponent)
+        }
+        return vc
+    }
+
+    func updateUIViewController(_ controller: MFMailComposeViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+
+    private static func mimeType(for url: URL) -> String {
+        switch url.pathExtension.lowercased() {
+        case "png": return "image/png"
+        case "pdf": return "application/pdf"
+        case "svg": return "image/svg+xml"
+        case "eps": return "application/postscript"
+        default:    return "application/octet-stream"
+        }
+    }
+
+    final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        let onFinish: () -> Void
+        init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+        func mailComposeController(_ controller: MFMailComposeViewController,
+                                   didFinishWith result: MFMailComposeResult, error: Error?) {
+            controller.dismiss(animated: true, completion: onFinish)
+        }
+    }
 }
 
 /// Identifiable error wrapper for `.alert(item:)`.

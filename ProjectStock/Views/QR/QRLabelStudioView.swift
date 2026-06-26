@@ -11,6 +11,7 @@ struct QRLabelStudioView: View {
     let targetName: String
 
     @State private var shareItem: ShareableFile?
+    @State private var mailItem: ShareableFile?
     @State private var error: PresentableError?
 
     init(code: String, projectName: String, targetName: String) {
@@ -31,6 +32,13 @@ struct QRLabelStudioView: View {
         .navigationTitle(NSLocalizedString("QRラベル", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $shareItem) { item in ShareSheet(items: [item.url]) }
+        .sheet(item: $mailItem) { item in
+            MailComposeView(
+                subject: String(format: NSLocalizedString("QRラベル: %@ / %@", comment: ""), projectName, targetName),
+                body: NSLocalizedString("QRラベルを添付します。印刷してご利用ください。", comment: ""),
+                attachmentURL: item.url
+            )
+        }
         .errorAlert($error)
     }
 
@@ -130,9 +138,16 @@ struct QRLabelStudioView: View {
             .pickerStyle(.segmented)
 
             Button {
+                exportThenMail()
+            } label: {
+                Label(NSLocalizedString("メールで送る", comment: ""), systemImage: "envelope.fill")
+            }
+            .accessibilityIdentifier("emailQRButton")
+
+            Button {
                 exportLabel()
             } label: {
-                Label(NSLocalizedString("書き出して共有 / 保存", comment: ""), systemImage: "square.and.arrow.up")
+                Label(NSLocalizedString("共有・ファイルに保存", comment: ""), systemImage: "square.and.arrow.up")
             }
             .accessibilityIdentifier("exportQRButton")
 
@@ -142,8 +157,11 @@ struct QRLabelStudioView: View {
                 Label(NSLocalizedString("印刷校正シートを作成", comment: ""), systemImage: "printer")
             }
         } footer: {
-            Text(NSLocalizedString("PNGは透過対応、PDFとEPSはベクターです。ファイルは一時領域に作成され、一定時間後に自動削除されます。", comment: ""))
-                .font(.caption2)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(NSLocalizedString("メールに添付したり「ファイル」に保存すると、Windowsパソコンでも開けます。", comment: ""))
+                Text(NSLocalizedString("PNGは透過対応、PDFとEPSはベクターです。ファイルは一時領域に作成され、一定時間後に自動削除されます。", comment: ""))
+            }
+            .font(.caption2)
         }
     }
 
@@ -156,6 +174,19 @@ struct QRLabelStudioView: View {
         do {
             let url = try model.export(projectName: projectName, targetName: targetName)
             shareItem = ShareableFile(url: url)
+        } catch { self.error = PresentableError(error) }
+    }
+
+    private func exportThenMail() {
+        do {
+            let url = try model.export(projectName: projectName, targetName: targetName)
+            // Compose an email directly when Mail is set up; otherwise fall back to
+            // the system share sheet (which still offers other mail apps / Files).
+            if MailComposeView.canSend {
+                mailItem = ShareableFile(url: url)
+            } else {
+                shareItem = ShareableFile(url: url)
+            }
         } catch { self.error = PresentableError(error) }
     }
 
