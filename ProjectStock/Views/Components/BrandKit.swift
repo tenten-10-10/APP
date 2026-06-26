@@ -24,9 +24,9 @@ struct PrimaryButtonStyle: ButtonStyle {
     var enabled: Bool = true
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
+            .font(.title3.weight(.semibold))
+            .frame(maxWidth: .infinity, minHeight: 26)
+            .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(enabled ? Brand.primary : Color.secondary)

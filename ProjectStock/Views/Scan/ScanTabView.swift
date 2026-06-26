@@ -68,6 +68,16 @@ struct ScanTabView: View {
                 .frame(width: 220, height: 220)
                 .accessibilityHidden(true)
 
+            // Plain-language guidance at the top.
+            VStack {
+                Text(NSLocalizedString("QRコードを枠の中に入れてください", comment: ""))
+                    .font(.headline).foregroundColor(.white).multilineTextAlignment(.center)
+                    .padding(.horizontal, 18).padding(.vertical, 10)
+                    .background(Capsule().fill(.ultraThinMaterial))
+                    .padding(.top, 16)
+                Spacer()
+            }
+
             VStack {
                 Spacer()
                 HStack(spacing: 24) {

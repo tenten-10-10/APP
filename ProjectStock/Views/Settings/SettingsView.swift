@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var confirmingExport = false
     @State private var showTutorial = false
     @State private var error: PresentableError?
+    @AppStorage("hideFirstRunGuide") private var hideFirstRunGuide = false
 
     var body: some View {
         Form {
@@ -68,6 +69,11 @@ struct SettingsView: View {
                     showTutorial = true
                 } label: {
                     Label(NSLocalizedString("使い方をもう一度見る", comment: ""), systemImage: "questionmark.circle")
+                }
+                Button {
+                    hideFirstRunGuide = false
+                } label: {
+                    Label(NSLocalizedString("はじめてガイドを再表示", comment: ""), systemImage: "sparkles")
                 }
                 NavigationLink(NSLocalizedString("プライバシーポリシー", comment: "")) { PrivacyPolicyView() }
                 LabeledRow(title: NSLocalizedString("バージョン", comment: ""), value: "\(AppConfig.marketingVersion) (\(AppConfig.buildNumber))")

@@ -98,23 +98,30 @@ struct ProductDetailView: View {
         Section(NSLocalizedString("クイック操作", comment: "")) {
             if product.trackingMode == .quantity {
                 HStack {
-                    Text(NSLocalizedString("数量", comment: ""))
+                    Text(NSLocalizedString("数量", comment: "")).font(.title3)
                     Spacer()
                     TextField("1", text: $stepAmount)
-                        .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(maxWidth: 80)
+                        .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                        .font(.title2.monospacedDigit()).frame(maxWidth: 90)
                         .accessibilityIdentifier("stepAmountField")
                 }
                 HStack(spacing: 12) {
                     Button {
                         change(.receive)
-                    } label: { Label(NSLocalizedString("入庫", comment: ""), systemImage: "plus.circle.fill") }
-                        .buttonStyle(.borderedProminent)
-                        .accessibilityIdentifier("receiveButton")
+                    } label: {
+                        Label(NSLocalizedString("入庫", comment: ""), systemImage: "plus.circle.fill")
+                            .font(.title3.weight(.semibold)).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent).controlSize(.large)
+                    .accessibilityIdentifier("receiveButton")
                     Button {
                         change(.consume)
-                    } label: { Label(NSLocalizedString("出庫", comment: ""), systemImage: "minus.circle.fill") }
-                        .buttonStyle(.bordered)
-                        .accessibilityIdentifier("consumeButton")
+                    } label: {
+                        Label(NSLocalizedString("出庫", comment: ""), systemImage: "minus.circle.fill")
+                            .font(.title3.weight(.semibold)).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered).controlSize(.large)
+                    .accessibilityIdentifier("consumeButton")
                 }
                 .accessibilityHint(Text(NSLocalizedString("数量フィールドの値だけ在庫を増減します", comment: "")))
             }
