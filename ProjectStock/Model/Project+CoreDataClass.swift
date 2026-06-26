@@ -11,7 +11,7 @@ public class Project: NSManagedObject {
     public static func make(in context: NSManagedObjectContext,
                             name: String,
                             ownerDisplayName: String,
-                            color: ProjectColor = .blue,
+                            color: ProjectColor = .olive,
                             isSample: Bool = false,
                             defaultMode: TrackingMode = .quantity) -> Project {
         let project = Project(context: context)

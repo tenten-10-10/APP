@@ -103,7 +103,7 @@ struct ProjectsView: View {
                         }.tint(.orange)
                         Button { duplicate(project) } label: {
                             Label(NSLocalizedString("複製", comment: ""), systemImage: "plus.square.on.square")
-                        }.tint(.blue)
+                        }.tint(.accentColor)
                     }
                     .contextMenu {
                         Button { editingProject = project } label: {

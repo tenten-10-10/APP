@@ -3,6 +3,7 @@ import SwiftUI
 extension ProjectColor {
     var color: Color {
         switch self {
+        case .olive:  return Color(red: 83 / 255, green: 90 / 255, blue: 48 / 255)
         case .blue:   return .blue
         case .green:  return .green
         case .orange: return .orange
@@ -16,6 +17,7 @@ extension ProjectColor {
 
     var localizedTitle: String {
         switch self {
+        case .olive:  return NSLocalizedString("オリーブ", comment: "")
         case .blue:   return NSLocalizedString("青", comment: "")
         case .green:  return NSLocalizedString("緑", comment: "")
         case .orange: return NSLocalizedString("橙", comment: "")

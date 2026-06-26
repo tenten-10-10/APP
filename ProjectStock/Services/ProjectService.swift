@@ -15,7 +15,7 @@ struct ProjectService {
 
     /// Create a new, owned project in the private store.
     @discardableResult
-    func createProject(name: String, ownerDisplayName: String, color: ProjectColor = .blue,
+    func createProject(name: String, ownerDisplayName: String, color: ProjectColor = .olive,
                        isSample: Bool = false, defaultMode: TrackingMode = .quantity,
                        in context: NSManagedObjectContext) -> Project {
         let project = Project.make(in: context, name: name, ownerDisplayName: ownerDisplayName,

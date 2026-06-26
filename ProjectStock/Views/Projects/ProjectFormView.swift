@@ -15,7 +15,7 @@ struct ProjectFormView: View {
 
     @State private var name: String = ""
     @State private var note: String = ""
-    @State private var color: ProjectColor = .blue
+    @State private var color: ProjectColor = .olive
     @State private var defaultMode: TrackingMode = .quantity
     @State private var error: PresentableError?
 

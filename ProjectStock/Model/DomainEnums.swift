@@ -228,11 +228,11 @@ public enum CodeTargetType: String, CaseIterable, Identifiable {
 /// Named accent colors for projects (stored as `colorKey`). Kept as a small
 /// fixed palette so it round-trips through CloudKit as a short string.
 public enum ProjectColor: String, CaseIterable, Identifiable {
-    case blue, green, orange, red, purple, teal, pink, gray
+    case olive, blue, green, orange, red, purple, teal, pink, gray
 
     public var id: String { rawValue }
 
     public init(raw: String?) {
-        self = ProjectColor(rawValue: raw ?? "") ?? .blue
+        self = ProjectColor(rawValue: raw ?? "") ?? .olive
     }
 }
