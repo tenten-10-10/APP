@@ -26,6 +26,10 @@ final class BarcodeScannerController: UIViewController {
     var allowsRepeatAfterDebounce: Bool = true
 
     private var isConfigured = false
+    /// Set synchronously on the main thread the first time configuration is
+    /// requested, so `start()` can't enqueue a second configuration pass (which
+    /// previously added a duplicate preview layer and slowed the first frame).
+    private var didRequestConfigure = false
 
     // MARK: - Lifecycle
 
@@ -53,11 +57,18 @@ final class BarcodeScannerController: UIViewController {
     // MARK: - Session configuration
 
     private func configureSessionIfNeeded() {
-        guard !isConfigured else { return }
+        guard !didRequestConfigure else { return }
+        didRequestConfigure = true
         sessionQueue.async { [weak self] in
             guard let self else { return }
             self.session.beginConfiguration()
             defer { self.session.commitConfiguration() }
+
+            // A 720p preset starts noticeably faster than the default high/photo
+            // preset and is more than enough resolution for QR detection.
+            if self.session.canSetSessionPreset(.hd1280x720) {
+                self.session.sessionPreset = .hd1280x720
+            }
 
             guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
                     ?? AVCaptureDevice.default(for: .video) else {
@@ -96,6 +107,7 @@ final class BarcodeScannerController: UIViewController {
     }
 
     private func installPreviewLayer() {
+        guard previewLayer == nil else { return }
         let layer = AVCaptureVideoPreviewLayer(session: session)
         layer.videoGravity = .resizeAspectFill
         layer.frame = view.bounds
@@ -106,7 +118,9 @@ final class BarcodeScannerController: UIViewController {
     // MARK: - Control
 
     func start() {
-        guard isConfigured else { configureSessionIfNeeded(); sessionQueue.async { [weak self] in self?.startRunning() }; return }
+        // Configuration is requested at most once; the serial sessionQueue
+        // guarantees this startRunning runs after it completes.
+        configureSessionIfNeeded()
         sessionQueue.async { [weak self] in self?.startRunning() }
     }
 

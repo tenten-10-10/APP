@@ -104,31 +104,52 @@ final class PersistenceController {
     }
 
     private func loadStores() {
-        var loadError: Error?
+        var failed: [NSPersistentStoreDescription] = []
         container.loadPersistentStores { [weak self] description, error in
             guard let self else { return }
             if let error = error {
-                loadError = error
-                self.logger.error("Store load failed for \(description.url?.lastPathComponent ?? "?", privacy: .public): \(error.localizedDescription, privacy: .public)")
-                return
-            }
-            // Map the loaded store to private/shared by its CloudKit scope, or
-            // by filename when CloudKit is disabled.
-            let coordinator = self.container.persistentStoreCoordinator
-            if let url = description.url, let store = coordinator.persistentStore(for: url) {
-                if description.cloudKitContainerOptions?.databaseScope == .shared
-                    || url.lastPathComponent.contains("shared") {
-                    self.sharedStore = store
-                } else {
-                    self.privateStore = store
-                }
+                self.logger.error("Store '\(description.url?.lastPathComponent ?? "?", privacy: .public)' failed to load: \(error.localizedDescription, privacy: .public). Falling back to local-only storage.")
+                failed.append(description)
+            } else {
+                self.mapStore(description)
             }
         }
 
-        if let loadError {
-            // Loading is recoverable for the user via the diagnostics UI rather
-            // than a crash. We surface the failure but keep a usable container.
-            StoreLoadFailure.shared.record(loadError)
+        // If a CloudKit-backed store failed to load — no iCloud account, the
+        // container isn't provisioned yet, offline, or an entitlement mismatch —
+        // retry it as a plain local store. This guarantees there is ALWAYS a
+        // usable store, so a write never hits a coordinator with zero / ambiguous
+        // stores. (That would raise an uncatchable Obj-C exception on save, not a
+        // Swift error, which is exactly the create/sample-data crash.)
+        for description in failed {
+            description.cloudKitContainerOptions = nil
+            do {
+                let store = try container.persistentStoreCoordinator.addPersistentStore(
+                    ofType: description.type,
+                    configurationName: description.configuration,
+                    at: description.url,
+                    options: description.options)
+                assignStore(store, for: description)
+            } catch {
+                StoreLoadFailure.shared.record(error)
+            }
+        }
+    }
+
+    /// Map an already-loaded store (looked up by URL) to the private/shared slot.
+    private func mapStore(_ description: NSPersistentStoreDescription) {
+        guard let url = description.url,
+              let store = container.persistentStoreCoordinator.persistentStore(for: url) else { return }
+        assignStore(store, for: description)
+    }
+
+    /// Record a store as private or shared, by CloudKit scope or store filename.
+    private func assignStore(_ store: NSPersistentStore, for description: NSPersistentStoreDescription) {
+        if description.cloudKitContainerOptions?.databaseScope == .shared
+            || (description.url?.lastPathComponent.contains("shared") ?? false) {
+            sharedStore = store
+        } else {
+            privateStore = store
         }
     }
 

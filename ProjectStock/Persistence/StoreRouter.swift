@@ -21,13 +21,17 @@ struct StoreRouter {
     /// (the local user is the owner). Returns nil only if stores failed to load.
     var newProjectStore: NSPersistentStore? {
         persistence.privateStore
+            ?? persistence.container.persistentStoreCoordinator.persistentStores.first
     }
 
     /// The store an existing Project currently lives in.
     func store(for project: Project) -> NSPersistentStore? {
         // For a saved object this is its real backing store; for a freshly
-        // inserted, not-yet-assigned object it is nil.
-        project.objectID.persistentStore ?? persistence.privateStore
+        // inserted, not-yet-assigned object it is nil — fall back to the private
+        // store, then to any loaded store, so assignment is never skipped.
+        project.objectID.persistentStore
+            ?? persistence.privateStore
+            ?? persistence.container.persistentStoreCoordinator.persistentStores.first
     }
 
     /// Assign a newly created Project to the private store.
