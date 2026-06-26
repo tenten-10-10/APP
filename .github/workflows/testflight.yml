@@ -1,11 +1,13 @@
 name: TestFlight
 
-# push されるたびに自動でビルド → TestFlight へアップロード。手動実行も可能。
+# 手動実行（Actions → "Run workflow"）か、バージョンタグ（例: v1.0.0）の push で
+# ビルド → TestFlight へアップロード。毎コミットでの無駄なアップロードを避ける構成。
+# ブランチ push 毎に自動実行したい場合は push: branches: [<branch>] を追加。
 on:
-  push:
-    branches:
-      - claude/confident-rubin-0np4rh
   workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 
 concurrency:
   group: testflight-${{ github.ref }}
