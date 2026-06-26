@@ -89,6 +89,8 @@
         <attribute name="defaultTrackingModeRaw" optional="YES" attributeType="String" defaultValueString="quantity"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="isSample" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isPinned" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="sortIndex" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="name" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="note" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="ownerDisplayName" optional="YES" attributeType="String" defaultValueString=""/>

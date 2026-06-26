@@ -43,6 +43,8 @@ extension Project {
     @NSManaged public var archivedAt: Date?
     @NSManaged public var ownerDisplayName: String?
     @NSManaged public var isSample: Bool
+    @NSManaged public var isPinned: Bool
+    @NSManaged public var sortIndex: Int64
     @NSManaged public var defaultTrackingModeRaw: String?
 
     @NSManaged public var folders: NSSet?

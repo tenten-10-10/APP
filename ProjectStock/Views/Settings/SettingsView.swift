@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 struct SettingsView: View {
     @EnvironmentObject private var container: ServiceContainer
@@ -10,6 +11,7 @@ struct SettingsView: View {
     @State private var confirmingExport = false
     @State private var showTutorial = false
     @State private var error: PresentableError?
+    @State private var infoAlert: String?
     @AppStorage("hideFirstRunGuide") private var hideFirstRunGuide = false
 
     var body: some View {
@@ -52,10 +54,7 @@ struct SettingsView: View {
 
             Section(NSLocalizedString("データ", comment: "")) {
                 Button {
-                    let result = container.performWrite { ctx in
-                        _ = try container.sampleData.makeSampleProject(in: ctx, owner: settings.effectiveOperatorName)
-                    }
-                    if case .failure(let err) = result { error = PresentableError(err) }
+                    createSample()
                 } label: {
                     Label(NSLocalizedString("サンプルデータを作成", comment: ""), systemImage: "wand.and.stars")
                 }
@@ -90,7 +89,29 @@ struct SettingsView: View {
         .fullScreenCover(isPresented: $showTutorial) {
             OnboardingView(isPresented: $showTutorial)
         }
+        .alert(infoAlert ?? "", isPresented: Binding(get: { infoAlert != nil },
+                                                     set: { if !$0 { infoAlert = nil } })) {
+            Button(NSLocalizedString("OK", comment: "")) { infoAlert = nil }
+        }
         .errorAlert($error)
+    }
+
+    private func createSample() {
+        var existed = false
+        let result = container.performWrite { ctx in
+            let req: NSFetchRequest<Project> = Project.fetchRequest()
+            req.predicate = NSPredicate(format: "isSample == YES")
+            req.fetchLimit = 1
+            if ((try? ctx.count(for: req)) ?? 0) > 0 { existed = true; return }
+            _ = try container.sampleData.makeSampleProject(in: ctx, owner: settings.effectiveOperatorName)
+        }
+        switch result {
+        case .success:
+            infoAlert = existed
+                ? NSLocalizedString("サンプルデータは既に作成済みです", comment: "")
+                : NSLocalizedString("サンプルデータを作成しました", comment: "")
+        case .failure(let err): error = PresentableError(err)
+        }
     }
 
     private func exportData() {
