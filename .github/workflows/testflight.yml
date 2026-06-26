@@ -61,7 +61,7 @@ jobs:
 
       - name: Install Ruby dependencies
         run: |
-          gem install bundler --no-document || true
+          rm -f Gemfile.lock
           bundle install
 
       - name: Build & upload to TestFlight
