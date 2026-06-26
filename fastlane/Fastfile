@@ -98,7 +98,8 @@ platform :ios do
       force:                 true,    # skip the interactive HTML preview (CI)
       skip_binary_upload:    true,    # the build comes from the `beta` lane
       skip_screenshots:      true,    # already uploaded by the `screenshots` lane
-      app_rating_config_path: "fastlane/metadata/rating_config.json", # age rating
+      # Age rating is set once in App Store Connect (Apple's 2025 questionnaire
+      # added required keys that the old rating_config.json doesn't cover).
       precheck_include_in_app_purchases: false,
       submission_information: {
         add_id_info_uses_idfa:                       false,
