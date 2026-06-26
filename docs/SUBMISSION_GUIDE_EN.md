@@ -9,7 +9,7 @@ archive require a Mac with Xcode 26.
 ## 1. App Review notes (paste into App Store Connect → App Review Information)
 
 ```
-ProjectStock is an offline-first QR inventory manager for iPhone. There is no
+Tanamiru (タナミル) is an offline-first QR inventory manager for iPhone. There is no
 account, login, or developer server: all data lives in the user's own iCloud
 (CloudKit private database, plus a shared database when a project is shared).
 

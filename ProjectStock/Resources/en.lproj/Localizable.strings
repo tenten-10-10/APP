@@ -24,8 +24,8 @@
 "M（約15%）" = "M (approx. 15%)";
 "OK" = "OK";
 "PNGは透過対応、PDFとEPSはベクターです。ファイルは一時領域に作成され、一定時間後に自動削除されます。" = "PNG supports transparency; PDF and EPS are vector formats. Files are created in temporary storage and deleted automatically after a period.";
-"ProjectStock へようこそ" = "Welcome to ProjectStock";
-"ProjectStock形式のコードですが、まだ同期されていないか、別のアカウントのものです。" = "This is a ProjectStock code, but it hasn't synced yet or belongs to a different account.";
+"タナミル へようこそ" = "Welcome to Tanamiru";
+"タナミル形式のコードですが、まだ同期されていないか、別のアカウントのものです。" = "This is a Tanamiru code, but it hasn't synced yet or belongs to a different account.";
 "QRで入出庫" = "Receive / Issue via QR";
 "QRをスキャンするにはカメラの許可が必要です。" = "Camera access is required to scan QR codes.";
 "QRラベル" = "QR Label";
@@ -49,7 +49,7 @@
 "iCloudアカウントが一時的に利用できません。しばらくして再度お試しください。" = "iCloud account is temporarily unavailable. Please try again later.";
 "iCloud共有" = "iCloud Sharing";
 "ここで作成したコードは一意に予約されます。現場で貼り、スキャンして製品・個体・場所へ後から割り当てられます。" = "Codes created here are uniquely reserved. Apply them on-site, then scan to assign to a product, item, or location later.";
-"このQRはProjectStockのコードではありません。" = "This QR code is not a ProjectStock code.";
+"このQRはタナミルのコードではありません。" = "This QR code is not a Tanamiru code.";
 "このコードはこの端末で見つかりません" = "This code was not found on this device";
 "このビルドではiCloud同期は無効です。データはこの端末にのみ保存されます。" = "iCloud sync is disabled in this build. Data is stored on this device only.";
 "このビルドでは共有を利用できません。" = "Sharing is not available in this build.";

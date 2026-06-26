@@ -29,7 +29,7 @@ struct ScanResultSheet: View {
         VStack(spacing: 16) {
             Image(systemName: "questionmark.circle").font(.system(size: 48)).foregroundColor(.secondary)
             Text(NSLocalizedString("このコードはこの端末で見つかりません", comment: "")).font(.headline)
-            Text(NSLocalizedString("ProjectStock形式のコードですが、まだ同期されていないか、別のアカウントのものです。", comment: ""))
+            Text(NSLocalizedString("タナミル形式のコードですが、まだ同期されていないか、別のアカウントのものです。", comment: ""))
                 .font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
             Text(code).font(.system(.callout, design: .monospaced))
             Button(NSLocalizedString("コードをコピー", comment: "")) { UIPasteboard.general.string = code }

@@ -31,7 +31,7 @@ public struct CalibrationSheetRenderer {
         ctx.beginPDFPage(nil)
         var cursorY = page.height - margin
 
-        drawText("ProjectStock 印刷校正シート", at: CGPoint(x: margin, y: cursorY - 14),
+        drawText("タナミル 印刷校正シート", at: CGPoint(x: margin, y: cursorY - 14),
                  size: 14, weight: .bold, context: ctx)
         cursorY -= 26
         drawText("コード: \(code)", at: CGPoint(x: margin, y: cursorY - 10), size: 9, context: ctx)

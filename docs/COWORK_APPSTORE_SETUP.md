@@ -15,8 +15,8 @@ Chrome で Apple のサイトを操作し、TestFlight にビルドを上げら�
 
 ### 事前に決まっている値
 - ★ **Bundle ID**: `__________________`  ← (例 `com.yourname.projectstock`。私が所有する逆ドメイン形式)
-- App 名(App Store 表示・30字以内・全ストアで一意): `ProjectStock 在庫QR管理`
-  - もし既に使われていて登録できない場合は、末尾に語を足して(例 `ProjectStock 在庫QR管理 Pro`)、使った名前を報告して。
+- App 名(App Store 表示・30字以内・全ストアで一意): `タナミル - QRを発行して在庫を簡単に管理`
+  - もし既に使われていて登録できない場合は、末尾に語を足して(例 `タナミル - QRを発行して在庫を簡単に管理 Pro`)、使った名前を報告して。
 - 主要言語: **日本語 (Japanese)**
 - SKU: `projectstock-001`
 - CloudKit コンテナ ID: `iCloud.` + 上の Bundle ID(例 `iCloud.com.yourname.projectstock`)

@@ -21,7 +21,7 @@ struct OnboardingView: View {
 
     private let pages: [Page] = [
         Page(symbol: "shippingbox.fill",
-             title: NSLocalizedString("ProjectStock へようこそ", comment: ""),
+             title: NSLocalizedString("タナミル へようこそ", comment: ""),
              body: NSLocalizedString("プロジェクトごとに在庫を整理し、QRコードで現物をすばやく管理するアプリです。", comment: "")),
         Page(symbol: "folder.fill",
              title: NSLocalizedString("プロジェクトで整理", comment: ""),

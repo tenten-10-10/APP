@@ -56,7 +56,7 @@ struct DiagnosticsView: View {
 
     private func shareDiagnostics() {
         var lines: [String] = []
-        lines.append("ProjectStock Diagnostics")
+        lines.append("タナミル (ProjectStock) Diagnostics")
         lines.append("Version: \(AppConfig.marketingVersion) (\(AppConfig.buildNumber))")
         lines.append("CloudKit: \(container.persistence.cloudKitEnabled)")
         lines.append("Account: \(syncMonitor.accountState)")

@@ -48,7 +48,7 @@ struct ScanTabView: View {
         .alert(item: Binding(get: { foreignValue.map { PresentableError(message: $0) } },
                              set: { _ in foreignValue = nil })) { presentable in
             Alert(title: Text(NSLocalizedString("対象外のQR", comment: "")),
-                  message: Text(NSLocalizedString("このQRはProjectStockのコードではありません。", comment: "")),
+                  message: Text(NSLocalizedString("このQRはタナミルのコードではありません。", comment: "")),
                   primaryButton: .default(Text(NSLocalizedString("コピー", comment: ""))) {
                       UIPasteboard.general.string = presentable.message
                   },

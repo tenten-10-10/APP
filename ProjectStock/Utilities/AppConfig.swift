@@ -21,7 +21,7 @@ enum AppConfig {
     static var displayName: String {
         (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
             ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
-            ?? "ProjectStock"
+            ?? "タナミル"
     }
 
     static var marketingVersion: String {
