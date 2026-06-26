@@ -12,8 +12,7 @@ on:
     # docs / metadata / CI / markdown-only commits.
     paths-ignore:
       - 'docs/**'
-      - 'fastlane/metadata/**'
-      - 'fastlane/Snapfile'
+      - 'fastlane/**'
       - '**/*.md'
       - '.github/**'
   workflow_dispatch:
