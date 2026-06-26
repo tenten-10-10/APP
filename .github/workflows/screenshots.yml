@@ -59,6 +59,14 @@ jobs:
           rm -f Gemfile.lock
           bundle install
 
+      # fastlane refuses to run if SnapshotHelper.swift doesn't byte-match the
+      # installed gem's copy, so sync it from the gem before building.
+      - name: Sync SnapshotHelper with installed fastlane
+        run: |
+          HELPER="$(bundle show fastlane)/snapshot/lib/assets/SnapshotHelper.swift"
+          echo "Copying $HELPER"
+          cp "$HELPER" ProjectStockUITests/SnapshotHelper.swift
+
       - name: Capture & upload screenshots
         run: bundle exec fastlane screenshots
 
