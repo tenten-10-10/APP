@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 /// Create or edit a project (spec §12.2). Read-only projects never reach the
 /// edit path because the caller hides the entry point.
