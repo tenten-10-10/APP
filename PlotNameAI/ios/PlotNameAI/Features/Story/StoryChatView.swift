@@ -112,6 +112,7 @@ struct StoryChatView: View {
             } label: {
                 Image(systemName: "paperplane.fill")
             }
+            .accessibilityLabel("送信")
             .buttonStyle(.borderedProminent)
             .disabled(input.trimmingCharacters(in: .whitespaces).isEmpty)
         }

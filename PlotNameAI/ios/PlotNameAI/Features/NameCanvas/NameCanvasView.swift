@@ -122,6 +122,7 @@ struct NameCanvasView: View {
                 } label: {
                     Image(systemName: "chevron.left")  // 右開き: 「進む」は左矢印
                 }
+                .accessibilityLabel("次のページ")
                 .disabled(selectedPage >= pageCount)
 
                 Spacer()
@@ -134,6 +135,7 @@ struct NameCanvasView: View {
                 } label: {
                     Image(systemName: "chevron.right")  // 右開き: 「戻る」は右矢印
                 }
+                .accessibilityLabel("前のページ")
                 .disabled(selectedPage <= 1)
             }
             .padding(.horizontal)

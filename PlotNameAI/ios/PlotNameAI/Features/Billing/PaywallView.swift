@@ -173,3 +173,9 @@ private struct PlanCard: View {
     PaywallView(trigger: PaywallTrigger(feature: .ipadCanvas, requiredPlan: .pro))
         .environmentForPreview(plan: .free)
 }
+
+#Preview("ダーク") {
+    PaywallView(trigger: PaywallTrigger(feature: .ipadCanvas, requiredPlan: .pro))
+        .environmentForPreview(plan: .free)
+        .preferredColorScheme(.dark)
+}

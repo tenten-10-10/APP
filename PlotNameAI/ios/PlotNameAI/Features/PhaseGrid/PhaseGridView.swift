@@ -70,7 +70,12 @@ private struct PhaseCardCell: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(3)
             HStack {
-                Chip(text: "P\(card.pages.first ?? 0)-\(card.pages.last ?? 0)", color: .gray)
+                // 短いページ数ではページを持たないフェーズもあるため、空なら非表示。
+                if let firstPage = card.pages.first {
+                    let lastPage = card.pages.last ?? firstPage
+                    Chip(text: firstPage == lastPage ? "P\(firstPage)" : "P\(firstPage)-\(lastPage)",
+                         color: .gray)
+                }
                 Chip(text: "感情 \(card.emotionalValue >= 0 ? "+" : "")\(card.emotionalValue)",
                      color: Theme.color(forPhase: card.phaseNumber))
             }
@@ -100,7 +105,7 @@ private struct PhaseDetailView: View {
                 Text(card.summary)
                 LabeledContent("役割", value: card.function)
                 LabeledContent("感情価", value: "\(card.emotionalValue)")
-                LabeledContent("ページ", value: card.pages.map(String.init).joined(separator: ", "))
+                LabeledContent("ページ", value: card.pages.isEmpty ? "—" : card.pages.map(String.init).joined(separator: ", "))
             }
             Section("必ず描く") {
                 ForEach(card.mustShow, id: \.self) { item in

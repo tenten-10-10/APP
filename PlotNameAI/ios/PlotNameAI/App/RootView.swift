@@ -200,3 +200,17 @@ private struct GlobalPaywallModifier: ViewModifier {
     RootView()
         .environmentForPreview()
 }
+
+// regular サイズクラスを強制し、Canvas のデバイスに依らず 3 カラム構成を確認できる。
+// 実機レイアウト確認は Canvas でも iPad デバイスを選ぶこと。
+#Preview("iPad 3カラム") {
+    RootView()
+        .environment(\.horizontalSizeClass, .regular)
+        .environmentForPreview(plan: .pro)
+}
+
+#Preview("ダーク") {
+    RootView()
+        .environmentForPreview()
+        .preferredColorScheme(.dark)
+}
