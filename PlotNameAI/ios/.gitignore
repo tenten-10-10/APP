@@ -1,0 +1,7 @@
+# XcodeGen で生成するため成果物はコミットしない
+*.xcodeproj/
+DerivedData/
+build/
+.DS_Store
+*.xcuserstate
+xcuserdata/
