@@ -150,3 +150,29 @@ test("works for a non-35 page count too (16 pages)", async () => {
   const allPages = out.phases.flatMap((p) => p.pages).sort((a, b) => a - b);
   assert.deepEqual(allPages, Array.from({ length: 16 }, (_, i) => i + 1));
 });
+
+test("supports advertised short read-throughs (8P) without throwing", async () => {
+  const out = await runPipeline({ ...baseConfig, page_count: 8 }, new MockProvider());
+  assert.equal(out.pagePlan.length, 8);
+  assert.equal(out.phases.length, 13); // backbone stays 13 phases; some own 0 pages
+  // Pages still cover 1..8 contiguously with no gaps/overlaps.
+  const allPages = out.phases.flatMap((p) => p.pages).sort((a, b) => a - b);
+  assert.deepEqual(allPages, Array.from({ length: 8 }, (_, i) => i + 1));
+  // Every page maps to exactly one phase and owns at least one panel.
+  for (let page = 1; page <= 8; page++) {
+    assert.ok(out.panels.some((p) => p.page_number === page), `page ${page} has no panels`);
+  }
+});
+
+test("every selectable page count 4..12 generates cleanly", async () => {
+  for (let pageCount = 4; pageCount <= 12; pageCount++) {
+    const out = await runPipeline({ ...baseConfig, page_count: pageCount }, new MockProvider());
+    assert.equal(out.pagePlan.length, pageCount, `page_count=${pageCount}`);
+    const allPages = out.phases.flatMap((p) => p.pages).sort((a, b) => a - b);
+    assert.deepEqual(
+      allPages,
+      Array.from({ length: pageCount }, (_, i) => i + 1),
+      `page_count=${pageCount} page coverage`,
+    );
+  }
+});

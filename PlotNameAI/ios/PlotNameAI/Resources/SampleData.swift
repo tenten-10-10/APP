@@ -20,7 +20,8 @@ enum SampleData {
         tone: ["熱血", "青春", "再起"],
         status: .ready,
         createdAt: Date(timeIntervalSince1970: 1_700_000_000),
-        updatedAt: Date(timeIntervalSince1970: 1_700_500_000)
+        updatedAt: Date(timeIntervalSince1970: 1_700_500_000),
+        isSample: true
     )
 
     // MARK: StoryBrief
@@ -149,7 +150,8 @@ enum SampleData {
             pageCount: 35,
             targetReader: "青年",
             tone: ["ミステリー", "シリアス"],
-            status: .draft
+            status: .draft,
+            isSample: true
         ),
         Project(
             id: UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
@@ -158,7 +160,8 @@ enum SampleData {
             pageCount: 60,
             targetReader: "全年齢",
             tone: ["日常", "ほのぼの"],
-            status: .draft
+            status: .draft,
+            isSample: true
         )
     ]
 }

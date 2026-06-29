@@ -207,30 +207,49 @@ private extension MockAIProvider {
     static let phaseEmotion: [Int] = [1, -1, 2, -2, 1, 3, 4, -2, -5, 0, 2, 3, 5]
 
     /// total ページを weights に比例配分して、各フェーズのページ番号配列を返す。
+    /// 最大剰余法（largest remainder）で決定論的に配分し、合計は常に total に一致する。
+    /// total >= フェーズ数 のときは各フェーズに最低1ページを保証する。
+    /// total < 13（例: 8P読み切り）のときは低ウェイトのフェーズが0ページになり得る
+    /// （13フェーズの骨格が圧縮される）。下流の generatePagePlan は空フェーズを許容する。
     static func distributePages(total: Int, weights: [Int]) -> [[Int]] {
-        let weightSum = weights.reduce(0, +)
-        var counts = weights.map { max(1, Int((Double($0) / Double(weightSum) * Double(total)).rounded())) }
+        let n = weights.count
+        guard total > 0, n > 0 else { return Array(repeating: [], count: n) }
 
-        // 合計を total に厳密に合わせる。
-        var diff = total - counts.reduce(0, +)
-        var i = 0
-        while diff != 0 {
-            let idx = i % counts.count
-            if diff > 0 {
-                counts[idx] += 1
-                diff -= 1
-            } else if counts[idx] > 1 {
-                counts[idx] -= 1
-                diff += 1
+        let weightSum = max(1, weights.reduce(0, +))
+        let raw = weights.map { Double($0) / Double(weightSum) * Double(total) }
+        var counts = raw.map { Int($0.rounded(.down)) }   // 床関数。0 になり得る。
+
+        // 端数の大きい順に余りページを配分（決定論的・同点はインデックス昇順）。
+        var remaining = total - counts.reduce(0, +)
+        let order = raw.enumerated()
+            .map { (i: $0.offset, frac: $0.element - $0.element.rounded(.down)) }
+            .sorted { $0.frac != $1.frac ? $0.frac > $1.frac : $0.i < $1.i }
+        var k = 0
+        while remaining > 0 {
+            counts[order[k % n].i] += 1
+            remaining -= 1
+            k += 1
+        }
+
+        // ページ数がフェーズ数以上なら全フェーズに最低1ページを保証（最大から借りる）。
+        if total >= n {
+            for idx in 0..<n where counts[idx] == 0 {
+                if let donor = counts.indices.max(by: { counts[$0] < counts[$1] }), counts[donor] > 1 {
+                    counts[donor] -= 1
+                    counts[idx] = 1
+                }
             }
-            i += 1
         }
 
         var buckets: [[Int]] = []
         var page = 1
         for c in counts {
-            buckets.append(Array(page..<(page + c)))
-            page += c
+            if c <= 0 {
+                buckets.append([])
+            } else {
+                buckets.append(Array(page..<(page + c)))
+                page += c
+            }
         }
         return buckets
     }

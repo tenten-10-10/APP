@@ -47,8 +47,8 @@ struct HomeView: View {
     }
 
     private func handleNewProject() {
-        // プロジェクト数の上限を確認。
-        if billing.canCreateProject(currentCount: store.projects.count) {
+        // プロジェクト数の上限を確認（同梱サンプルは数えない）。
+        if billing.canCreateProject(currentCount: store.userProjectCount) {
             showingNewProject = true
         } else {
             billing.requireFeature(.unlimitedProjects)

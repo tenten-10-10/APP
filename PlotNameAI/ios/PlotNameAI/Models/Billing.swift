@@ -63,7 +63,7 @@ struct SubscriptionEntitlement: Codable, Hashable {
             return .init(
                 plan: .free,
                 features: [.basicGeneration],
-                limits: .init(maxProjects: 1, monthlyCredits: 3, maxPagesPerProject: 16)
+                limits: .init(maxProjects: 2, monthlyCredits: 3, maxPagesPerProject: 16)
             )
         case .plus:
             return .init(

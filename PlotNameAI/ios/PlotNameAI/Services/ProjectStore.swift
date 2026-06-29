@@ -43,6 +43,11 @@ final class ProjectStore {
         bundles.map(\.project).sorted { $0.updatedAt > $1.updatedAt }
     }
 
+    /// ユーザーが作成した作品数（同梱サンプルはプラン上限のカウント対象外）。
+    var userProjectCount: Int {
+        bundles.lazy.filter { !$0.project.isSample }.count
+    }
+
     /// 選択中の束。
     var selectedBundle: ProjectBundle? {
         guard let id = selectedProjectID else { return nil }

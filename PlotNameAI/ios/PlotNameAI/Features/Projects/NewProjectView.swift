@@ -10,7 +10,6 @@ struct NewProjectView: View {
     @Environment(GenerationService.self) private var generation
     @Environment(SafetyService.self) private var safety
     @Environment(BillingService.self) private var billing
-    @Environment(UsageService.self) private var usage
 
     @State private var logline = ""
     @State private var title = ""
@@ -93,10 +92,11 @@ struct NewProjectView: View {
     }
 
     private func startGeneration() {
-        // クレジット確認（合計 6 クレジット消費する想定）。
-        guard usage.canSpend(6) else {
-            billing.requireFeature(.basicGeneration)
-            generation.errorMessage = "今月のクレジットが不足しています。プランをご確認ください。"
+        // テキストのプロット生成（Save the Cat→13フェーズ→ページプラン→コマ→セリフ）は
+        // .basicGeneration 機能で提供する無料の中核体験。クレジットはラフ画像生成のためのもので、
+        // この MVP パイプラインでは画像を生成しないため消費しない。
+        guard billing.requireFeature(.basicGeneration) else {
+            generation.errorMessage = "現在のプランではプロット生成を利用できません。プランをご確認ください。"
             return
         }
 

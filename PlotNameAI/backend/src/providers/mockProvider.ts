@@ -77,12 +77,18 @@ function allocatePages(pageCount: number): Array<{ start: number; end: number }>
     counts[order[k]!.i]! += 1;
     remaining -= 1;
   }
-  // Guarantee every phase gets at least one page (steal from the largest).
-  for (let i = 0; i < counts.length; i++) {
-    if (counts[i]! === 0) {
-      const donorIdx = counts.indexOf(Math.max(...counts));
-      counts[donorIdx]! -= 1;
-      counts[i]! = 1;
+  // When there are at least as many pages as phases, guarantee every phase
+  // gets a page (steal from the largest). For short page counts (< 13, e.g. an
+  // 8P read-through) this is impossible, so low-weight phases are allowed to
+  // own zero pages — the 13-phase backbone simply compresses. Downstream
+  // (sceneAgent / page plan) tolerates phases with empty page ranges.
+  if (pageCount >= counts.length) {
+    for (let i = 0; i < counts.length; i++) {
+      if (counts[i]! === 0) {
+        const donorIdx = counts.indexOf(Math.max(...counts));
+        counts[donorIdx]! -= 1;
+        counts[i]! = 1;
+      }
     }
   }
 

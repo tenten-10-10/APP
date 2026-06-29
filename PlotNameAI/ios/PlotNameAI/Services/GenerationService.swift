@@ -55,17 +55,19 @@ final class GenerationService {
             update(&job, stage: .classifyGenre, progress: 0.1, message: "ジャンルを分類中…")
             var brief = try await provider.classifyGenre(logline: logline, format: .manga)
             brief.projectId = projectID  // projectId を確定。
-            usage.spend(1, projectId: projectID, stage: .classifyGenre, note: "ジャンル分類")
+            // テキスト生成ステージはクレジット非消費（クレジットはラフ画像生成用）。
+            // 台帳には記録だけ残す（消費0）。
+            usage.spend(0, projectId: projectID, stage: .classifyGenre, note: "ジャンル分類")
 
             // 2) 13フェーズ。
             update(&job, stage: .generatePhases, progress: 0.25, message: "13フェーズを構成中…")
             let phases = try await provider.generatePhases(brief: brief, pageCount: pageCount)
-            usage.spend(1, projectId: projectID, stage: .generatePhases, note: "13フェーズ生成")
+            usage.spend(0, projectId: projectID, stage: .generatePhases, note: "13フェーズ生成")
 
             // 3) ページプラン。
             update(&job, stage: .generatePagePlan, progress: 0.4, message: "\(pageCount)ページのプランを設計中…")
             let pagePlans = try await provider.generatePagePlan(brief: brief, phases: phases, pageCount: pageCount)
-            usage.spend(1, projectId: projectID, stage: .generatePagePlan, note: "ページプラン生成")
+            usage.spend(0, projectId: projectID, stage: .generatePagePlan, note: "ページプラン生成")
 
             // 4) & 5) ページごとにコマ割り＋セリフ。
             var allPanels: [PanelSpec] = []
@@ -80,7 +82,7 @@ final class GenerationService {
                 let withDialogue = try await provider.generateDialogue(panels: layout, page: plan, brief: brief)
                 allPanels.append(contentsOf: withDialogue)
             }
-            usage.spend(2, projectId: projectID, stage: .generateLayout, note: "コマ割り＋セリフ")
+            usage.spend(0, projectId: projectID, stage: .generateLayout, note: "コマ割り＋セリフ")
 
             // 6) 批評。
             update(&job, stage: .critique, progress: 0.95, message: "全体を批評中…")
