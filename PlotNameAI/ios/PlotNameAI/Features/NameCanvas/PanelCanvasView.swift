@@ -84,6 +84,14 @@ private struct PanelShape: View {
                                 lineWidth: isSelected ? 3 : 1.5)
                 )
 
+            // ラフ画像（あれば枠内に薄く表示）。
+            if let rough = panel.rough {
+                PanelRoughView(rough: rough, showsCaption: false)
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
+                    .opacity(0.85)
+                    .allowsHitTesting(false)
+            }
+
             // 内容（説明＋セリフ）。
             VStack(alignment: .leading, spacing: 2) {
                 if !panel.dialogue.isEmpty {

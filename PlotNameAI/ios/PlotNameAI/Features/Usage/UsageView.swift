@@ -26,6 +26,10 @@ struct UsageView: View {
                         value: Double(usage.remainingCredits),
                         total: Double(max(1, usage.monthlyAllowance))
                     )
+
+                    // 無料プラン向け: 広告視聴で枠を増やす。
+                    RewardButton()
+                        .padding(.top, 4)
                 }
                 .padding(.vertical, 4)
             }

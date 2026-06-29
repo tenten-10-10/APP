@@ -188,6 +188,28 @@ struct MockAIProvider: AIProvider {
         try await Self.simulateDelay(short: true)
         return safety.evaluate(text: text)
     }
+
+    // MARK: generatePanelRough
+
+    /// コマの内容から決定論的なラフ記述子を生成する（実画像なし）。
+    /// シードはコマ ID とコマ番号から固定的に作るため、同じコマからは常に同じラフになる。
+    func generatePanelRough(panel: PanelSpec, brief: PanelRoughBrief) async throws -> PanelRough {
+        // ラフ生成は他ステージより少し時間がかかる演出。
+        try await Self.simulateDelay()
+
+        let seed = Self.roughSeed(for: panel)
+        let symbol = Self.roughSymbol(shot: panel.shot, phaseName: brief.phaseName)
+        let caption = "\(brief.phaseName)／\(panel.shot)・\(panel.camera)：\(brief.protagonistName)"
+        let shapes = Self.roughShapes(seed: seed, shot: panel.shot)
+
+        return PanelRough(
+            panelId: panel.id,
+            symbolName: symbol,
+            caption: caption,
+            seed: seed,
+            shapes: shapes
+        )
+    }
 }
 
 // MARK: - Mock generation helpers
@@ -515,5 +537,45 @@ private extension MockAIProvider {
             pool = ["行こう。", "大丈夫、きっと。", "……", ""]
         }
         return (0..<count).map { pool[$0 % pool.count] }
+    }
+
+    // MARK: ラフ生成（決定論的）
+
+    /// コマ ID とコマ番号から安定したシードを作る。
+    static func roughSeed(for panel: PanelSpec) -> Int {
+        // UUID のハッシュは実行ごとに変わり得るため、文字列から決定論的に算出する。
+        let base = panel.id.uuidString + "#\(panel.pageNumber).\(panel.panelNumber)"
+        var hash = 5381
+        for byte in base.utf8 {
+            hash = ((hash << 5) &+ hash) &+ Int(byte)   // djb2（オーバーフロー許容）
+        }
+        return abs(hash % 100_000)
+    }
+
+    /// ショット／フェーズに応じたプレースホルダー SF Symbol。
+    static func roughSymbol(shot: String, phaseName: String) -> String {
+        if shot.contains("大ゴマ") || shot.contains("ロング") { return "figure.run" }
+        if shot.contains("クローズアップ") { return "face.smiling" }
+        if shot.contains("バストアップ") { return "person.crop.square" }
+        switch phaseName {
+        case "破滅": return "cloud.heavyrain"
+        case "対決", "排除": return "bolt.fill"
+        case "満足": return "sun.max"
+        default: return "person.fill"
+        }
+    }
+
+    /// シードから決定論的に簡単な図形を配置する（0...1 相対座標）。
+    static func roughShapes(seed: Int, shot: String) -> [RoughShape] {
+        // 背景の地平線（line）＋主要被写体（ellipse）＋補助矩形（rectangle）。
+        let cx = 0.30 + Double(seed % 40) / 100.0      // 0.30...0.69
+        let size = shot.contains("クローズアップ") ? 0.55 : 0.32
+        let groundY = 0.62 + Double(seed % 20) / 100.0 // 0.62...0.81
+
+        return [
+            RoughShape(kind: .line, x: 0.06, y: groundY, w: 0.88, h: 0.0),
+            RoughShape(kind: .ellipse, x: cx, y: 0.20, w: size, h: size),
+            RoughShape(kind: .rectangle, x: 0.10, y: 0.10, w: 0.80, h: 0.80)
+        ]
     }
 }

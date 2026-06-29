@@ -3,8 +3,10 @@ import Foundation
 // MARK: - ProjectStore
 
 /// プロジェクトの保持・永続化を担うストア。
-/// インメモリで保持し、Codable で Application Support に保存する。
+/// インメモリで保持し、ProjectPersistence（ファイル or SwiftData）に保存する。
+/// SwiftData の ModelContext を扱うため MainActor 隔離（View / 各サービスも MainActor）。
 @Observable
+@MainActor
 final class ProjectStore {
 
     /// 全プロジェクト（束ねたデータ込み）。
@@ -13,18 +15,20 @@ final class ProjectStore {
     /// 現在選択中のプロジェクト ID。
     var selectedProjectID: UUID?
 
-    /// 永続化先 URL。
-    private let storeURL: URL
+    /// 永続化バックエンド（ファイル or SwiftData）。差し替え可能。
+    private let persistence: ProjectPersistence
 
     // MARK: Init
 
-    init(seedWithSample: Bool = true, fileName: String = "projects.json") {
-        let dir = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first ?? FileManager.default.temporaryDirectory
-        self.storeURL = dir.appendingPathComponent(fileName)
+    /// - Parameters:
+    ///   - persistence: 永続化バックエンド。既定はファイル（プレビュー・テスト・フォールバック用）。
+    ///                  端末では PlotNameAIApp が SwiftData 版を注入する。
+    ///   - seedWithSample: 永続データが空のときサンプルでシードするか。
+    init(persistence: ProjectPersistence = FileProjectPersistence(), seedWithSample: Bool = true) {
+        self.persistence = persistence
 
-        if let loaded = Self.load(from: storeURL), !loaded.isEmpty {
+        let loaded = persistence.load()
+        if !loaded.isEmpty {
             self.bundles = loaded
         } else if seedWithSample {
             // 初回起動時はサンプル作品でシードする。
@@ -114,6 +118,19 @@ final class ProjectStore {
         persist()
     }
 
+    /// ページごとの赤入れ（PencilKit）データを保存する。
+    /// data が空なら当該ページの注釈を削除する。
+    func updateAnnotation(_ data: Data, page: Int, in projectID: UUID) {
+        guard let idx = index(of: projectID) else { return }
+        if data.isEmpty {
+            bundles[idx].annotations.removeValue(forKey: page)
+        } else {
+            bundles[idx].annotations[page] = data
+        }
+        bundles[idx].project.updatedAt = .now
+        persist()
+    }
+
     /// プロジェクト削除。
     func deleteProject(_ id: UUID) {
         bundles.removeAll { $0.id == id }
@@ -125,36 +142,8 @@ final class ProjectStore {
 
     // MARK: Persistence
 
-    /// 即時保存。
+    /// 即時保存（バックエンドへ委譲）。
     func persist() {
-        do {
-            let data = try Self.encoder.encode(bundles)
-            try data.write(to: storeURL, options: [.atomic])
-        } catch {
-            // 永続化失敗はアプリ動作を止めない（ログのみ）。
-            #if DEBUG
-            print("ProjectStore persist error: \(error)")
-            #endif
-        }
+        persistence.save(bundles)
     }
-
-    private static func load(from url: URL) -> [ProjectBundle]? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? decoder.decode([ProjectBundle].self, from: data)
-    }
-
-    // MARK: Codable config
-
-    private static let encoder: JSONEncoder = {
-        let e = JSONEncoder()
-        e.dateEncodingStrategy = .iso8601
-        e.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return e
-    }()
-
-    private static let decoder: JSONDecoder = {
-        let d = JSONDecoder()
-        d.dateDecodingStrategy = .iso8601
-        return d
-    }()
 }

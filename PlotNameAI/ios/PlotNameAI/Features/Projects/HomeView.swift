@@ -7,6 +7,7 @@ struct HomeView: View {
 
     @Environment(ProjectStore.self) private var store
     @Environment(BillingService.self) private var billing
+    @Environment(AuthService.self) private var auth
     @State private var showingNewProject = false
 
     var body: some View {
@@ -36,6 +37,25 @@ struct HomeView: View {
                     handleNewProject()
                 } label: {
                     Label("新規", systemImage: "plus")
+                }
+            }
+            // プロフィール／サインアウト。
+            ToolbarItem(placement: .topBarLeading) {
+                Menu {
+                    if let user = auth.currentUser {
+                        Section(user.displayName) {
+                            if let email = user.email {
+                                Text(email)
+                            }
+                        }
+                    }
+                    Button(role: .destructive) {
+                        auth.signOut()
+                    } label: {
+                        Label("サインアウト", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                } label: {
+                    Label("アカウント", systemImage: "person.crop.circle")
                 }
             }
         }

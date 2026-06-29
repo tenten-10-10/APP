@@ -84,6 +84,9 @@ struct PanelSpec: Codable, Identifiable, Hashable {
     var sfx: String            // 効果音・描き文字
     var emotion: String
     var imagePrompt: String
+    /// ラフ画像の記述子（ラフ生成後に付与）。未生成なら nil。
+    /// 旧データには存在しないため optional + decodeIfPresent 相当でデコードされる。
+    var rough: PanelRough?
 
     init(
         id: UUID = UUID(),
@@ -97,7 +100,8 @@ struct PanelSpec: Codable, Identifiable, Hashable {
         dialogue: String = "",
         sfx: String = "",
         emotion: String = "",
-        imagePrompt: String = ""
+        imagePrompt: String = "",
+        rough: PanelRough? = nil
     ) {
         self.id = id
         self.pageNumber = pageNumber
@@ -111,5 +115,6 @@ struct PanelSpec: Codable, Identifiable, Hashable {
         self.sfx = sfx
         self.emotion = emotion
         self.imagePrompt = imagePrompt
+        self.rough = rough
     }
 }

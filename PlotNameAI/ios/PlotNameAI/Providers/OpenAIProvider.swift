@@ -61,4 +61,11 @@ struct OpenAIProvider: AIProvider {
         _ = try requireKey()
         throw AIProviderError.notConfigured
     }
+
+    func generatePanelRough(panel: PanelSpec, brief: PanelRoughBrief) async throws -> PanelRough {
+        // 実装メモ（将来）: images/generations 等でラフを生成し、
+        // 生成結果をローカルにキャッシュして PanelRough へ橋渡しする。
+        _ = try requireKey()
+        throw AIProviderError.notConfigured
+    }
 }

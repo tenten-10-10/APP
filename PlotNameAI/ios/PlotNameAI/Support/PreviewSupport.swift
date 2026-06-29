@@ -17,5 +17,7 @@ extension View {
             .environment(env.generation)
             .environment(env.safety)
             .environment(env.config)
+            .environment(env.auth)
+            .environment(env.reward)
     }
 }

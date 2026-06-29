@@ -38,6 +38,21 @@ struct SafetyResult: Codable, Hashable {
     var reason: String?
 }
 
+// MARK: - PanelRoughBrief
+
+/// ラフ画像生成の入力。コマ単体では情報が薄いため、物語の文脈を添える。
+struct PanelRoughBrief: Codable, Hashable {
+    var theme: String
+    var protagonistName: String
+    var phaseName: String
+
+    init(theme: String, protagonistName: String, phaseName: String) {
+        self.theme = theme
+        self.protagonistName = protagonistName
+        self.phaseName = phaseName
+    }
+}
+
 // MARK: - AIProvider
 
 /// FABLE パイプラインの各ステージを担う AI プロバイダー抽象。
@@ -75,4 +90,8 @@ protocol AIProvider: Sendable {
 
     /// 入力テキストの安全性（著作権侵害等）をチェック。
     func safetyCheck(text: String) async throws -> SafetyResult
+
+    /// 1コマのラフ画像を生成する。
+    /// 実画像ではなく、キャンバスが描画できる軽量な記述子（PanelRough）を返す。
+    func generatePanelRough(panel: PanelSpec, brief: PanelRoughBrief) async throws -> PanelRough
 }

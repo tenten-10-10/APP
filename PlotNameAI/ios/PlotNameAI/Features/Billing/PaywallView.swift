@@ -31,6 +31,17 @@ struct PaywallView: View {
                         )
                         .onTapGesture { selected = plan }
                     }
+
+                    // 無料プラン向け: 広告視聴で生成枠を増やす導線。
+                    if billing.currentPlan == .free {
+                        VStack(spacing: 8) {
+                            Text("今すぐ無料で枠を増やす")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            RewardButton()
+                        }
+                        .padding(.top, 4)
+                    }
                 }
                 .padding()
             }

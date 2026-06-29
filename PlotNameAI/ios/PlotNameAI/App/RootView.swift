@@ -6,16 +6,25 @@ import SwiftUI
 struct RootView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(AuthService.self) private var auth
 
     var body: some View {
         Group {
-            if horizontalSizeClass == .regular {
-                iPadSplitRoot()
+            if auth.isSignedIn {
+                // サインイン済み: 通常のアプリ UI。
+                Group {
+                    if horizontalSizeClass == .regular {
+                        iPadSplitRoot()
+                    } else {
+                        iPhoneStackRoot()
+                    }
+                }
+                .modifier(GlobalPaywallModifier())
             } else {
-                iPhoneStackRoot()
+                // サインアウト中（本番のみ到達。Mock は自動サインインする）。
+                SignInView()
             }
         }
-        .modifier(GlobalPaywallModifier())
     }
 }
 
