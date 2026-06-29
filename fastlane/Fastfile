@@ -90,9 +90,20 @@ platform :ios do
       key_filepath: ENV.fetch("ASC_KEY_PATH")
     )
 
+    # Pin the build that gets attached to the version. The rejected v1.0 still has
+    # the previous build selected, so we must explicitly point deliver at the
+    # latest TestFlight build (the olive rebuild) — otherwise the stale build
+    # would simply be resubmitted and rejected again.
+    latest_build = latest_testflight_build_number(
+      api_key:        api_key,
+      app_identifier: APP_ID,
+      initial_build_number: 0
+    )
+
     deliver(
       api_key:               api_key,
       app_identifier:        APP_ID,
+      build_number:          latest_build.to_s,
       submit_for_review:     true,
       automatic_release:     false,   # release manually after approval
       force:                 true,    # skip the interactive HTML preview (CI)
