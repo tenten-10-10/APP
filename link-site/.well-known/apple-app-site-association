@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["3FGX27GY77.com.tenten.tanamiru"],
+        "components": [
+          { "/": "/*", "comment": "Every path on this link subdomain opens タナミル" }
+        ]
+      }
+    ]
+  }
+}

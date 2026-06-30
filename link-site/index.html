@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タナミルで借りる</title>
+<meta name="apple-itunes-app" content="app-id=6784470155">
+<style>
+  :root { --olive:#4c5a2e; --olive2:#3c4826; --ink:#1d2417; --muted:#5b6450; --paper:#fbfbf7; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+         color:var(--ink); background:linear-gradient(160deg,#6e7c48,#3c4826); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { background:var(--paper); border-radius:22px; max-width:420px; width:100%; padding:32px 26px 26px; box-shadow:0 18px 50px rgba(0,0,0,.25); text-align:center; }
+  .badge { width:84px; height:84px; border-radius:20px; background:linear-gradient(160deg,#6e7c48,#3c4826); margin:0 auto 18px;
+           display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(60,72,38,.4); }
+  .badge svg { width:46px; height:46px; }
+  h1 { font-size:22px; margin:0 0 8px; }
+  p.lead { color:var(--muted); margin:0 0 22px; line-height:1.7; font-size:15px; }
+  a.cta { display:block; background:var(--olive); color:#fff; text-decoration:none; font-weight:700; font-size:16px;
+          padding:15px; border-radius:13px; margin-bottom:14px; }
+  a.cta:active { background:var(--olive2); }
+  .steps { text-align:left; background:#f1f2ea; border-radius:13px; padding:14px 16px; margin-bottom:18px; }
+  .steps ol { margin:0; padding-left:1.25em; color:var(--ink); font-size:14px; line-height:1.9; }
+  .code { font-size:12px; color:var(--muted); word-break:break-all; }
+  footer { margin-top:18px; font-size:11px; color:var(--muted); }
+  .note { font-size:12px; color:var(--muted); margin-top:2px; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+        <line x1="14" y1="14" x2="14" y2="21"></line>
+        <line x1="18" y1="14" x2="21" y2="14"></line>
+        <line x1="18" y1="18" x2="21" y2="18"></line>
+        <line x1="14" y1="18" x2="14" y2="18"></line>
+      </svg>
+    </div>
+    <h1>この現物を「タナミル」で借りる</h1>
+    <p class="lead">QRコードを読み取りました。続けるには在庫管理アプリ「タナミル」が必要です。</p>
+
+    <a class="cta" href="https://apps.apple.com/app/id6784470155">App Store で入手</a>
+
+    <div class="steps">
+      <ol>
+        <li>App Store でタナミルをインストール</li>
+        <li>アプリを開いて、共有された招待を受け取る（初回のみ）</li>
+        <li><strong>もう一度このQRを読み取る</strong>と、その現物の貸出画面が開きます</li>
+      </ol>
+    </div>
+    <p class="note">すでにインストール済みの方へ：タナミルを開いてから、もう一度QRを読み取ってください。</p>
+    <p class="code" id="code"></p>
+    <footer>© 2026 PLANter — タナミル</footer>
+  </main>
+  <script>
+    // Show the opaque item code (no product data) for reference/support.
+    var seg = location.pathname.replace(/^\/+|\/+$/g, "");
+    if (seg && seg.indexOf(".") === -1) {
+      document.getElementById("code").textContent = "コード: " + decodeURIComponent(seg);
+    }
+  </script>
+</body>
+</html>
