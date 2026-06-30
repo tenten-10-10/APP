@@ -106,6 +106,9 @@ platform :ios do
       type:           "appstore",
       app_identifier: APP_ID,
       readonly:       false, # create + store the assets if the repo is empty
+      force:          true,  # regenerate the profile so newly-enabled App ID
+                             # capabilities (e.g. Associated Domains) are included
+                             # — reuses the existing certificate, no new cert
       team_id:        ENV.fetch("TANAMIRU_TEAM_ID")
     )
 
