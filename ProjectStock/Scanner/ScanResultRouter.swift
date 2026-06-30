@@ -23,7 +23,9 @@ public struct ScanResultRouter {
     }
 
     public func route(rawValue: String, in context: NSManagedObjectContext) -> ScanOutcome {
-        let code = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Accept both a bare code (old labels) and a Universal Link URL
+        // (`https://t.l0l0.app/<code>` — new labels and deep links).
+        let code = AppConfig.extractCode(fromScanned: rawValue)
         guard PublicCodeGenerator.looksLikeAppCode(code) else {
             return .foreign(rawValue)
         }

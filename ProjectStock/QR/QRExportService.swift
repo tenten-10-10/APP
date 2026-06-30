@@ -33,7 +33,10 @@ public final class QRExportService {
     // MARK: - Encoding / evaluation
 
     public func encodeMatrix(code: String, errorCorrection: QRErrorCorrectionLevel) throws -> QRCodeMatrix {
-        try encoder.encode(code, errorCorrection: errorCorrection)
+        // Encode the Universal Link URL (not the bare code) so the label opens
+        // タナミル when installed, or the App Store when not — even when scanned
+        // by the plain iPhone Camera app. The scanner extracts the code back out.
+        try encoder.encode(AppConfig.qrPayload(for: code), errorCorrection: errorCorrection)
     }
 
     public func evaluate(matrix: QRCodeMatrix, spec: QRRenderSpec) -> QRScanabilityEvaluator.Report {

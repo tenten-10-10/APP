@@ -73,6 +73,12 @@ final class HierarchyAndScanTests: XCTestCase {
             XCTFail("既知として分類されるべき")
         }
 
+        // Known via Universal Link URL (new label / deep-link form)
+        let linkURL = "https://t.l0l0.app/\(unassigned.code)"
+        if case .known = container.scanRouter.route(rawValue: linkURL, in: ctx) {} else {
+            XCTFail("Universal LinkのURLからもコードを解決すべき")
+        }
+
         // Retired
         container.aliases.retire(alias: unassigned)
         try ctx.save()

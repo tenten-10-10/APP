@@ -36,6 +36,27 @@ enum AppConfig {
     /// Public App Store product URL for タナミル.
     static var appStoreURL: String { "https://apps.apple.com/app/id\(appStoreID)" }
 
+    /// Host for QR Universal Links. Labels encode `https://<linkHost>/<code>` so
+    /// an iPhone WITHOUT タナミル can scan with the Camera app and be sent to the
+    /// App Store, while an installed app opens straight to that item.
+    static let linkHost = "t.l0l0.app"
+
+    /// The string actually encoded into a QR label for a given public code.
+    static func qrPayload(for code: String) -> String { "https://\(linkHost)/\(code)" }
+
+    /// Extract a public code from a raw scanned value or opened URL. Accepts a
+    /// bare code (old labels) and a Universal Link URL (new labels / deep links).
+    static func extractCode(fromScanned raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: trimmed),
+           let host = url.host?.lowercased(),
+           host == linkHost || host == "www.\(linkHost)",
+           let last = url.pathComponents.last(where: { $0 != "/" && !$0.isEmpty }) {
+            return last
+        }
+        return trimmed
+    }
+
     static var buildNumber: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }

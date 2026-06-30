@@ -103,7 +103,7 @@ public struct QRScanabilityEvaluator {
                       errorCorrection: spec.errorCorrection,
                       dpi: spec.dpi,
                       modulePixels: modulePixels,
-                      payloadLength: spec.code.count,
+                      payloadLength: AppConfig.qrPayload(for: spec.code).count,
                       rating: rating,
                       warnings: warnings)
     }
