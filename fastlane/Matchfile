@@ -7,7 +7,7 @@
 # Connect API key (passed in the Fastfile lane, not here).
 #
 # Override the repo with the MATCH_GIT_URL secret if you named it differently.
-git_url(ENV["MATCH_GIT_URL"] || "https://github.com/tenten-10-10/tanamiru-match.git")
+git_url(ENV["MATCH_GIT_URL"] || "https://github.com/tenten-10-10/tanamiru-certs.git")
 storage_mode("git")
 
 type("appstore")
