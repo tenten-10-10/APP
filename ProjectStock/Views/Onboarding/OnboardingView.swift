@@ -11,6 +11,7 @@ struct OnboardingView: View {
     @State private var page = 0
     @State private var creatingSample = false
     @State private var error: PresentableError?
+    @State private var operatorName: String = ""
 
     private struct Page: Identifiable {
         let id = UUID()
@@ -34,7 +35,8 @@ struct OnboardingView: View {
              body: NSLocalizedString("QRラベルを PNG / PDF / EPS で書き出して印刷。プロジェクトは iCloud でチームと共有できます。", comment: "")),
     ]
 
-    private var isLastPage: Bool { page == pages.count - 1 }
+    /// The final step (after the info pages) is the operator-name input.
+    private var isNameStep: Bool { page == pages.count }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,11 +45,12 @@ struct OnboardingView: View {
                 ForEach(Array(pages.enumerated()), id: \.element.id) { idx, item in
                     pageView(item).tag(idx)
                 }
+                nameStepView.tag(pages.count)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut, value: page)
 
-            PageDots(count: pages.count, index: page)
+            PageDots(count: pages.count + 1, index: page)
                 .padding(.bottom, 16)
 
             controls
@@ -57,6 +60,14 @@ struct OnboardingView: View {
         .background(Color(.systemBackground).ignoresSafeArea())
         .errorAlert($error)
         .interactiveDismissDisabled(true)
+        .onAppear {
+            // Pre-fill the name field only if the user already set a custom
+            // operator name (avoid showing the generic default in the field).
+            let current = settings.operatorDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !current.isEmpty && current != NSLocalizedString("担当者", comment: "") {
+                operatorName = current
+            }
+        }
     }
 
     private var header: some View {
@@ -99,8 +110,41 @@ struct OnboardingView: View {
         .accessibilityElement(children: .combine)
     }
 
+    private var nameStepView: some View {
+        VStack(spacing: 28) {
+            Spacer(minLength: 0)
+            ZStack {
+                Circle()
+                    .fill(Brand.gradient)
+                    .frame(width: 148, height: 148)
+                    .shadow(color: Brand.primary.opacity(0.35), radius: 18, y: 8)
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .font(.system(size: 60, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .accessibilityHidden(true)
+            VStack(spacing: 12) {
+                Text(NSLocalizedString("担当者名を設定", comment: ""))
+                    .font(.title.bold())
+                    .multilineTextAlignment(.center)
+                Text(NSLocalizedString("複数人で共有して使うとき、入出庫などの操作が「誰がやったか」として履歴に残ります。あなたの担当者名を入力してください（あとから設定で変更できます）。", comment: ""))
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                TextField(NSLocalizedString("例: 田中", comment: ""), text: $operatorName)
+                    .textFieldStyle(.roundedBorder)
+                    .submitLabel(.done)
+                    .accessibilityIdentifier("onboardingOperatorName")
+                    .padding(.top, 4)
+            }
+            .padding(.horizontal, 28)
+            Spacer(minLength: 0)
+        }
+    }
+
     @ViewBuilder private var controls: some View {
-        if isLastPage {
+        if isNameStep {
             VStack(spacing: 12) {
                 Button {
                     finish(seedSample: false)
@@ -133,6 +177,10 @@ struct OnboardingView: View {
     }
 
     private func finish(seedSample: Bool) {
+        // Persist the operator name so shared-project activity shows who acted.
+        let trimmedName = operatorName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedName.isEmpty { settings.operatorDisplayName = trimmedName }
+
         if seedSample {
             creatingSample = true
             let result = container.performWrite { ctx in

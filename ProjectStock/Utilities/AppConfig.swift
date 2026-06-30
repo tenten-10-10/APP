@@ -28,6 +28,14 @@ enum AppConfig {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
     }
 
+    /// Apple's numeric App Store id for タナミル. Used to build an install link
+    /// (e.g. inside a CloudKit share invitation, so an invited colleague who
+    /// doesn't have the app yet can get it from the App Store first).
+    static let appStoreID = "6784470155"
+
+    /// Public App Store product URL for タナミル.
+    static var appStoreURL: String { "https://apps.apple.com/app/id\(appStoreID)" }
+
     static var buildNumber: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }

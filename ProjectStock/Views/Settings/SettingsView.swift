@@ -16,7 +16,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section(NSLocalizedString("操作者", comment: "")) {
+            Section {
                 TextField(NSLocalizedString("操作者表示名", comment: ""), text: $settings.operatorDisplayName)
                     .accessibilityIdentifier("operatorNameField")
                 HStack {
@@ -24,6 +24,10 @@ struct SettingsView: View {
                     Button(NSLocalizedString("保存", comment: "")) { DeviceIdentity.shared.updateDisplayName(deviceName) }
                         .font(.caption)
                 }
+            } header: {
+                Text(NSLocalizedString("操作者", comment: ""))
+            } footer: {
+                Text(NSLocalizedString("「操作者表示名」は、プロジェクトを共有して複数人で使うとき、入出庫などの操作履歴に「誰がやったか」として表示されます。", comment: ""))
             }
 
             Section(NSLocalizedString("iCloud", comment: "")) {

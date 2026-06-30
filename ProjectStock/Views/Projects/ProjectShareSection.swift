@@ -13,6 +13,7 @@ struct ProjectShareSection: View {
     @State private var presentation: SharePresentation?
     @State private var preparing = false
     @State private var error: PresentableError?
+    @State private var inviteSheet: InviteText?
 
     var body: some View {
         Section {
@@ -51,6 +52,16 @@ struct ProjectShareSection: View {
                     }
                     .disabled(preparing)
                     .accessibilityIdentifier("shareProjectButton")
+
+                    if permission == .owner {
+                        Button {
+                            sendInvite()
+                        } label: {
+                            Label(NSLocalizedString("招待リンクを送る", comment: ""), systemImage: "envelope")
+                        }
+                        .accessibilityIdentifier("sendInviteButton")
+                        .sheet(item: $inviteSheet) { ShareSheet(items: [$0.text]) }
+                    }
                 }
             }
         } header: {
@@ -90,10 +101,32 @@ struct ProjectShareSection: View {
     private func refreshPermission() {
         permission = container.sharing.permission(for: project)
     }
+
+    /// Build a ready-to-send invitation that includes BOTH the App Store link
+    /// (so a colleague without the app installs it first) and the CloudKit join
+    /// link, then present the share sheet. Only available once a share exists.
+    private func sendInvite() {
+        guard let share = container.sharing.existingShare(for: project),
+              let url = share.url else {
+            error = PresentableError(AppError.shareCreationFailed(
+                NSLocalizedString("招待リンクをまだ作成できません。先に「共有を管理」から共有を開始してください。", comment: "")))
+            return
+        }
+        let message = String(
+            format: NSLocalizedString("在庫アプリ「タナミル」でプロジェクト『%@』に招待します。\n\n① アプリ未インストールの方は、まずこちらから入手してください：\n%@\n\n② インストール後、この招待リンクを開いて参加してください：\n%@", comment: ""),
+            project.displayName, AppConfig.appStoreURL, url.absoluteString)
+        inviteSheet = InviteText(text: message)
+    }
 }
 
 struct SharePresentation: Identifiable {
     let id = UUID()
     let share: CKShare
     let container: CKContainer
+}
+
+/// Identifiable wrapper so an invitation message can drive `.sheet(item:)`.
+struct InviteText: Identifiable {
+    let id = UUID()
+    let text: String
 }

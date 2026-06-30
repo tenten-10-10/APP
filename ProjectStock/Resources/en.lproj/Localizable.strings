@@ -466,3 +466,12 @@
 "社内コード（任意）" = "Internal code (optional)";
 "同じ社内コードの製品が既にあります" = "A product with the same internal code already exists";
 "オリーブ" = "Olive";
+
+/* 1.0.2: operator-name onboarding + share invitation */
+"担当者名を設定" = "Set your name";
+"複数人で共有して使うとき、入出庫などの操作が「誰がやったか」として履歴に残ります。あなたの担当者名を入力してください（あとから設定で変更できます）。" = "When you share with others, actions like check-in and check-out are recorded with who performed them. Enter your name (you can change it later in Settings).";
+"例: 田中" = "e.g. Alex";
+"招待リンクを送る" = "Send invite link";
+"招待リンクをまだ作成できません。先に「共有を管理」から共有を開始してください。" = "The invite link isn’t ready yet. Start sharing from “Manage Sharing” first.";
+"在庫アプリ「タナミル」でプロジェクト『%@』に招待します。\n\n① アプリ未インストールの方は、まずこちらから入手してください：\n%@\n\n② インストール後、この招待リンクを開いて参加してください：\n%@" = "You’re invited to the project “%@” in the Tanamiru inventory app.\n\n1) Don’t have the app yet? Get it here first:\n%@\n\n2) After installing, open this invite link to join:\n%@";
+"「操作者表示名」は、プロジェクトを共有して複数人で使うとき、入出庫などの操作履歴に「誰がやったか」として表示されます。" = "Your operator name is shown in the activity log as who performed each action when a project is shared among several people.";
