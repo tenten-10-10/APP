@@ -59,8 +59,10 @@ jobs:
           bundle install
 
       - name: Create + store signing assets (match)
+        # Do NOT pass MATCH_GIT_URL here: an unset secret arrives as "" and the
+        # env var overrides the Matchfile, making match clone '' (empty path).
+        # The repo URL is defined in fastlane/Matchfile instead.
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
         run: bundle exec fastlane certs
