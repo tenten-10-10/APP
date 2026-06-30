@@ -7,7 +7,12 @@
 # Connect API key (passed in the Fastfile lane, not here).
 #
 # Override the repo with the MATCH_GIT_URL secret if you named it differently.
-git_url(ENV["MATCH_GIT_URL"] || "https://github.com/tenten-10-10/tanamiru-certs.git")
+# NOTE: an unset GitHub secret is passed through as an EMPTY string (not nil), and
+# in Ruby "" is truthy — so test for empty explicitly, otherwise match would try
+# to clone '' and fail with "The empty string is not a valid path".
+_match_git_url = ENV["MATCH_GIT_URL"].to_s
+_match_git_url = "https://github.com/tenten-10-10/tanamiru-certs.git" if _match_git_url.empty?
+git_url(_match_git_url)
 storage_mode("git")
 
 type("appstore")
