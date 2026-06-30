@@ -13,11 +13,15 @@ platform :ios do
   #   ASC_KEY_PATH      absolute path to the AuthKey_XXXX.p8 file
   #   TANAMIRU_TEAM_ID  10-char Apple Developer Team ID (for code signing)
   #
-  # Cloud signing: -allowProvisioningUpdates + the API key let Xcode create the
-  # distribution certificate and provisioning profile automatically, so no
-  # certificates need to be installed beforehand.
+  # Signing: a SHARED App Store distribution certificate + provisioning profile,
+  # created once by the `certs` lane and reused on every build via fastlane match.
+  # This replaces the old per-build cloud signing, which minted a fresh
+  # certificate on each ephemeral CI run and kept exhausting Apple's certificate
+  # limit (forcing a manual revoke before every build).
   desc "Build and upload a new build to TestFlight"
   lane :beta do
+    setup_ci # temporary keychain on CI for match to import the certificate into
+
     api_key = app_store_connect_api_key(
       key_id:       ENV.fetch("ASC_KEY_ID"),
       issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
@@ -25,6 +29,17 @@ platform :ios do
     )
 
     team_id = ENV.fetch("TANAMIRU_TEAM_ID")
+
+    # Install the shared cert + profile from the match repo. readonly: true means
+    # this NEVER creates a new certificate here — if the assets are missing it
+    # fails loudly instead, telling you to run the `certs` lane first.
+    match(
+      api_key:        api_key,
+      type:           "appstore",
+      app_identifier: APP_ID,
+      readonly:       true,
+      team_id:        team_id
+    )
 
     # Next build number = highest already on TestFlight for this version + 1.
     # Passed via xcargs so no file is mutated (the project has no agvtool setup).
@@ -34,6 +49,18 @@ platform :ios do
       initial_build_number: 0
     ) + 1
 
+    # Force manual signing with the match profile so xcodebuild uses the shared
+    # certificate instead of trying to cloud-sign (which would mint a new cert).
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  PROJECT,
+      team_id:               team_id,
+      code_sign_identity:    "Apple Distribution",
+      profile_name:          "match AppStore #{APP_ID}",
+      bundle_identifier:     APP_ID,
+      targets:               [SCHEME]
+    )
+
     build_app(
       project:          PROJECT,
       scheme:           SCHEME,
@@ -41,24 +68,12 @@ platform :ios do
       export_method:    "app-store",
       output_directory: "build",
       clean:            true,
-      # Make the export step do automatic cloud signing explicitly (creates the
-      # app-store distribution profile via the Admin API key).
       export_options: {
-        signingStyle: "automatic",
-        teamID:       team_id
+        signingStyle:         "manual",
+        teamID:               team_id,
+        provisioningProfiles: { APP_ID => "match AppStore #{APP_ID}" }
       },
-      # Authenticate xcodebuild for cloud signing with the App Store Connect API
-      # key. gym appends xcargs to BOTH the archive and the export invocations,
-      # so do NOT also set export_xcargs — that duplicates -authenticationKeyPath
-      # and makes xcodebuild fail with exit 64 (usage error).
-      xcargs: [
-        "-allowProvisioningUpdates",
-        "-authenticationKeyPath", ENV.fetch("ASC_KEY_PATH"),
-        "-authenticationKeyID", ENV.fetch("ASC_KEY_ID"),
-        "-authenticationKeyIssuerID", ENV.fetch("ASC_ISSUER_ID"),
-        "DEVELOPMENT_TEAM=#{team_id}",
-        "CURRENT_PROJECT_VERSION=#{next_build}"
-      ].join(" ")
+      xcargs: "CURRENT_PROJECT_VERSION=#{next_build}"
     )
 
     upload_to_testflight(
@@ -68,6 +83,33 @@ platform :ios do
     )
 
     UI.success("Uploaded build #{next_build} to TestFlight 🚀")
+  end
+
+  # ONE-TIME (run from Actions → "Set up signing certs"): create the shared App
+  # Store distribution certificate + provisioning profile via the App Store
+  # Connect API key and store them, encrypted, in the dedicated match repo.
+  # After this succeeds once, every `beta` build reuses them and no certificate
+  # is ever minted again. Requires one free certificate slot, so revoke a stale
+  # "Apple Distribution" certificate first if the account is at its limit.
+  desc "Create + store the shared signing certificate and profile (match)"
+  lane :certs do
+    setup_ci
+
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    match(
+      api_key:        api_key,
+      type:           "appstore",
+      app_identifier: APP_ID,
+      readonly:       false, # create + store the assets if the repo is empty
+      team_id:        ENV.fetch("TANAMIRU_TEAM_ID")
+    )
+
+    UI.success("Stored the shared App Store signing assets in the match repo 🔐")
   end
 
   # Push App Store metadata (text) and submit the latest processed build for

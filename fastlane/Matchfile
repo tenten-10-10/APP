@@ -1,0 +1,14 @@
+# fastlane match — shared App Store signing assets.
+#
+# The encrypted distribution certificate + provisioning profile live in a
+# DEDICATED PRIVATE repo (never in this public app repo). Authentication to that
+# repo is via MATCH_GIT_BASIC_AUTHORIZATION (base64 "user:token"); the assets are
+# encrypted with MATCH_PASSWORD. Apple Developer Portal auth uses the App Store
+# Connect API key (passed in the Fastfile lane, not here).
+#
+# Override the repo with the MATCH_GIT_URL secret if you named it differently.
+git_url(ENV["MATCH_GIT_URL"] || "https://github.com/tenten-10-10/tanamiru-certs.git")
+storage_mode("git")
+
+type("appstore")
+app_identifier(["com.tenten.tanamiru"])

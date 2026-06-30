@@ -70,4 +70,8 @@ jobs:
           bundle install
 
       - name: Build & upload to TestFlight
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
         run: bundle exec fastlane beta
