@@ -90,19 +90,24 @@ platform :ios do
       key_filepath: ENV.fetch("ASC_KEY_PATH")
     )
 
-    # Pin the build that gets attached to the version. The rejected v1.0 still has
-    # the previous build selected, so we must explicitly point deliver at the
-    # latest TestFlight build (the olive rebuild) — otherwise the stale build
-    # would simply be resubmitted and rejected again.
+    # Pin the build that gets attached to the version. Point deliver at the
+    # latest TestFlight build (the build the `beta` lane just uploaded) so the
+    # exact binary we expect is the one submitted.
     latest_build = latest_testflight_build_number(
       api_key:        api_key,
       app_identifier: APP_ID,
       initial_build_number: 0
     )
 
+    # Marketing version for the App Store version being created/edited. Read from
+    # the project (single source of truth: Scripts/generate_pbxproj.py) so a new
+    # update version (e.g. 1.0.1) is created on App Store Connect automatically.
+    app_version = get_version_number(xcodeproj: PROJECT, target: SCHEME)
+
     deliver(
       api_key:               api_key,
       app_identifier:        APP_ID,
+      app_version:           app_version,
       build_number:          latest_build.to_s,
       submit_for_review:     true,
       automatic_release:     false,   # release manually after approval
