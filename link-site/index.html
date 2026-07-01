@@ -11,9 +11,8 @@
   body { margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
          color:var(--ink); background:linear-gradient(160deg,#6e7c48,#3c4826); display:flex; align-items:center; justify-content:center; padding:20px; }
   .card { background:var(--paper); border-radius:22px; max-width:440px; width:100%; padding:26px 22px; box-shadow:0 18px 50px rgba(0,0,0,.25); }
-  .badge { width:64px; height:64px; border-radius:16px; background:linear-gradient(160deg,#6e7c48,#3c4826); margin:0 auto 14px;
-           display:flex; align-items:center; justify-content:center; }
-  .badge svg { width:34px; height:34px; }
+  .badge { width:80px; height:80px; border-radius:18px; display:block; margin:0 auto 14px;
+           box-shadow:0 6px 16px rgba(0,0,0,.12); }
   h1 { font-size:21px; margin:0 0 6px; text-align:center; }
   p.lead { color:var(--muted); margin:0 0 18px; line-height:1.7; font-size:14px; text-align:center; }
   label { display:block; font-size:13px; font-weight:600; margin:12px 0 4px; }
@@ -36,14 +35,7 @@
 </head>
 <body>
   <main class="card">
-    <div class="badge" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect>
-        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-        <line x1="14" y1="14" x2="14" y2="21"></line><line x1="18" y1="14" x2="21" y2="14"></line>
-        <line x1="18" y1="18" x2="21" y2="18"></line><line x1="14" y1="18" x2="14" y2="18"></line>
-      </svg>
-    </div>
+    <img class="badge" src="/appicon.png" alt="タナミル" width="80" height="80">
     <h1>この現物を借りる</h1>
     <p class="lead">必要事項を入力して送信すると、貸出として記録されます。<br>アプリの登録・インストールは不要です。</p>
 
