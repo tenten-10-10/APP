@@ -18,11 +18,6 @@ public struct CalibrationSheetRenderer {
     private let sampleSizesMM: [Double] = [8, 10, 12, 16, 20, 28]
     private let eccLevels: [QRErrorCorrectionLevel] = [.low, .medium, .quartile]
 
-    /// A4 page height in points. Text is positioned in the same top-down space
-    /// as the layout math, then flipped against this when handed to Core Text
-    /// (whose baseline placement in this PDF context is measured from the top).
-    private let pageHeight = PaperSize.a4.sizePoints.height
-
     public func render(code: String) -> Data {
         let page = PaperSize.a4.sizePoints
         let margin = CGFloat(QRMeasurement.millimetersToPoints(12))
@@ -38,6 +33,11 @@ public struct CalibrationSheetRenderer {
 
         drawText("タナミル 印刷校正シート", at: CGPoint(x: margin, y: cursorY - 14),
                  size: 14, weight: .bold, context: ctx)
+        // Small build stamp in the top-right so a printed/exported sheet always
+        // shows exactly which app version produced it.
+        drawText("v\(AppConfig.marketingVersion) (\(AppConfig.buildNumber))",
+                 at: CGPoint(x: page.width - margin - 80, y: cursorY - 12),
+                 size: 8, color: .darkGray, context: ctx)
         cursorY -= 26
         drawText("コード: \(code)", at: CGPoint(x: margin, y: cursorY - 10), size: 9, context: ctx)
         cursorY -= 18
@@ -177,12 +177,11 @@ public struct CalibrationSheetRenderer {
         ]
         let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attributes))
         context.saveGState()
-        // Core Text places the baseline in this PDF context measured from the
-        // top of the page, while the fills (QR boxes / checkboxes) use the
-        // native bottom-up space. Flip the y so text lands next to the boxes it
-        // labels instead of collapsing to the bottom of the page.
-        context.textPosition = CGPoint(x: point.x, y: pageHeight - point.y)
-        context.textMatrix = .identity
+        // Bake the position straight into the text matrix. Previously the code
+        // set `textPosition` and THEN `textMatrix = .identity`, and since
+        // identity has translation (0,0) it wiped the position — so every
+        // string collapsed onto the bottom-left corner of the page.
+        context.textMatrix = CGAffineTransform(translationX: point.x, y: point.y)
         CTLineDraw(line, context)
         context.restoreGState()
     }

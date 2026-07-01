@@ -44,7 +44,7 @@ public struct QRVectorPDFRenderer {
                   in: qrRect, context: context, background: spec.background)
         if let caption {
             Self.drawCaption(caption, in: CGRect(x: 0, y: 0, width: pageWidth, height: captionHeight),
-                             context: context, contextHeight: pageHeight)
+                             context: context)
         }
         context.endPDFPage()
         context.closePDF()
@@ -87,10 +87,7 @@ public struct QRVectorPDFRenderer {
 
     /// Draws `text` centered in `rect`, shrinking the (monospaced) font until
     /// it fits so a long code never clips on a small physical label.
-    /// `contextHeight` is the full page/context height: Core Text measures the
-    /// baseline from the top in this PDF context, so the final y is flipped
-    /// against it to land in the same bottom-up space as the drawn QR.
-    static func drawCaption(_ text: String, in rect: CGRect, context: CGContext, contextHeight: CGFloat) {
+    static func drawCaption(_ text: String, in rect: CGRect, context: CGContext) {
         let maxWidth = rect.width * 0.94
         let minFontSize: CGFloat = 4
         var fontSize: CGFloat = 7
@@ -113,9 +110,10 @@ public struct QRVectorPDFRenderer {
         let x = rect.midX - bounds.width / 2 - bounds.minX
         let y = rect.midY - bounds.height / 2 - bounds.minY
         context.saveGState()
-        context.textPosition = CGPoint(x: max(rect.minX + 1, x),
-                                       y: contextHeight - max(rect.minY + 1, y))
-        context.textMatrix = .identity
+        // Bake position into the text matrix (setting textPosition then
+        // textMatrix = .identity would reset it to the origin).
+        context.textMatrix = CGAffineTransform(translationX: max(rect.minX + 1, x),
+                                               y: max(rect.minY + 1, y))
         CTLineDraw(line, context)
         context.restoreGState()
     }

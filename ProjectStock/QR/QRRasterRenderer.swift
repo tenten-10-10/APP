@@ -148,7 +148,7 @@ public struct QRRasterRenderer {
 
         if let caption, captionHeightPx > 0 {
             Self.drawFittedCaption(caption, boxWidth: width, boxHeight: captionHeightPx,
-                                   contextHeight: height, dpi: dpi, context: context)
+                                   dpi: dpi, context: context)
         }
 
         guard let image = context.makeImage() else { throw RasterError.imageFailed }
@@ -157,12 +157,9 @@ public struct QRRasterRenderer {
 
     /// Draw `text` centered in a `boxWidth`×`boxHeight` band at the bottom of
     /// the image, shrinking the font until it fits so long codes never clip on
-    /// small physical labels. `contextHeight` is the full image height — Core
-    /// Text places the baseline measured from the top in this context, so the
-    /// final y is flipped against it to land in the bottom band next to (below)
-    /// the QR, matching the bottom-up space the modules are filled in.
+    /// small physical labels.
     static func drawFittedCaption(_ text: String, boxWidth: Int, boxHeight: Int,
-                                  contextHeight: Int, dpi: Int, context: CGContext) {
+                                  dpi: Int, context: CGContext) {
         let maxWidth = CGFloat(boxWidth) * 0.92
         let minFontSize = CGFloat(QRMeasurement.millimetersToPixels(0.9, dpi: dpi))
         var fontSize = CGFloat(QRMeasurement.millimetersToPixels(1.8, dpi: dpi))
@@ -185,8 +182,9 @@ public struct QRRasterRenderer {
         let x = (CGFloat(boxWidth) - bounds.width) / 2 - bounds.minX
         let y = (CGFloat(boxHeight) - bounds.height) / 2 - bounds.minY
         context.saveGState()
-        context.textPosition = CGPoint(x: x, y: CGFloat(contextHeight) - y)
-        context.textMatrix = .identity
+        // Bake position into the text matrix (setting textPosition then
+        // textMatrix = .identity would reset it to the origin).
+        context.textMatrix = CGAffineTransform(translationX: x, y: y)
         CTLineDraw(line, context)
         context.restoreGState()
     }
