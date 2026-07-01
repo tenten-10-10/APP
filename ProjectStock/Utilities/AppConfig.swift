@@ -57,6 +57,18 @@ enum AppConfig {
         return trimmed
     }
 
+    // MARK: - Web borrow backend (Layer B)
+
+    /// Base URL of the Supabase project that backs the public web borrow form
+    /// (`t.l0l0.app/<code>`). The form writes a `tanamiru_borrow_requests` row;
+    /// the app pulls the rows for the codes it owns and turns them into loans.
+    static let webBorrowBaseURL = "https://lwxpbgbqldhnvcxnyehe.supabase.co"
+
+    /// Supabase anon (publishable) key. This key is public by design — row
+    /// access is gated by RLS and the `SECURITY DEFINER` RPCs, so it is safe to
+    /// ship in the client (the same key is embedded in the public web form).
+    static let webBorrowAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3eHBiZ2JxbGRobnZjeG55ZWhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzI0MzksImV4cCI6MjA5MjMwODQzOX0.K0sSR_AZ8OeVTAB11pFL3qMohX769xSyes3-_SFNi5Y"
+
     static var buildNumber: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }

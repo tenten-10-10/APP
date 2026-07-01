@@ -85,11 +85,20 @@
 			defaultConfigurationName = Release;
 		};
 		137162193D06D1D8DD52F07F /* CloudSharingService.swift in Build */ = {isa = PBXBuildFile; fileRef = 88170F113C9EE2A489662227 /* CloudSharingService.swift */; };
+		13D5D93A81FCF628F6313A5A /* WebBorrow */ = {
+			isa = PBXGroup;
+			children = (
+				1B5DDC1C9ED081B1356F5630 /* WebBorrowInboxView.swift */,
+			);
+			path = "WebBorrow";
+			sourceTree = "<group>";
+		};
 		161C7695FE57AACE6B924D0D /* ImageResizer.swift in Build */ = {isa = PBXBuildFile; fileRef = F067296002A627ADB394F447 /* ImageResizer.swift */; };
 		164CCF07BBF5328E66B538AD /* CloudSharingControllerView.swift in Build */ = {isa = PBXBuildFile; fileRef = 08005E3E8FED1D7FA9A42FAB /* CloudSharingControllerView.swift */; };
 		1754A21C6C88927645C10913 /* Project+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Project+CoreDataClass.swift"; sourceTree = "<group>"; };
 		194CB13328550D4CBC4CFEB1 /* CalibrationSheetRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = 7ED3C809F179C5141D63DE20 /* CalibrationSheetRenderer.swift */; };
 		1B335609141E0E1922C2CFB3 /* AssignmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AssignmentView.swift"; sourceTree = "<group>"; };
+		1B5DDC1C9ED081B1356F5630 /* WebBorrowInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebBorrowInboxView.swift"; sourceTree = "<group>"; };
 		1BB270D5DCB07FE4ED7F4CDB /* Product+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Product+CoreDataClass.swift"; sourceTree = "<group>"; };
 		1E159BE8968219A70B42C3AC /* ScanResultSheet.swift in Build */ = {isa = PBXBuildFile; fileRef = 82B44E869DF98EFC2C186126 /* ScanResultSheet.swift */; };
 		1E5E0121AE1A2DD71A0960F0 /* ProjectStockUITests.swift in Build */ = {isa = PBXBuildFile; fileRef = AD7BC2A2BF509346CF9A8A94 /* ProjectStockUITests.swift */; };
@@ -243,6 +252,7 @@
 				F0C06E858B7BA745A1393ABB /* RootTabView.swift */,
 				0DF4FCA787FDE8B6393F1D78 /* Scan */,
 				83D375B18ED7DE03137A667E /* Settings */,
+				13D5D93A81FCF628F6313A5A /* WebBorrow */,
 			);
 			path = "Views";
 			sourceTree = "<group>";
@@ -395,6 +405,7 @@
 		6E321A06193EEBA18E431DCD /* LoansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoansView.swift"; sourceTree = "<group>"; };
 		6FE50AE458089BB9CA15834C /* PrePrintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrePrintView.swift"; sourceTree = "<group>"; };
 		7045F19802E60D5AC5063E48 /* BarcodeScannerController.swift in Build */ = {isa = PBXBuildFile; fileRef = C086FBA486D8D49EE642B89D /* BarcodeScannerController.swift */; };
+		7200428237903139A043F58B /* BorrowBackend.swift in Build */ = {isa = PBXBuildFile; fileRef = 91D65C2AE3BBC8AB389BEA46 /* BorrowBackend.swift */; };
 		737885C2CF1DD1C6C0F3C880 /* QREPSRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = D3344E5809B34A6995540E49 /* QREPSRenderer.swift */; };
 		74AD5A86ABB4B81E53ECA651 /* StockUnit+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 589EDCB99A93C603592817C1 /* StockUnit+CoreDataClass.swift */; };
 		7596F5C1DFA295EB8041CD3E /* Projects */ = {
@@ -467,7 +478,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -479,6 +490,7 @@
 		8C574E02E3F1F5E8CFD7E6E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
 		8D79AF1109876C7E947709B3 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView.swift"; sourceTree = "<group>"; };
 		8EDDCCAC8C5805D13B447CB7 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DiagnosticsView.swift"; sourceTree = "<group>"; };
+		91D65C2AE3BBC8AB389BEA46 /* BorrowBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BorrowBackend.swift"; sourceTree = "<group>"; };
 		9214F5F598DB71B1BD6025D4 /* BrandKit.swift in Build */ = {isa = PBXBuildFile; fileRef = 94A4667D2D598AF06D98F43A /* BrandKit.swift */; };
 		929B4F3ADEE074A2048A5C9B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -526,6 +538,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		98C7888E22AD0E8B277EF179 /* WebBorrowInbox.swift in Build */ = {isa = PBXBuildFile; fileRef = DAFF04E4FEDFC2185BA792E1 /* WebBorrowInbox.swift */; };
 		9A7434934173BD55106D6AEA /* QRScanabilityEvaluator.swift in Build */ = {isa = PBXBuildFile; fileRef = D87478A81EECC12D21C73A12 /* QRScanabilityEvaluator.swift */; };
 		9B482ED06EEE6036F6924417 /* DataExportService.swift in Build */ = {isa = PBXBuildFile; fileRef = 6C81F8D3649D2157C91CA88D /* DataExportService.swift */; };
 		9B9470B9EECF61424B33AD5E /* QREncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QREncoder.swift"; sourceTree = "<group>"; };
@@ -549,6 +562,15 @@
 		};
 		9F0754DFE8278023F93DA3AF /* ProjectStock.xcdatamodeld in Build */ = {isa = PBXBuildFile; fileRef = 7E1CEE9178467909FA347B4D /* ProjectStock.xcdatamodeld */; };
 		9F14ADEAA62E7F34521BF339 /* HierarchyAndScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HierarchyAndScanTests.swift"; sourceTree = "<group>"; };
+		9FC2CC4575393AD60C996313 /* WebBorrow */ = {
+			isa = PBXGroup;
+			children = (
+				91D65C2AE3BBC8AB389BEA46 /* BorrowBackend.swift */,
+				DAFF04E4FEDFC2185BA792E1 /* WebBorrowInbox.swift */,
+			);
+			path = "WebBorrow";
+			sourceTree = "<group>";
+		};
 		A0689484B5F5C062B7CD1EAA /* DiagnosticsView.swift in Build */ = {isa = PBXBuildFile; fileRef = 8EDDCCAC8C5805D13B447CB7 /* DiagnosticsView.swift */; };
 		A0A15E3D84EB83A5A84D44F3 /* QRTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRTypes.swift"; sourceTree = "<group>"; };
 		A0C9AA6A797B705E9B62B65A /* Activity */ = {
@@ -607,6 +629,7 @@
 				A70882E988098D1FF19A4510 /* SampleDataBuilder.swift */,
 				F7F844BE5A7004DEA811A03B /* ServiceContainer.swift */,
 				A87E251B91A8470096807D5D /* StocktakeCoordinator.swift */,
+				9FC2CC4575393AD60C996313 /* WebBorrow */,
 			);
 			path = "Services";
 			sourceTree = "<group>";
@@ -733,7 +756,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -747,6 +770,7 @@
 		CC7DA07507417302ED109CB5 /* ProductDetailView.swift in Build */ = {isa = PBXBuildFile; fileRef = 08B4D9F0A303798CD546995E /* ProductDetailView.swift */; };
 		CDDCF7C95BF06FAA7B485870 /* CodeAlias+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 08F203FB47A15DE3AA064589 /* CodeAlias+CoreDataClass.swift */; };
 		D0AF020FA16FA78B165A35EB /* Config.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Config.xcconfig.example"; sourceTree = "<group>"; };
+		D214F6BBD0E37D0E5248CF6F /* WebBorrowInboxView.swift in Build */ = {isa = PBXBuildFile; fileRef = 1B5DDC1C9ED081B1356F5630 /* WebBorrowInboxView.swift */; };
 		D22459D68E4841F797DE19C3 /* InventoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryServiceTests.swift"; sourceTree = "<group>"; };
 		D2B52B4EE066B69062433CFC /* Build configuration list for ProjectStockTests */ = {
 			isa = XCConfigurationList;
@@ -776,6 +800,7 @@
 		D72B76FAE1538605277E54E6 /* StoreRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StoreRouter.swift"; sourceTree = "<group>"; };
 		D7885388650754E165EAA81A /* SnapshotHelper.swift in Build */ = {isa = PBXBuildFile; fileRef = 02A5CDBA8DCCFB5C5BEE5A9C /* SnapshotHelper.swift */; };
 		D87478A81EECC12D21C73A12 /* QRScanabilityEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRScanabilityEvaluator.swift"; sourceTree = "<group>"; };
+		DAFF04E4FEDFC2185BA792E1 /* WebBorrowInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebBorrowInbox.swift"; sourceTree = "<group>"; };
 		DCC848E2CFBDB65D354F64C0 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		DCD88AE75B994D598470D9B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 		DEA36C0A5C8E11E294C56C48 /* ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "ARCHITECTURE.md"; sourceTree = "<group>"; };
@@ -826,6 +851,8 @@
 				CBBE7876FDEF07C86FA3A956 /* in Sources */,
 				D6DF8741F7D4BC5B2A5DBC19 /* in Sources */,
 				4182146D1A2809FD1C7A57A3 /* in Sources */,
+				7200428237903139A043F58B /* in Sources */,
+				98C7888E22AD0E8B277EF179 /* in Sources */,
 				4C6A847261A6671743808C36 /* in Sources */,
 				BD5CF6B4A41B4783116D632A /* in Sources */,
 				164CCF07BBF5328E66B538AD /* in Sources */,
@@ -864,6 +891,7 @@
 				3F8E40F116D41DDED8983E9E /* in Sources */,
 				A0689484B5F5C062B7CD1EAA /* in Sources */,
 				BAD63926AE612F4253C6D079 /* in Sources */,
+				D214F6BBD0E37D0E5248CF6F /* in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -875,7 +903,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -909,7 +937,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -937,7 +965,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -997,7 +1025,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

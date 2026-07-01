@@ -24,6 +24,7 @@ struct ProjectStockApp: App {
                 .environmentObject(container)
                 .environmentObject(container.syncMonitor)
                 .environmentObject(container.stocktake)
+                .environmentObject(container.webBorrow)
                 .environmentObject(settings)
                 .environment(\.managedObjectContext, container.viewContext)
                 .task {
@@ -36,6 +37,8 @@ struct ProjectStockApp: App {
                     container.syncMonitor.refreshAccountStatus()
                     container.refreshLoanNotifications()
                     container.refreshExpiryNotifications()
+                    // Pull any web borrow requests (and auto-apply if enabled).
+                    if !AppConfig.isRunningTests { await container.webBorrow.refresh() }
                 }
         }
     }

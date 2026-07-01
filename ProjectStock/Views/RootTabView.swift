@@ -4,6 +4,7 @@ import SwiftUI
 struct RootTabView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showOnboarding = false
     @State private var deepLinkOutcome: ScanOutcomeBox?
 
@@ -54,6 +55,12 @@ struct RootTabView: View {
         .onAppear {
             if !settings.hasCompletedOnboarding && !AppConfig.isUITesting {
                 showOnboarding = true
+            }
+        }
+        .onChange(of: scenePhase) { phase in
+            // Re-check the web borrow inbox whenever the app comes to the front.
+            if phase == .active && !AppConfig.isRunningTests {
+                Task { await container.webBorrow.refresh() }
             }
         }
     }

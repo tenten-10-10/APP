@@ -7,6 +7,7 @@ import CoreData
 struct HomeView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var webBorrow: WebBorrowInbox
 
     // Broad fetches — filter in Swift (computed properties can't be predicates)
     @FetchRequest(
@@ -90,6 +91,7 @@ struct HomeView: View {
         List {
             if showGuide { setupGuideSection }
             registerSampleSection
+            if webBorrow.pendingCount > 0 { webBorrowSection }
             summaryCard
             if hasAlerts {
                 lowStockSection
@@ -195,6 +197,36 @@ struct HomeView: View {
                 .padding(.vertical, 2)
             }
             .accessibilityIdentifier("registerSampleButton")
+        }
+    }
+
+    // MARK: - Web borrow inbox entry
+
+    private var webBorrowSection: some View {
+        Section {
+            NavigationLink(destination: WebBorrowInboxView()) {
+                HStack(spacing: 12) {
+                    Image(systemName: "tray.and.arrow.down.fill")
+                        .font(.title2)
+                        .foregroundColor(Brand.primary)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(NSLocalizedString("Web借用リクエスト", comment: ""))
+                            .font(.subheadline.weight(.semibold))
+                        Text(String(format: NSLocalizedString("%d 件の承認待ち", comment: ""), webBorrow.pendingCount))
+                            .font(.caption).foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Text("\(webBorrow.pendingCount)")
+                        .font(.caption.weight(.bold))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(Color.red))
+                        .foregroundColor(.white)
+                }
+                .padding(.vertical, 2)
+            }
+            .accessibilityIdentifier("webBorrowInboxButton")
         }
     }
 

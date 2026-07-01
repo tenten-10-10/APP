@@ -484,3 +484,35 @@
 "または既存へ割り当て" = "Or assign to an existing item";
 "サンプルを登録（スキャンして割当）" = "Register a Sample (scan and assign)";
 "スキャンしてサンプルを登録・割り当て" = "Scan to register and assign a sample";
+
+/* Web borrow (Layer B) */
+"Web借用" = "Web Borrowing";
+"Web借用リクエスト" = "Web Borrow Requests";
+"受け取り方" = "Handling";
+"承認してから反映" = "Approve first";
+"自動で反映" = "Apply automatically";
+"承認待ち" = "Awaiting approval";
+"承認して貸出" = "Approve & lend";
+"却下" = "Reject";
+"更新" = "Refresh";
+"新しい借用リクエストはありません" = "No new borrow requests";
+"QRを読み取った人がWebフォームから借用を申請すると、ここに届きます。" = "When someone scans a QR and submits the web form, it shows up here.";
+"QRから届いた借用リクエストを、確認なしで自動的に貸出として記録します。" = "Borrow requests from the QR form are recorded as loans automatically, without review.";
+"QRから届いた借用リクエストを一覧で確認し、承認したものだけを貸出として記録します。" = "Review borrow requests from the QR form and record only the ones you approve as loans.";
+"QRを読み取った人が、アプリなしでWebフォームから氏名・期間・貸出先を記入して借用を申請できます。届いた申請はここで確認できます。" = "Anyone who scans a QR can request to borrow via the web form — no app needed — by entering their name, period, and destination. Requests arrive here.";
+"%d 件の承認待ち" = "%d awaiting approval";
+"期間: %@ 〜 %@" = "Period: %@ – %@";
+"貸出日: %@" = "Lent on: %@";
+"返却予定: %@" = "Due back: %@";
+"期間の指定なし" = "No period specified";
+"貸出先: %@" = "Lent to: %@";
+"Webフォームから受付" = "Received via web form";
+"借り手" = "Borrower";
+"借り手未記入" = "Borrower not entered";
+"貸出として記録できませんでした。" = "Couldn't record the loan.";
+"この番号に一致する現物が見つかりませんでした。" = "No item matching this code was found.";
+"この番号は貸出に対応していません。" = "This code can't be used for a loan.";
+"このプロジェクトは読み取り専用のため反映できません。" = "This project is read-only, so the request can't be applied.";
+"この個体は現在貸出できない状態です。" = "This item can't be lent out right now.";
+"サーバーとの通信に失敗しました (%d)" = "Couldn't reach the server (%d)";
+"借用リクエストの取得先が設定されていません。" = "The borrow request source isn't configured.";

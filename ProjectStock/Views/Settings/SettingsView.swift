@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var syncMonitor: CloudKitSyncMonitor
+    @EnvironmentObject private var webBorrow: WebBorrowInbox
 
     @State private var deviceName = DeviceIdentity.shared.displayName
     @State private var shareItem: ShareableFile?
@@ -54,6 +55,31 @@ struct SettingsView: View {
 
             Section(NSLocalizedString("操作", comment: "")) {
                 Toggle(NSLocalizedString("触覚フィードバック", comment: ""), isOn: $settings.hapticsEnabled)
+            }
+
+            Section {
+                Picker(NSLocalizedString("受け取り方", comment: ""), selection: $settings.webBorrowModeRaw) {
+                    ForEach(WebBorrowMode.allCases) { Text($0.localizedTitle).tag($0.rawValue) }
+                }
+                NavigationLink {
+                    WebBorrowInboxView()
+                } label: {
+                    HStack {
+                        Label(NSLocalizedString("Web借用リクエスト", comment: ""), systemImage: "tray.and.arrow.down")
+                        if webBorrow.pendingCount > 0 {
+                            Spacer()
+                            Text("\(webBorrow.pendingCount)")
+                                .font(.caption.weight(.bold))
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(Capsule().fill(Color.red))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+            } header: {
+                Text(NSLocalizedString("Web借用", comment: ""))
+            } footer: {
+                Text(NSLocalizedString("QRを読み取った人が、アプリなしでWebフォームから氏名・期間・貸出先を記入して借用を申請できます。届いた申請はここで確認できます。", comment: ""))
             }
 
             Section(NSLocalizedString("データ", comment: "")) {

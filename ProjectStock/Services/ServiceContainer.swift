@@ -23,6 +23,7 @@ final class ServiceContainer: ObservableObject {
     let scanRouter: ScanResultRouter
     let stocktake: StocktakeCoordinator
     let sharing: CloudSharingService
+    let webBorrow: WebBorrowInbox
 
     let syncMonitor: CloudKitSyncMonitor
 
@@ -55,6 +56,24 @@ final class ServiceContainer: ObservableObject {
         self.stocktake = StocktakeCoordinator(inventory: inventory)
         self.sharing = CloudSharingService(persistence: persistence, router: router, projectService: projectService)
         self.syncMonitor = CloudKitSyncMonitor(persistence: persistence)
+
+        // Layer B: the public web borrow form's inbox. Built last so it can
+        // capture the container's write helper / notification refresh.
+        var writeHook: ((@escaping (NSManagedObjectContext) throws -> Void) -> Result<Void, Error>)!
+        var notifyHook: (() -> Void)!
+        self.webBorrow = WebBorrowInbox(
+            backend: BorrowBackend(),
+            viewContext: persistence.viewContext,
+            settings: settings,
+            aliases: aliases,
+            inventory: inventory,
+            sharing: self.sharing,
+            router: router,
+            write: { work in writeHook(work) },
+            refreshNotifications: { notifyHook() }
+        )
+        writeHook = { [unowned self] work in self.performWrite(author: "webborrow", work) }
+        notifyHook = { [unowned self] in self.refreshLoanNotifications() }
 
         // Accept incoming CloudKit share invitations into the shared store.
         NotificationCenter.default.publisher(for: .projectStockDidReceiveShareMetadata)
