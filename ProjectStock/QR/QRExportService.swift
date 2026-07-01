@@ -52,15 +52,15 @@ public final class QRExportService {
     // MARK: - Single-label file export
 
     public func exportFile(spec: QRRenderSpec, format: QRExportFormat,
-                           context: ExportContext) throws -> URL {
+                           context: ExportContext, caption: String? = nil) throws -> URL {
         let matrix = try encodeMatrix(code: spec.code, errorCorrection: spec.errorCorrection)
         let data: Data
         switch format {
         case .png:
-            data = try raster.renderPNG(matrix: matrix, spec: spec).pngData
+            data = try raster.renderPNG(matrix: matrix, spec: spec, caption: caption).pngData
         case .pdf:
             data = try pdf.renderSingleLabel(matrix: matrix, spec: spec,
-                                             caption: nil)
+                                             caption: caption)
         case .eps:
             data = eps.renderEPS(matrix: matrix, spec: spec, title: context.targetName)
         case .svg:

@@ -85,16 +85,30 @@ public struct QRVectorPDFRenderer {
         }
     }
 
+    /// Draws `text` centered in `rect`, shrinking the (monospaced) font until
+    /// it fits so a long code never clips on a small physical label.
     static func drawCaption(_ text: String, in rect: CGRect, context: CGContext) {
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 7, weight: .regular),
-            .foregroundColor: UIColor.black
-        ]
-        let attributed = NSAttributedString(string: text, attributes: attributes)
-        let line = CTLineCreateWithAttributedString(attributed)
-        let bounds = CTLineGetBoundsWithOptions(line, .useOpticalBounds)
-        let x = rect.midX - bounds.width / 2
-        let y = rect.midY - bounds.height / 2
+        let maxWidth = rect.width * 0.94
+        let minFontSize: CGFloat = 4
+        var fontSize: CGFloat = 7
+
+        func makeLine(_ size: CGFloat) -> (CTLine, CGRect) {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: size, weight: .regular),
+                .foregroundColor: UIColor.black
+            ]
+            let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attributes))
+            return (line, CTLineGetBoundsWithOptions(line, .useOpticalBounds))
+        }
+
+        var (line, bounds) = makeLine(fontSize)
+        while bounds.width > maxWidth && fontSize > minFontSize {
+            fontSize -= max(0.5, fontSize * 0.1)
+            (line, bounds) = makeLine(fontSize)
+        }
+
+        let x = rect.midX - bounds.width / 2 - bounds.minX
+        let y = rect.midY - bounds.height / 2 - bounds.minY
         context.saveGState()
         context.textPosition = CGPoint(x: max(rect.minX + 1, x), y: max(rect.minY + 1, y))
         context.textMatrix = .identity

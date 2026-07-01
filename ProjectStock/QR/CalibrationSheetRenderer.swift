@@ -74,67 +74,82 @@ public struct CalibrationSheetRenderer {
 
     // MARK: - Row drawers
 
+    /// Fixed vertical space reserved below every QR for its labels + checkbox,
+    /// measured down from that QR's own bottom edge.
+    private let labelBlockHeight: CGFloat = 36
+
+    /// Draws one QR + its label lines + checkbox as a self-contained unit whose
+    /// bottom (checkbox) sits `labelBlockHeight` below the QR's bottom edge —
+    /// used by every row so labels/checkboxes never drift relative to the code
+    /// they describe.
+    private func drawSample(matrix: QRCodeMatrix, sizePts: CGFloat, at x: CGFloat, bottomY: CGFloat,
+                            lines: [(text: String, size: CGFloat, color: UIColor)],
+                            context: CGContext) {
+        let qrRect = CGRect(x: x, y: bottomY, width: sizePts, height: sizePts)
+        QRVectorPDFRenderer.draw(matrix: matrix, quietZoneModules: 4, in: qrRect,
+                                 context: context, background: .whiteQuietZone)
+        var lineY = bottomY - 10
+        for line in lines {
+            drawText(line.text, at: CGPoint(x: x, y: lineY), size: line.size, color: line.color, context: context)
+            lineY -= 9
+        }
+        drawCheckbox(at: CGPoint(x: x, y: lineY - 2), context: context)
+    }
+
+    /// A row of the SAME code at different physical sizes, all sharing one
+    /// bottom edge so every size's label + checkbox lines up on one common
+    /// line beneath the row (rather than trailing off under each code).
     private func drawSampleRow(sizes: [Double], matrix: QRCodeMatrix, ecc: QRErrorCorrectionLevel,
                                startY: CGFloat, margin: CGFloat, pageWidth: CGFloat, context: CGContext) -> CGFloat {
+        let sizePtsList = sizes.map { CGFloat(QRMeasurement.millimetersToPoints($0)) }
+        let maxSizePts = sizePtsList.max() ?? 0
+        let rowBottom = startY - maxSizePts
         var x = margin
-        let rowTop = startY
-        let labelHeight: CGFloat = 26
-        var maxLabelPts: CGFloat = 0
-        for sizeMM in sizes {
-            let sizePts = CGFloat(QRMeasurement.millimetersToPoints(sizeMM))
-            maxLabelPts = max(maxLabelPts, sizePts)
+        for (sizeMM, sizePts) in zip(sizes, sizePtsList) {
             if x + sizePts > pageWidth - margin { break }
-            let qrRect = CGRect(x: x, y: rowTop - sizePts, width: sizePts, height: sizePts)
-            let spec = QRRenderSpec(code: "", totalSizeMM: sizeMM, errorCorrection: ecc)
-            QRVectorPDFRenderer.draw(matrix: matrix, quietZoneModules: 4, in: qrRect,
-                                     context: context, background: .whiteQuietZone)
             let moduleMM = sizeMM / Double(matrix.moduleCount + 8)
-            drawText("\(Int(sizeMM))mm", at: CGPoint(x: x, y: rowTop - sizePts - 10), size: 7, context: context)
-            drawText(String(format: "%.2fmm/mod", moduleMM),
-                     at: CGPoint(x: x, y: rowTop - sizePts - 19), size: 6, color: .darkGray, context: context)
-            drawCheckbox(at: CGPoint(x: x, y: rowTop - sizePts - 30), context: context)
-            _ = spec
-            x += sizePts + 12
+            drawSample(matrix: matrix, sizePts: sizePts, at: x, bottomY: rowBottom, lines: [
+                ("\(Int(sizeMM))mm", 7, .black),
+                (String(format: "%.2fmm/mod", moduleMM), 6, .darkGray)
+            ], context: context)
+            x += sizePts + 14
         }
-        return rowTop - maxLabelPts - labelHeight - 8
+        return rowBottom - labelBlockHeight - 12
     }
 
     private func drawECCRow(items: [(QRErrorCorrectionLevel, QRCodeMatrix)], sizeMM: Double,
                             startY: CGFloat, margin: CGFloat, context: CGContext) -> CGFloat {
-        var x = margin
         let sizePts = CGFloat(QRMeasurement.millimetersToPoints(sizeMM))
+        let rowBottom = startY - sizePts
+        var x = margin
         for (ecc, matrix) in items {
-            let qrRect = CGRect(x: x, y: startY - sizePts, width: sizePts, height: sizePts)
-            QRVectorPDFRenderer.draw(matrix: matrix, quietZoneModules: 4, in: qrRect,
-                                     context: context, background: .whiteQuietZone)
-            drawText("ECC \(ecc.rawValue) · v\(matrix.version)",
-                     at: CGPoint(x: x, y: startY - sizePts - 10), size: 7, context: context)
-            drawCheckbox(at: CGPoint(x: x, y: startY - sizePts - 21), context: context)
-            x += sizePts + 24
+            drawSample(matrix: matrix, sizePts: sizePts, at: x, bottomY: rowBottom, lines: [
+                ("ECC \(ecc.rawValue) · v\(matrix.version)", 7, .black)
+            ], context: context)
+            x += sizePts + 26
         }
-        return startY - sizePts - 30
+        return rowBottom - labelBlockHeight - 12
     }
 
     private func drawQuietZoneComparison(matrix: QRCodeMatrix, sizeMM: Double,
                                          startY: CGFloat, margin: CGFloat, context: CGContext) -> CGFloat {
         let sizePts = CGFloat(QRMeasurement.millimetersToPoints(sizeMM))
-        // Correct quiet zone.
-        let correctRect = CGRect(x: margin, y: startY - sizePts, width: sizePts, height: sizePts)
-        QRVectorPDFRenderer.draw(matrix: matrix, quietZoneModules: 4, in: correctRect,
-                                 context: context, background: .whiteQuietZone)
-        drawText("正常 (4モジュール)", at: CGPoint(x: margin, y: startY - sizePts - 10), size: 7, context: context)
-        drawCheckbox(at: CGPoint(x: margin, y: startY - sizePts - 21), context: context)
+        let rowBottom = startY - sizePts
 
-        // Warning: insufficient quiet zone.
+        drawSample(matrix: matrix, sizePts: sizePts, at: margin, bottomY: rowBottom, lines: [
+            ("正常 (4モジュール)", 7, .black)
+        ], context: context)
+        // Redraw with a shrunk quiet zone for the warning example (drawSample
+        // always uses 4 modules, so this one bypasses it to use 1).
         let warnX = margin + sizePts + 30
-        let warnRect = CGRect(x: warnX, y: startY - sizePts, width: sizePts, height: sizePts)
+        let warnRect = CGRect(x: warnX, y: rowBottom, width: sizePts, height: sizePts)
         QRVectorPDFRenderer.draw(matrix: matrix, quietZoneModules: 1, in: warnRect,
                                  context: context, background: .whiteQuietZone)
-        drawText("警告例 (1モジュール)", at: CGPoint(x: warnX, y: startY - sizePts - 10), size: 7,
+        drawText("警告例 (1モジュール)", at: CGPoint(x: warnX, y: rowBottom - 10), size: 7,
                  color: UIColor.systemRed, context: context)
-        drawCheckbox(at: CGPoint(x: warnX, y: startY - sizePts - 21), context: context)
+        drawCheckbox(at: CGPoint(x: warnX, y: rowBottom - 21), context: context)
 
-        return startY - sizePts - 30
+        return rowBottom - labelBlockHeight - 12
     }
 
     // MARK: - Primitives

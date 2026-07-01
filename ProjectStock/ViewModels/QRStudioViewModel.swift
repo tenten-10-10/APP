@@ -70,9 +70,12 @@ final class QRStudioViewModel: ObservableObject {
     }
 
     /// Export the current spec in the chosen format; returns a temp file URL.
+    /// Includes the code itself below the QR (unless `showCaption` is off) so
+    /// a printed label is still identifiable by eye, e.g. if a scan fails.
     func export(projectName: String, targetName: String) throws -> URL {
         let context = QRExportService.ExportContext(projectName: projectName, targetName: targetName)
-        return try exportService.exportFile(spec: spec, format: format, context: context)
+        return try exportService.exportFile(spec: spec, format: format, context: context,
+                                            caption: showCaption ? code : nil)
     }
 
     func exportCalibrationSheet(projectName: String, targetName: String) throws -> URL {

@@ -144,6 +144,8 @@ struct QRLabelStudioView: View {
             }
             .pickerStyle(.segmented)
 
+            Toggle(NSLocalizedString("コードを文字で併記", comment: ""), isOn: $model.showCaption)
+
             Button {
                 exportThenMail()
             } label: {
