@@ -555,3 +555,20 @@
 "このQRは既に他の対象へ割り当て済みです。" = "This QR is already assigned to something else.";
 "このQRは無効化されているため使用できません。" = "This QR has been deactivated and can't be used.";
 "未登録のQRです。先に「空のQRをまとめて発行」で作成してください。" = "This QR isn't registered yet. Create blank QRs first with “Issue blank QRs in bulk.”";
+
+/* 1.1.0 Home flow redesign */
+"サンプルを登録する" = "Register a sample";
+"空のQRラベルを印刷" = "Print blank QR labels";
+"A4にまとめて印刷。サンプルが届く前でもOK" = "Print a full A4 sheet — even before samples arrive";
+"スキャンして登録" = "Scan to register";
+"貼ったQRを読み取って「これは○○」と登録" = "Scan a stuck-on QR and register “this is …”";
+"空のQRラベルを印刷して貼る" = "Print blank QR labels and stick them on";
+"スキャンして「これは○○」と登録" = "Scan and register “this is …”";
+"① 空のQRを現物や棚・箱に貼り、② スキャンして製品を登録します。届く前に空QRを刷っておくとスムーズです。" = "① Stick blank QRs on items, shelves or boxes, then ② scan to register the product. Printing blanks ahead of time makes it smooth.";
+"どのプロジェクトの空QRを印刷しますか？" = "Which project's blank QRs do you want to print?";
+"まず、空のQRを印刷" = "First, print blank QRs";
+"サンプルが届く前でもOK。空のQRラベルをA4にまとめて印刷し、現物や棚・箱に先に貼っておきます。" = "Even before samples arrive: print a full A4 sheet of blank QR labels and stick them on items, shelves or boxes first.";
+"貼ったQRをスキャンして「これは○○」と登録。あとは入庫・出庫・貸出も、スキャンするだけで履歴に残ります。" = "Scan a stuck-on QR to register “this is …”. After that, stock-in, stock-out and loans are all recorded with a single scan.";
+"チームで共有" = "Share with your team";
+"プロジェクトは iCloud でチームと共有。ラベルは PDF などで書き出して、まとめて印刷できます。" = "Share projects with your team via iCloud. Export labels as PDF and print them in bulk.";
+"サンプルや備品を、QRコードで手早く管理。どこにあるか・誰が借りているかがひと目でわかります。" = "Manage samples and gear quickly with QR codes. See at a glance where things are and who has borrowed them.";

@@ -34,11 +34,24 @@ struct HomeView: View {
         animation: .default
     ) private var checkedOutUnits: FetchedResults<StockUnit>
 
+    // Existence check for any pre-printed QR label (fetchLimit 1 keeps it cheap).
+    @FetchRequest(fetchRequest: HomeView.anyLabelRequest) private var anyLabel: FetchedResults<CodeAlias>
+
     @State private var showSearch = false
-    @State private var showCreateProject = false
-    @State private var routedProject: Project?
-    @State private var routedProduct: Product?
+    // Pre-print (blank QR) flow driven from the Home hero.
+    @State private var prePrintProject: Project?
+    @State private var showCreateProjectForPrePrint = false
+    @State private var pendingPrePrintProject: Project?
+    @State private var showProjectPicker = false
+    @State private var goScan = false
     @AppStorage("hideFirstRunGuide") private var hideSetupGuide = false
+
+    private static let anyLabelRequest: NSFetchRequest<CodeAlias> = {
+        let request: NSFetchRequest<CodeAlias> = CodeAlias.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \CodeAlias.createdAt, ascending: false)]
+        request.fetchLimit = 1
+        return request
+    }()
 
     // MARK: - Derived
 
@@ -68,29 +81,29 @@ struct HomeView: View {
     // MARK: - First-run guide
 
     private var hasProject: Bool { !projects.isEmpty }
+    private var hasBlankLabel: Bool { !anyLabel.isEmpty }
     private var hasProduct: Bool { !products.isEmpty }
-    private var hasLabel: Bool { products.contains { !$0.labelArray.isEmpty } }
-    private var setupComplete: Bool { hasProject && hasProduct && hasLabel }
+    // Sample-first flow: ① プロジェクト → ② 空QRを印刷して貼る → ③ スキャンして登録.
+    private var setupComplete: Bool { hasProject && hasBlankLabel && hasProduct }
     private var showGuide: Bool { !hideSetupGuide && !setupComplete }
 
-    private var nextStepTitle: String {
-        if !hasProject { return NSLocalizedString("プロジェクトを作る", comment: "") }
-        if !hasProduct { return NSLocalizedString("製品を追加する", comment: "") }
-        return NSLocalizedString("QRラベルを作る", comment: "")
-    }
-
-    private func advanceGuide() {
-        if !hasProject { showCreateProject = true }
-        else if !hasProduct { routedProject = projects.first }
-        else { routedProduct = products.first }
+    /// Entry point for the "print blank QR labels" hero action. A project is
+    /// required to mint codes, so bootstrap or disambiguate one first.
+    private func startPrePrint() {
+        if projects.isEmpty {
+            showCreateProjectForPrePrint = true
+        } else if projects.count == 1 {
+            prePrintProject = projects.first
+        } else {
+            showProjectPicker = true
+        }
     }
 
     // MARK: - Body
 
     var body: some View {
         List {
-            if showGuide { setupGuideSection }
-            registerSampleSection
+            startHubSection
             if webBorrow.pendingCount > 0 { webBorrowSection }
             summaryCard
             if hasAlerts {
@@ -113,36 +126,80 @@ struct HomeView: View {
                 .accessibilityLabel(Text(NSLocalizedString("検索", comment: "")))
             }
         }
+        .background(navigationLinks)
         .sheet(isPresented: $showSearch) {
             SearchView()
         }
-        .sheet(isPresented: $showCreateProject) {
-            ProjectFormView(onCreated: { routedProject = $0 })
+        .sheet(isPresented: $showCreateProjectForPrePrint, onDismiss: {
+            // Present the pre-print sheet only after the create sheet has fully
+            // dismissed, avoiding a sheet-over-sheet presentation race.
+            if let created = pendingPrePrintProject {
+                pendingPrePrintProject = nil
+                prePrintProject = created
+            }
+        }) {
+            ProjectFormView(onCreated: { pendingPrePrintProject = $0 })
         }
-        .background(setupGuideLinks)
+        .sheet(item: $prePrintProject) { project in
+            PrePrintView(project: project)
+        }
+        .confirmationDialog(NSLocalizedString("どのプロジェクトの空QRを印刷しますか？", comment: ""),
+                            isPresented: $showProjectPicker, titleVisibility: .visible) {
+            ForEach(projects) { project in
+                Button(project.displayName) { prePrintProject = project }
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+        }
     }
 
-    // MARK: - First-run guide card
+    // MARK: - Start hub (hero) — print blank QR + scan to register
 
-    private var setupGuideSection: some View {
+    /// The primary call-to-action block at the top of Home. It makes "print
+    /// blank QR labels" the headline action (previously buried) and, until the
+    /// first sample is registered, shows a 3-step getting-started checklist.
+    private var startHubSection: some View {
         Section {
-            VStack(alignment: .leading, spacing: 12) {
-                guideStep(index: 1, title: NSLocalizedString("プロジェクトを作る", comment: ""), done: hasProject)
-                guideStep(index: 2, title: NSLocalizedString("最初の製品を追加", comment: ""), done: hasProduct)
-                guideStep(index: 3, title: NSLocalizedString("QRラベルを作る", comment: ""), done: hasLabel)
-                Button { advanceGuide() } label: {
-                    Text(nextStepTitle).frame(maxWidth: .infinity)
+            if showGuide {
+                VStack(alignment: .leading, spacing: 12) {
+                    guideStep(index: 1, title: NSLocalizedString("プロジェクトを作る", comment: ""), done: hasProject)
+                    guideStep(index: 2, title: NSLocalizedString("空のQRラベルを印刷して貼る", comment: ""), done: hasBlankLabel)
+                    guideStep(index: 3, title: NSLocalizedString("スキャンして「これは○○」と登録", comment: ""), done: hasProduct)
+                }
+                .padding(.vertical, 2)
+            }
+
+            VStack(spacing: 10) {
+                Button { startPrePrint() } label: {
+                    heroButtonLabel(systemImage: "printer.fill",
+                                    title: NSLocalizedString("空のQRラベルを印刷", comment: ""),
+                                    subtitle: NSLocalizedString("A4にまとめて印刷。サンプルが届く前でもOK", comment: ""),
+                                    tint: .white)
                 }
                 .buttonStyle(PrimaryButtonStyle())
-                .accessibilityIdentifier("setupGuideNext")
+                .accessibilityIdentifier("printBlankQRButton")
+
+                Button { goScan = true } label: {
+                    heroButtonLabel(systemImage: "qrcode.viewfinder",
+                                    title: NSLocalizedString("スキャンして登録", comment: ""),
+                                    subtitle: NSLocalizedString("貼ったQRを読み取って「これは○○」と登録", comment: ""),
+                                    tint: Brand.primary)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("registerSampleButton")
             }
             .padding(.vertical, 4)
         } header: {
             HStack {
-                Label(NSLocalizedString("はじめてガイド", comment: ""), systemImage: "sparkles")
+                Label(NSLocalizedString("サンプルを登録する", comment: ""), systemImage: "sparkles")
                 Spacer()
-                Button(NSLocalizedString("閉じる", comment: "")) { hideSetupGuide = true }
-                    .font(.caption)
+                if showGuide {
+                    Button(NSLocalizedString("閉じる", comment: "")) { hideSetupGuide = true }
+                        .font(.caption)
+                }
+            }
+        } footer: {
+            if showGuide {
+                Text(NSLocalizedString("① 空のQRを現物や棚・箱に貼り、② スキャンして製品を登録します。届く前に空QRを刷っておくとスムーズです。", comment: ""))
             }
         }
     }
@@ -160,44 +217,29 @@ struct HomeView: View {
         .font(.subheadline)
     }
 
-    /// Hidden links so the guide can push straight to the next screen.
-    @ViewBuilder private var setupGuideLinks: some View {
-        NavigationLink(isActive: Binding(get: { routedProject != nil },
-                                         set: { if !$0 { routedProject = nil } })) {
-            if let project = routedProject { ProjectDetailView(project: project) }
-        } label: { EmptyView() }
-        .opacity(0)
-
-        NavigationLink(isActive: Binding(get: { routedProduct != nil },
-                                         set: { if !$0 { routedProduct = nil } })) {
-            if let product = routedProduct { ProductDetailView(product: product) }
-        } label: { EmptyView() }
-        .opacity(0)
+    private func heroButtonLabel(systemImage: String, title: String, subtitle: String, tint: Color) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.title2)
+                .frame(width: 30)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline)
+                Text(subtitle).font(.caption2).opacity(0.85)
+            }
+            Spacer()
+            Image(systemName: "chevron.right").font(.footnote).opacity(0.6)
+        }
+        .foregroundColor(tint)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Register-a-sample entry (primary action)
-
-    private var registerSampleSection: some View {
-        Section {
-            NavigationLink(destination: ScanTabView()) {
-                HStack(spacing: 12) {
-                    Image(systemName: "qrcode.viewfinder")
-                        .font(.title2)
-                        .foregroundColor(Brand.primary)
-                        .frame(width: 28)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(NSLocalizedString("サンプルを登録（スキャンして割当）", comment: ""))
-                            .font(.subheadline.weight(.semibold))
-                        Text(NSLocalizedString("スキャンしてサンプルを登録・割り当て", comment: ""))
-                            .font(.caption).foregroundColor(.secondary)
-                    }
-                    Spacer()
-                }
-                .padding(.vertical, 2)
-            }
-            .accessibilityIdentifier("registerSampleButton")
-        }
+    /// Hidden link so a button tap can push the scanner.
+    @ViewBuilder private var navigationLinks: some View {
+        NavigationLink(isActive: $goScan) {
+            ScanTabView()
+        } label: { EmptyView() }
+        .opacity(0)
     }
 
     // MARK: - Web borrow inbox entry

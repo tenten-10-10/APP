@@ -39,6 +39,24 @@ struct PrimaryButtonStyle: ButtonStyle {
     }
 }
 
+/// Full-width tinted secondary button (light brand fill, brand-coloured label).
+/// Pairs with `PrimaryButtonStyle` for a two-action hero.
+struct SecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.title3.weight(.semibold))
+            .frame(maxWidth: .infinity, minHeight: 26)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Brand.primary.opacity(0.12))
+            )
+            .foregroundColor(Brand.primary)
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .contentShape(Rectangle())
+    }
+}
+
 /// Small paging dots used by the onboarding carousel.
 struct PageDots: View {
     let count: Int

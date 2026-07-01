@@ -23,16 +23,16 @@ struct OnboardingView: View {
     private let pages: [Page] = [
         Page(symbol: "shippingbox.fill",
              title: NSLocalizedString("タナミル へようこそ", comment: ""),
-             body: NSLocalizedString("プロジェクトごとに在庫を整理し、QRコードで現物をすばやく管理するアプリです。", comment: "")),
-        Page(symbol: "folder.fill",
-             title: NSLocalizedString("プロジェクトで整理", comment: ""),
-             body: NSLocalizedString("フォルダ・保管場所・製品を自由な階層で管理。数量での管理と、個体ごとの管理のどちらにも対応します。", comment: "")),
+             body: NSLocalizedString("サンプルや備品を、QRコードで手早く管理。どこにあるか・誰が借りているかがひと目でわかります。", comment: "")),
+        Page(symbol: "printer.fill",
+             title: NSLocalizedString("まず、空のQRを印刷", comment: ""),
+             body: NSLocalizedString("サンプルが届く前でもOK。空のQRラベルをA4にまとめて印刷し、現物や棚・箱に先に貼っておきます。", comment: "")),
         Page(symbol: "qrcode.viewfinder",
-             title: NSLocalizedString("QRで入出庫", comment: ""),
-             body: NSLocalizedString("スキャンして入庫・出庫・移動・貸出を記録。すべて追記型の台帳に残り、いつでも訂正できます。", comment: "")),
-        Page(symbol: "square.and.arrow.up.on.square.fill",
-             title: NSLocalizedString("ラベル印刷と共有", comment: ""),
-             body: NSLocalizedString("QRラベルを PNG / PDF / EPS で書き出して印刷。プロジェクトは iCloud でチームと共有できます。", comment: "")),
+             title: NSLocalizedString("スキャンして登録", comment: ""),
+             body: NSLocalizedString("貼ったQRをスキャンして「これは○○」と登録。あとは入庫・出庫・貸出も、スキャンするだけで履歴に残ります。", comment: "")),
+        Page(symbol: "person.2.fill",
+             title: NSLocalizedString("チームで共有", comment: ""),
+             body: NSLocalizedString("プロジェクトは iCloud でチームと共有。ラベルは PDF などで書き出して、まとめて印刷できます。", comment: "")),
     ]
 
     /// The final step (after the info pages) is the operator-name input.
