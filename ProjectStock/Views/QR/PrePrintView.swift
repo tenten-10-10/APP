@@ -11,11 +11,40 @@ struct PrePrintView: View {
     @State private var count: Double = 12
     @State private var labelSizeMM: Double = 16
     @State private var paper: PaperSize = .a4
+    @State private var marginMM: Double = 8
+    @State private var spacingMM: Double = 3
     @State private var showCaption = true
-    @State private var showCutGuides = true
+    @State private var cutStyle: CutStyle = .cropMarks
     @State private var shareItem: ShareableFile?
     @State private var error: PresentableError?
     @State private var working = false
+
+    /// Trim/registration guide drawn around each label.
+    enum CutStyle: String, CaseIterable, Identifiable {
+        case cropMarks, border, none
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .cropMarks: return NSLocalizedString("トンボ", comment: "")
+            case .border:    return NSLocalizedString("枠線", comment: "")
+            case .none:      return NSLocalizedString("なし", comment: "")
+            }
+        }
+    }
+
+    /// The sheet geometry currently configured (used for capacity + export).
+    private var sheetOptions: LabelSheetOptions {
+        var options = LabelSheetOptions()
+        options.labelSizeMM = labelSizeMM
+        options.paper = paper
+        options.marginMM = marginMM
+        options.spacingMM = spacingMM
+        options.showCaption = showCaption
+        options.showCutGuides = (cutStyle == .border)
+        options.cropMarks = (cutStyle == .cropMarks)
+        return options
+    }
+    private var capacity: (columns: Int, rows: Int, perPage: Int) { sheetOptions.capacity }
 
     var body: some View {
         NavigationView {
@@ -31,23 +60,50 @@ struct PrePrintView: View {
                     .padding(.vertical, 2)
                 }
                 Section(NSLocalizedString("枚数", comment: "")) {
-                    Stepper(value: $count, in: 1...200, step: 1) {
+                    Stepper(value: $count, in: 1...500, step: 1) {
                         Text(String(format: NSLocalizedString("%d 枚のサンプル用QRを作成", comment: ""), Int(count)))
                     }
+                    Button {
+                        count = Double(capacity.perPage)
+                    } label: {
+                        Label(String(format: NSLocalizedString("A4いっぱいに敷き詰める（%d枚）", comment: ""), capacity.perPage),
+                              systemImage: "square.grid.3x3.fill")
+                    }
+                    .accessibilityIdentifier("fillPageButton")
+                } footer: {
+                    Text(String(format: NSLocalizedString("この設定だと1ページに %d 枚（%d×%d）並びます。%d 枚だと %d ページになります。", comment: ""),
+                                capacity.perPage, capacity.columns, capacity.rows,
+                                Int(count), max(1, Int(ceil(count / Double(capacity.perPage))))))
+                        .font(.caption2)
                 }
                 Section(NSLocalizedString("レイアウト", comment: "")) {
-                    HStack {
-                        Text(String(format: NSLocalizedString("ラベルサイズ: %d mm", comment: ""), Int(labelSizeMM)))
-                        Spacer()
-                    }
-                    Slider(value: $labelSizeMM, in: 8...40, step: 1)
                     Picker(NSLocalizedString("用紙", comment: ""), selection: $paper) {
                         Text("A4").tag(PaperSize.a4)
                         Text("Letter").tag(PaperSize.letter)
                     }
                     .pickerStyle(.segmented)
+                    VStack(alignment: .leading) {
+                        Text(String(format: NSLocalizedString("ラベルサイズ: %d mm", comment: ""), Int(labelSizeMM)))
+                        Slider(value: $labelSizeMM, in: 8...40, step: 1)
+                    }
+                    Picker(NSLocalizedString("切り取り線", comment: ""), selection: $cutStyle) {
+                        ForEach(CutStyle.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
                     Toggle(NSLocalizedString("コードを文字で併記", comment: ""), isOn: $showCaption)
-                    Toggle(NSLocalizedString("カットガイドを表示", comment: ""), isOn: $showCutGuides)
+                }
+                Section(NSLocalizedString("ラベルシート調整", comment: "")) {
+                    VStack(alignment: .leading) {
+                        Text(String(format: NSLocalizedString("外側の余白: %d mm", comment: ""), Int(marginMM)))
+                        Slider(value: $marginMM, in: 0...25, step: 1)
+                    }
+                    VStack(alignment: .leading) {
+                        Text(String(format: NSLocalizedString("ラベル間隔: %d mm", comment: ""), Int(spacingMM)))
+                        Slider(value: $spacingMM, in: 0...20, step: 1)
+                    }
+                } footer: {
+                    Text(NSLocalizedString("お使いのラベルシートに合わせて、余白・間隔・ラベルサイズを調整してください。トンボを目印に貼り付け・カットできます。", comment: ""))
+                        .font(.caption2)
                 }
                 Section {
                     Button {
@@ -83,12 +139,7 @@ struct PrePrintView: View {
         }
         if case .failure(let err) = writeResult { working = false; error = PresentableError(err); return }
 
-        var options = LabelSheetOptions()
-        options.labelSizeMM = labelSizeMM
-        options.paper = paper
-        options.showCaption = showCaption
-        options.showCutGuides = showCutGuides
-
+        let options = sheetOptions
         let entries: [(code: String, caption: String?)] = codes.map { (code: $0, caption: showCaption ? $0 : nil) }
         let exportContext = QRExportService.ExportContext(projectName: project.displayName, targetName: "blank")
         do {

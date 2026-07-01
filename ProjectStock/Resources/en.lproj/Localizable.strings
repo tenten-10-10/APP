@@ -527,6 +527,17 @@
 "共有・招待" = "Share & invite";
 "共有・メンバーを招待" = "Share & invite members";
 
+/* Pre-print sheet: fill A4, crop marks (トンボ), label-sheet tuning */
+"切り取り線" = "Cut guides";
+"トンボ" = "Crop marks";
+"枠線" = "Border";
+"ラベルシート調整" = "Label-sheet tuning";
+"A4いっぱいに敷き詰める（%d枚）" = "Fill the A4 (%d labels)";
+"この設定だと1ページに %d 枚（%d×%d）並びます。%d 枚だと %d ページになります。" = "This layout fits %d per page (%d×%d). %d labels = %d page(s).";
+"外側の余白: %d mm" = "Outer margin: %d mm";
+"ラベル間隔: %d mm" = "Label spacing: %d mm";
+"お使いのラベルシートに合わせて、余白・間隔・ラベルサイズを調整してください。トンボを目印に貼り付け・カットできます。" = "Adjust the margin, spacing, and label size to match your label sheet. Use the crop marks to place or cut.";
+
 /* Give-away (譲渡): permanently hand a unit out, no return tracking */
 "譲渡" = "Give away";
 "譲渡しますか？" = "Give this away?";
