@@ -69,14 +69,10 @@ struct SettingsView: View {
 
             Section(NSLocalizedString("情報", comment: "")) {
                 Button {
+                    hideFirstRunGuide = false   // ホームの初回ガイドも復活させる
                     showTutorial = true
                 } label: {
                     Label(NSLocalizedString("使い方をもう一度見る", comment: ""), systemImage: "questionmark.circle")
-                }
-                Button {
-                    hideFirstRunGuide = false
-                } label: {
-                    Label(NSLocalizedString("はじめてガイドを再表示", comment: ""), systemImage: "sparkles")
                 }
                 NavigationLink(NSLocalizedString("プライバシーポリシー", comment: "")) { PrivacyPolicyView() }
                 LabeledRow(title: NSLocalizedString("バージョン", comment: ""), value: "\(AppConfig.marketingVersion) (\(AppConfig.buildNumber))")
