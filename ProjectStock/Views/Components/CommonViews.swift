@@ -1,6 +1,8 @@
 import SwiftUI
 import UIKit
 import MessageUI
+import UniformTypeIdentifiers
+import LinkPresentation
 
 /// Generic empty-state placeholder.
 struct EmptyStateView: View {
@@ -73,12 +75,50 @@ struct MultilineTextField: View {
     }
 }
 
+/// Supplies an exported file to the share sheet WITH its concrete type (UTI)
+/// and a display name. Passing a bare `URL` leaves AirDrop to infer the type,
+/// which fails intermittently ("AirDropを実行できませんでした") for files in the
+/// app's temp directory; declaring the type up front makes the hand-off to
+/// AirDrop / Files / Mail reliable.
+final class FileShareItemSource: NSObject, UIActivityItemSource {
+    let url: URL
+    init(url: URL) { self.url = url }
+
+    func activityViewControllerPlaceholderItem(_ controller: UIActivityViewController) -> Any { url }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                itemForActivityType activityType: UIActivity.ActivityType?) -> Any? { url }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
+        (UTType(filenameExtension: url.pathExtension) ?? .data).identifier
+    }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
+        url.deletingPathExtension().lastPathComponent
+    }
+
+    func activityViewControllerLinkMetadata(_ controller: UIActivityViewController) -> LPLinkMetadata? {
+        let metadata = LPLinkMetadata()
+        metadata.title = url.lastPathComponent
+        metadata.originalURL = url
+        return metadata
+    }
+}
+
 /// `UIActivityViewController` wrapper for sharing exported files (spec §16:
-/// files come from a temp directory).
+/// files come from a temp directory). File URLs are wrapped in a
+/// `FileShareItemSource` so their type is declared (reliable AirDrop); other
+/// items (e.g. an invitation string) pass through unchanged.
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        let activityItems: [Any] = items.map { item in
+            if let url = item as? URL, url.isFileURL { return FileShareItemSource(url: url) }
+            return item
+        }
+        return UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
     }
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
