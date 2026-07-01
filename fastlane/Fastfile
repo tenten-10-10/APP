@@ -155,7 +155,7 @@ platform :ios do
       app_version:           app_version,
       build_number:          latest_build.to_s,
       submit_for_review:     true,
-      automatic_release:     false,   # release manually after approval
+      automatic_release:     true,    # auto-release to the App Store on approval
       force:                 true,    # skip the interactive HTML preview (CI)
       skip_binary_upload:    true,    # the build comes from the `beta` lane
       skip_screenshots:      true,    # screenshots are already uploaded by hand on
