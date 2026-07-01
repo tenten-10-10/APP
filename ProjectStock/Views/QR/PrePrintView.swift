@@ -46,6 +46,13 @@ struct PrePrintView: View {
     }
     private var capacity: (columns: Int, rows: Int, perPage: Int) { sheetOptions.capacity }
 
+    private var capacityFooter: String {
+        let cap = capacity
+        let pages = max(1, Int((count / Double(cap.perPage)).rounded(.up)))
+        return String(format: NSLocalizedString("この設定だと1ページに %d 枚（%d×%d）並びます。%d 枚だと %d ページになります。", comment: ""),
+                      cap.perPage, cap.columns, cap.rows, Int(count), pages)
+    }
+
     var body: some View {
         NavigationView {
             Form {
@@ -59,7 +66,7 @@ struct PrePrintView: View {
                     }
                     .padding(.vertical, 2)
                 }
-                Section(NSLocalizedString("枚数", comment: "")) {
+                Section {
                     Stepper(value: $count, in: 1...500, step: 1) {
                         Text(String(format: NSLocalizedString("%d 枚のサンプル用QRを作成", comment: ""), Int(count)))
                     }
@@ -70,11 +77,10 @@ struct PrePrintView: View {
                               systemImage: "square.grid.3x3.fill")
                     }
                     .accessibilityIdentifier("fillPageButton")
+                } header: {
+                    Text(NSLocalizedString("枚数", comment: ""))
                 } footer: {
-                    Text(String(format: NSLocalizedString("この設定だと1ページに %d 枚（%d×%d）並びます。%d 枚だと %d ページになります。", comment: ""),
-                                capacity.perPage, capacity.columns, capacity.rows,
-                                Int(count), max(1, Int(ceil(count / Double(capacity.perPage))))))
-                        .font(.caption2)
+                    Text(capacityFooter).font(.caption2)
                 }
                 Section(NSLocalizedString("レイアウト", comment: "")) {
                     Picker(NSLocalizedString("用紙", comment: ""), selection: $paper) {
@@ -92,7 +98,7 @@ struct PrePrintView: View {
                     .pickerStyle(.segmented)
                     Toggle(NSLocalizedString("コードを文字で併記", comment: ""), isOn: $showCaption)
                 }
-                Section(NSLocalizedString("ラベルシート調整", comment: "")) {
+                Section {
                     VStack(alignment: .leading) {
                         Text(String(format: NSLocalizedString("外側の余白: %d mm", comment: ""), Int(marginMM)))
                         Slider(value: $marginMM, in: 0...25, step: 1)
@@ -101,6 +107,8 @@ struct PrePrintView: View {
                         Text(String(format: NSLocalizedString("ラベル間隔: %d mm", comment: ""), Int(spacingMM)))
                         Slider(value: $spacingMM, in: 0...20, step: 1)
                     }
+                } header: {
+                    Text(NSLocalizedString("ラベルシート調整", comment: ""))
                 } footer: {
                     Text(NSLocalizedString("お使いのラベルシートに合わせて、余白・間隔・ラベルサイズを調整してください。トンボを目印に貼り付け・カットできます。", comment: ""))
                         .font(.caption2)
