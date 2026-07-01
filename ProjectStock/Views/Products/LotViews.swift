@@ -164,14 +164,13 @@ struct LotDetailView: View {
             }
 
             Section(NSLocalizedString("QRラベル", comment: "")) {
+                if lot.activeLabels.isEmpty {
+                    Text(NSLocalizedString("空のQRをスキャンしてこのロットに割り当てると、QRで管理できます。", comment: ""))
+                        .font(.caption).foregroundColor(.secondary)
+                }
                 ForEach(lot.activeLabels) { label in
                     NavigationLink(destination: studio(for: label.code)) {
                         Label(label.code, systemImage: "qrcode")
-                    }
-                }
-                if canEdit {
-                    Button { createLabel() } label: {
-                        Label(NSLocalizedString("ラベルを作成", comment: ""), systemImage: "plus")
                     }
                 }
             }
@@ -207,12 +206,4 @@ struct LotDetailView: View {
         if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
     }
 
-    private func createLabel() {
-        let lotID = lot.objectID
-        let result = container.performWrite { ctx in
-            guard let l = try ctx.existingObject(with: lotID) as? StockUnit, let project = l.project else { return }
-            _ = try container.aliases.createAlias(for: .unit(l), in: project, context: ctx)
-        }
-        if case .failure(let err) = result { error = PresentableError(err) }
-    }
 }

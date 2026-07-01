@@ -162,7 +162,7 @@ struct ProductDetailView: View {
             if product.labelArray.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(NSLocalizedString("QRラベルはまだありません", comment: "")).font(.subheadline)
-                    Text(NSLocalizedString("QRラベルを作ってこの製品に貼ると、スキャンするだけで入庫・出庫・移動ができます。", comment: ""))
+                    Text(NSLocalizedString("先に発行した空のQRを「スキャン」から読み取り、この製品に割り当ててください。以降はスキャンするだけで入庫・出庫・移動ができます。", comment: ""))
                         .font(.caption).foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -184,13 +184,6 @@ struct ProductDetailView: View {
                     }
                 }
             }
-            if canEdit {
-                Button { createLabel() } label: {
-                    Label(product.labelArray.isEmpty ? NSLocalizedString("QRラベルを作成", comment: "") : NSLocalizedString("QRラベルを追加", comment: ""),
-                          systemImage: "qrcode")
-                }
-                .accessibilityIdentifier("createLabelButton")
-            }
         } header: {
             Text(NSLocalizedString("QRラベル", comment: ""))
         } footer: {
@@ -211,7 +204,7 @@ struct ProductDetailView: View {
         } header: {
             Text(NSLocalizedString("個体", comment: ""))
         } footer: {
-            Text(NSLocalizedString("1つずつにQRラベルが付きます。QRをタップすると印刷・メール送信できます。", comment: ""))
+            Text(NSLocalizedString("個体にQRを付けるには、空のQRをスキャンして割り当てます。割り当て済みのQRをタップすると印刷・メール送信できます。", comment: ""))
         }
     }
 
@@ -348,15 +341,6 @@ struct ProductDetailView: View {
         }
     }
 
-    private func createLabel() {
-        let productID = product.objectID
-        let result = container.performWrite { ctx in
-            guard let p = try ctx.existingObject(with: productID) as? Product, let project = p.project else { return }
-            _ = try container.aliases.createAlias(for: .product(p), in: project, context: ctx)
-        }
-        if case .failure(let err) = result { error = PresentableError(err) }
-    }
-
     /// Create a new product like this one (same settings, no stock or history),
     /// then return to the list where the copy appears. Speeds up adding similar items.
     private func duplicateProduct() {
@@ -447,7 +431,7 @@ struct AddUnitSheet: View {
                             .accessibilityIdentifier("serialField")
                     }
                 } footer: {
-                    Text(NSLocalizedString("追加すると、1つずつにQRラベルが自動で発行されます。スキャンすればその1個がすぐ分かります。", comment: ""))
+                    Text(NSLocalizedString("個体にQRを付けるには、先に発行しておいた空のQRを「スキャン」から読み取って割り当ててください。", comment: ""))
                 }
             }
             .navigationTitle(NSLocalizedString("個体を追加", comment: ""))
@@ -477,8 +461,8 @@ struct AddUnitSheet: View {
                 let unit = StockUnit.make(in: ctx, serialNumber: label, product: p, project: proj, location: p.defaultLocation)
                 container.router.assignChild(unit, toSameStoreAs: proj, in: ctx)
                 container.inventory.registerUnit(unit, location: p.defaultLocation, actor: actor, in: ctx)
-                // 1 unit = 1 QR: bind a fresh QR label to this exact item.
-                _ = try container.aliases.createAlias(for: .unit(unit), in: proj, context: ctx)
+                // No QR is minted here. A label is attached only by scanning a
+                // pre-printed blank QR and assigning it to this unit.
             }
         }
         switch result {
