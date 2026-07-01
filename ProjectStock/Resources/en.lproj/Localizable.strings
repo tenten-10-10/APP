@@ -527,6 +527,13 @@
 "共有・招待" = "Share & invite";
 "共有・メンバーを招待" = "Share & invite members";
 
+/* Give-away (譲渡): permanently hand a unit out, no return tracking */
+"譲渡" = "Give away";
+"譲渡しますか？" = "Give this away?";
+"譲渡する" = "Give away";
+"譲渡（返却なし）" = "Given away (no return)";
+"返却なしで手放す操作です。この個体は在庫から外れます（貸出とは違い、返却の管理はしません）。" = "This hands the item off for good — it leaves your stock and, unlike a loan, isn't tracked for return.";
+
 /* Per-item QR link status + scan-to-assign from the detail screen */
 "QRを割り当て" = "Assign a QR";
 "QRあり" = "Has QR";

@@ -15,6 +15,7 @@ struct ProductDetailView: View {
     @State private var checkoutUnit: StockUnit?
     @State private var qrUnit: StockUnit?
     @State private var assignUnit: StockUnit?
+    @State private var giveAwayUnit: StockUnit?
     @State private var error: PresentableError?
     @State private var canEdit = true
 
@@ -64,6 +65,17 @@ struct ProductDetailView: View {
         .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
         .sheet(item: $qrUnit) { unit in unitQRStudio(unit) }
         .sheet(item: $assignUnit) { unit in AssignLabelToUnitSheet(unit: unit) }
+        .alert(NSLocalizedString("譲渡しますか？", comment: ""),
+               isPresented: Binding(get: { giveAwayUnit != nil },
+                                    set: { if !$0 { giveAwayUnit = nil } }),
+               presenting: giveAwayUnit) { unit in
+            Button(NSLocalizedString("譲渡する", comment: ""), role: .destructive) {
+                giveAway(unit); giveAwayUnit = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { giveAwayUnit = nil }
+        } message: { _ in
+            Text(NSLocalizedString("返却なしで手放す操作です。この個体は在庫から外れます（貸出とは違い、返却の管理はしません）。", comment: ""))
+        }
         .sheet(isPresented: $showingAddLot) {
             if let project = product.project { AddLotSheet(product: product, project: project) }
         }
@@ -260,7 +272,7 @@ struct ProductDetailView: View {
                     if unit.status == .available {
                         Button(NSLocalizedString("貸出", comment: "")) { checkoutUnit = unit }
                             .buttonStyle(.bordered).controlSize(.small)
-                        Button(NSLocalizedString("渡した", comment: "")) { giveAway(unit) }
+                        Button(NSLocalizedString("譲渡", comment: "")) { giveAwayUnit = unit }
                             .buttonStyle(.bordered).controlSize(.small).tint(.secondary)
                     } else if unit.status == .checkedOut {
                         Button(NSLocalizedString("返却", comment: "")) { unitAction(unit, .returned) }
@@ -399,13 +411,14 @@ struct ProductDetailView: View {
         container.refreshLoanNotifications()
     }
 
-    /// Hand a sample over for good (given to a client / consumed) — leaves on-hand stock.
+    /// Give this unit away for good (handed to a client / consumed) — it leaves
+    /// on-hand stock and is not tracked for return, unlike a loan.
     private func giveAway(_ unit: StockUnit) {
         let unitID = unit.objectID
         let actor = settings.effectiveOperatorName
         _ = container.performWrite { ctx in
             guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
-            container.inventory.retireUnit(u, actor: actor, note: NSLocalizedString("手渡し・配布", comment: ""), in: ctx)
+            container.inventory.retireUnit(u, actor: actor, note: NSLocalizedString("譲渡（返却なし）", comment: ""), in: ctx)
         }
         Haptics.success()
     }
