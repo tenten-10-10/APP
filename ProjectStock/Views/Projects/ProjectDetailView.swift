@@ -59,7 +59,7 @@ struct ProjectDetailView: View {
                 Menu {
                     if canEdit {
                         Button { showingEdit = true } label: { Label(NSLocalizedString("編集", comment: ""), systemImage: "pencil") }
-                        Button { showingPrePrint = true } label: { Label(NSLocalizedString("QRラベルを先に印刷", comment: ""), systemImage: "printer") }
+                        Button { showingPrePrint = true } label: { Label(NSLocalizedString("サンプル用QRをまとめて発行", comment: ""), systemImage: "printer") }
                         if project.isArchived {
                             Button { setArchived(false) } label: { Label(NSLocalizedString("アーカイブ解除", comment: ""), systemImage: "tray.and.arrow.up") }
                         } else {
@@ -122,6 +122,11 @@ struct ProjectDetailView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("addProductButton")
+
+                    Button { showingPrePrint = true } label: {
+                        Label(NSLocalizedString("サンプル用QRをまとめて発行", comment: ""), systemImage: "printer")
+                    }
+                    .accessibilityIdentifier("prePrintButton")
                 }
             }
             .frame(maxWidth: .infinity)

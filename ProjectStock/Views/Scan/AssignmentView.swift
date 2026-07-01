@@ -30,9 +30,15 @@ struct AssignmentView: View {
                 Section(NSLocalizedString("割当先", comment: "")) {
                     NavigationLink {
                         NewProductAssignView(alias: alias, project: project) { summary in assignedSummary = summary }
-                    } label: { Label(NSLocalizedString("新規製品を作成して割り当て", comment: ""), systemImage: "plus.app") }
-                        .accessibilityIdentifier("assignNewProduct")
+                    } label: {
+                        Label(NSLocalizedString("このサンプルを登録", comment: ""), systemImage: "plus.app.fill")
+                            .font(.body.weight(.semibold))
+                            .foregroundColor(Brand.primary)
+                    }
+                    .accessibilityIdentifier("assignNewProduct")
+                }
 
+                Section(NSLocalizedString("または既存へ割り当て", comment: "")) {
                     NavigationLink {
                         ExistingTargetPicker(title: NSLocalizedString("製品を選択", comment: ""), items: project.productArray.filter { !$0.isArchived },
                                              label: { $0.displayName }) { product in assign(.product(product)) }

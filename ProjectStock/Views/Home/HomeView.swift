@@ -89,6 +89,7 @@ struct HomeView: View {
     var body: some View {
         List {
             if showGuide { setupGuideSection }
+            registerSampleSection
             summaryCard
             if hasAlerts {
                 lowStockSection
@@ -170,6 +171,31 @@ struct HomeView: View {
             if let product = routedProduct { ProductDetailView(product: product) }
         } label: { EmptyView() }
         .opacity(0)
+    }
+
+    // MARK: - Register-a-sample entry (primary action)
+
+    private var registerSampleSection: some View {
+        Section {
+            NavigationLink(destination: ScanTabView()) {
+                HStack(spacing: 12) {
+                    Image(systemName: "qrcode.viewfinder")
+                        .font(.title2)
+                        .foregroundColor(Brand.primary)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(NSLocalizedString("サンプルを登録（スキャンして割当）", comment: ""))
+                            .font(.subheadline.weight(.semibold))
+                        Text(NSLocalizedString("スキャンしてサンプルを登録・割り当て", comment: ""))
+                            .font(.caption).foregroundColor(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 2)
+            }
+            .accessibilityIdentifier("registerSampleButton")
+        }
     }
 
     // MARK: - Summary card

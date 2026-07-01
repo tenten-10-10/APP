@@ -24,7 +24,7 @@ struct PrePrintView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Label(NSLocalizedString("これは何?", comment: ""), systemImage: "lightbulb.fill")
                             .font(.subheadline.weight(.semibold)).foregroundColor(Brand.primary)
-                        Text(NSLocalizedString("中身を決める前に、空のQRラベルをまとめて印刷できます。棚や箱に先に貼っておき、あとでスキャンして「これは○○」と割り当てます。", comment: ""))
+                        Text(NSLocalizedString("サンプルが届く前に、空のQRラベルをまとめて発行できます。サンプルや棚・箱に先に貼っておき、届いたらスキャンして「これは○○」と登録します。", comment: ""))
                             .font(.caption).foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -32,7 +32,7 @@ struct PrePrintView: View {
                 }
                 Section(NSLocalizedString("枚数", comment: "")) {
                     Stepper(value: $count, in: 1...200, step: 1) {
-                        Text(String(format: NSLocalizedString("%d 枚の空QRを作成", comment: ""), Int(count)))
+                        Text(String(format: NSLocalizedString("%d 枚のサンプル用QRを作成", comment: ""), Int(count)))
                     }
                 }
                 Section(NSLocalizedString("レイアウト", comment: "")) {
@@ -63,7 +63,7 @@ struct PrePrintView: View {
                         .font(.caption2)
                 }
             }
-            .navigationTitle(NSLocalizedString("QRラベルを先に印刷", comment: ""))
+            .navigationTitle(NSLocalizedString("サンプル用QRをまとめて発行", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("閉じる", comment: "")) { dismiss() } } }
             .sheet(item: $shareItem) { item in ShareSheet(items: [item.url]) }
