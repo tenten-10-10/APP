@@ -14,6 +14,7 @@ struct ProductDetailView: View {
     @State private var showingAddLot = false
     @State private var checkoutUnit: StockUnit?
     @State private var qrUnit: StockUnit?
+    @State private var assignUnit: StockUnit?
     @State private var error: PresentableError?
     @State private var canEdit = true
 
@@ -62,6 +63,7 @@ struct ProductDetailView: View {
         }
         .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
         .sheet(item: $qrUnit) { unit in unitQRStudio(unit) }
+        .sheet(item: $assignUnit) { unit in AssignLabelToUnitSheet(unit: unit) }
         .sheet(isPresented: $showingAddLot) {
             if let project = product.project { AddLotSheet(product: product, project: project) }
         }
@@ -228,12 +230,29 @@ struct ProductDetailView: View {
                     }
                 }
                 Spacer()
-                if unit.labelArray.first != nil {
+                if unit.activeLabels.first != nil {
                     Button { qrUnit = unit } label: {
-                        Image(systemName: "qrcode").font(.title2)
+                        VStack(spacing: 2) {
+                            Image(systemName: "qrcode").font(.title2)
+                            Text(NSLocalizedString("QRあり", comment: "")).font(.caption2)
+                        }
+                        .foregroundColor(Brand.primary)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text(NSLocalizedString("QRラベル", comment: "")))
+                    .accessibilityLabel(Text(NSLocalizedString("QRラベルを開く", comment: "")))
+                } else if canEdit {
+                    Button { assignUnit = unit } label: {
+                        VStack(spacing: 2) {
+                            Image(systemName: "qrcode.viewfinder").font(.title2)
+                            Text(NSLocalizedString("QRを割り当て", comment: "")).font(.caption2)
+                        }
+                        .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("assignUnitQRButton")
+                } else {
+                    Text(NSLocalizedString("QRなし", comment: ""))
+                        .font(.caption2).foregroundColor(.secondary)
                 }
             }
             if canEdit {
@@ -393,7 +412,7 @@ struct ProductDetailView: View {
 
     /// The QR studio for a single unit's bound label (1 unit = 1 QR).
     @ViewBuilder private func unitQRStudio(_ unit: StockUnit) -> some View {
-        if let code = unit.labelArray.first?.code {
+        if let code = (unit.activeLabels.first ?? unit.labelArray.first)?.code {
             NavigationView {
                 QRLabelStudioView(code: code,
                                   projectName: product.project?.displayName ?? "",

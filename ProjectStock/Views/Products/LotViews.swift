@@ -122,6 +122,7 @@ struct LotDetailView: View {
     @State private var amountText = "1"
     @State private var error: PresentableError?
     @State private var canEdit = true
+    @State private var showingAssign = false
 
     private var amount: Double { max(0, Double(amountText) ?? 0) }
 
@@ -167,6 +168,11 @@ struct LotDetailView: View {
                 if lot.activeLabels.isEmpty {
                     Text(NSLocalizedString("空のQRをスキャンしてこのロットに割り当てると、QRで管理できます。", comment: ""))
                         .font(.caption).foregroundColor(.secondary)
+                    if canEdit {
+                        Button { showingAssign = true } label: {
+                            Label(NSLocalizedString("QRを割り当て", comment: ""), systemImage: "qrcode.viewfinder")
+                        }
+                    }
                 }
                 ForEach(lot.activeLabels) { label in
                     NavigationLink(destination: studio(for: label.code)) {
@@ -185,6 +191,7 @@ struct LotDetailView: View {
         .navigationTitle(lot.lotNumberDisplay)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { canEdit = lot.project.map { container.sharing.canEdit($0) } ?? true }
+        .sheet(isPresented: $showingAssign) { AssignLabelToUnitSheet(unit: lot) }
         .errorAlert($error)
     }
 

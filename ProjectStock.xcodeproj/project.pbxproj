@@ -60,6 +60,7 @@
 		0DF4FCA787FDE8B6393F1D78 /* Scan */ = {
 			isa = PBXGroup;
 			children = (
+				42FF7FD7B9D7D4E01E70104F /* AssignLabelToUnitSheet.swift */,
 				1B335609141E0E1922C2CFB3 /* AssignmentView.swift */,
 				0FEFD5DC0C3AF231D99254FB /* CheckoutSheet.swift */,
 				82B44E869DF98EFC2C186126 /* ScanResultSheet.swift */,
@@ -100,6 +101,7 @@
 		1B335609141E0E1922C2CFB3 /* AssignmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AssignmentView.swift"; sourceTree = "<group>"; };
 		1B5DDC1C9ED081B1356F5630 /* WebBorrowInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebBorrowInboxView.swift"; sourceTree = "<group>"; };
 		1BB270D5DCB07FE4ED7F4CDB /* Product+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Product+CoreDataClass.swift"; sourceTree = "<group>"; };
+		1BDF34C4D59DE8D7B7EB3509 /* AssignLabelToUnitSheet.swift in Build */ = {isa = PBXBuildFile; fileRef = 42FF7FD7B9D7D4E01E70104F /* AssignLabelToUnitSheet.swift */; };
 		1E159BE8968219A70B42C3AC /* ScanResultSheet.swift in Build */ = {isa = PBXBuildFile; fileRef = 82B44E869DF98EFC2C186126 /* ScanResultSheet.swift */; };
 		1E5E0121AE1A2DD71A0960F0 /* ProjectStockUITests.swift in Build */ = {isa = PBXBuildFile; fileRef = AD7BC2A2BF509346CF9A8A94 /* ProjectStockUITests.swift */; };
 		1EAF6B1C573B98DE03975706 /* ProjectStock */ = {
@@ -267,6 +269,7 @@
 		};
 		4182146D1A2809FD1C7A57A3 /* StocktakeCoordinator.swift in Build */ = {isa = PBXBuildFile; fileRef = A87E251B91A8470096807D5D /* StocktakeCoordinator.swift */; };
 		4255A66D40383C2F4D16F847 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceController.swift"; sourceTree = "<group>"; };
+		42FF7FD7B9D7D4E01E70104F /* AssignLabelToUnitSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AssignLabelToUnitSheet.swift"; sourceTree = "<group>"; };
 		440DD1B347E291DD122560E2 /* ProjectShareSection.swift in Build */ = {isa = PBXBuildFile; fileRef = AB59A775F44D1A531E961EF4 /* ProjectShareSection.swift */; };
 		46F6956B05ACE1CF8B78B4D6 /* ProjectStockTests */ = {
 			isa = PBXGroup;
@@ -478,7 +481,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -756,7 +759,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -884,6 +887,7 @@
 				B1906FDB33638A1E64DF658C /* in Sources */,
 				08223C81EC70703CC3C01A92 /* in Sources */,
 				CAE05AB800C300B6C8321E79 /* in Sources */,
+				1BDF34C4D59DE8D7B7EB3509 /* in Sources */,
 				F5676A9A6858602DD3A284F3 /* in Sources */,
 				B53CBFDD304517E6686424E5 /* in Sources */,
 				1E159BE8968219A70B42C3AC /* in Sources */,
@@ -903,7 +907,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -937,7 +941,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -965,7 +969,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1025,7 +1029,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

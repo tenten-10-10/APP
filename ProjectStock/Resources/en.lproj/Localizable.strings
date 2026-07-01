@@ -522,3 +522,14 @@
 "先に発行した空のQRを「スキャン」から読み取り、この製品に割り当ててください。以降はスキャンするだけで入庫・出庫・移動ができます。" = "Scan one of your pre-printed blank QRs from the Scan tab and assign it to this product. After that, a scan is all you need to receive, issue, or move stock.";
 "個体にQRを付けるには、空のQRをスキャンして割り当てます。割り当て済みのQRをタップすると印刷・メール送信できます。" = "To attach a QR to an item, scan a blank QR and assign it. Tap an assigned QR to print or email it.";
 "空のQRをスキャンしてこのロットに割り当てると、QRで管理できます。" = "Scan a blank QR and assign it to this lot to manage it by QR.";
+
+/* Per-item QR link status + scan-to-assign from the detail screen */
+"QRを割り当て" = "Assign a QR";
+"QRあり" = "Has QR";
+"QRなし" = "No QR";
+"QRラベルを開く" = "Open QR label";
+"この個体に貼る空のQRをスキャンしてください" = "Scan the blank QR you'll stick on this item";
+"この端末ではスキャンできません。" = "This device can't scan.";
+"このQRは既に他の対象へ割り当て済みです。" = "This QR is already assigned to something else.";
+"このQRは無効化されているため使用できません。" = "This QR has been deactivated and can't be used.";
+"未登録のQRです。先に「空のQRをまとめて発行」で作成してください。" = "This QR isn't registered yet. Create blank QRs first with “Issue blank QRs in bulk.”";
