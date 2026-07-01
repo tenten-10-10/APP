@@ -523,6 +523,10 @@
 "個体にQRを付けるには、空のQRをスキャンして割り当てます。割り当て済みのQRをタップすると印刷・メール送信できます。" = "個体にQRを付けるには、空のQRをスキャンして割り当てます。割り当て済みのQRをタップすると印刷・メール送信できます。";
 "空のQRをスキャンしてこのロットに割り当てると、QRで管理できます。" = "空のQRをスキャンしてこのロットに割り当てると、QRで管理できます。";
 
+/* Sharing entry points (make multi-person sharing easy to find) */
+"共有・招待" = "共有・招待";
+"共有・メンバーを招待" = "共有・メンバーを招待";
+
 /* Per-item QR link status + scan-to-assign from the detail screen */
 "QRを割り当て" = "QRを割り当て";
 "QRあり" = "QRあり";

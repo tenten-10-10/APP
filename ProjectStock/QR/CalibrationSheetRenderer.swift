@@ -18,6 +18,11 @@ public struct CalibrationSheetRenderer {
     private let sampleSizesMM: [Double] = [8, 10, 12, 16, 20, 28]
     private let eccLevels: [QRErrorCorrectionLevel] = [.low, .medium, .quartile]
 
+    /// A4 page height in points. Text is positioned in the same top-down space
+    /// as the layout math, then flipped against this when handed to Core Text
+    /// (whose baseline placement in this PDF context is measured from the top).
+    private let pageHeight = PaperSize.a4.sizePoints.height
+
     public func render(code: String) -> Data {
         let page = PaperSize.a4.sizePoints
         let margin = CGFloat(QRMeasurement.millimetersToPoints(12))
@@ -172,7 +177,11 @@ public struct CalibrationSheetRenderer {
         ]
         let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attributes))
         context.saveGState()
-        context.textPosition = point
+        // Core Text places the baseline in this PDF context measured from the
+        // top of the page, while the fills (QR boxes / checkboxes) use the
+        // native bottom-up space. Flip the y so text lands next to the boxes it
+        // labels instead of collapsing to the bottom of the page.
+        context.textPosition = CGPoint(x: point.x, y: pageHeight - point.y)
         context.textMatrix = .identity
         CTLineDraw(line, context)
         context.restoreGState()

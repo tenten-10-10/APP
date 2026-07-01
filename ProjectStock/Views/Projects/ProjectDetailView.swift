@@ -55,8 +55,23 @@ struct ProjectDetailView: View {
         .navigationTitle(project.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                // Dedicated, always-visible entry so sharing with others is easy
+                // to find (the 共有 tab alone is easy to miss on a narrow screen).
+                Button {
+                    withAnimation { segment = .share }
+                } label: {
+                    Image(systemName: "person.crop.circle.badge.plus")
+                }
+                .accessibilityLabel(Text(NSLocalizedString("共有・招待", comment: "")))
+                .accessibilityIdentifier("shareToolbarButton")
+
                 Menu {
+                    Button {
+                        withAnimation { segment = .share }
+                    } label: {
+                        Label(NSLocalizedString("共有・メンバーを招待", comment: ""), systemImage: "person.2.badge.plus")
+                    }
                     if canEdit {
                         Button { showingEdit = true } label: { Label(NSLocalizedString("編集", comment: ""), systemImage: "pencil") }
                         Button { showingPrePrint = true } label: { Label(NSLocalizedString("サンプル用QRをまとめて発行", comment: ""), systemImage: "printer") }
@@ -90,7 +105,12 @@ struct ProjectDetailView: View {
         VStack(spacing: 10) {
             HStack {
                 Circle().fill(project.color.color).frame(width: 12, height: 12)
-                SharePermissionBadge(permission: permission)
+                Button {
+                    withAnimation { segment = .share }
+                } label: {
+                    SharePermissionBadge(permission: permission)
+                }
+                .buttonStyle(.plain)
                 if project.isArchived {
                     Label(NSLocalizedString("アーカイブ済み", comment: ""), systemImage: "archivebox")
                         .font(.caption2).foregroundColor(.secondary)

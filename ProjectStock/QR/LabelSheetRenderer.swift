@@ -101,7 +101,7 @@ public struct LabelSheetRenderer {
 
             if options.showCaption, let caption = item.caption {
                 let captionRect = CGRect(x: cellX, y: cellBottomY, width: cellWidth, height: captionHeight)
-                QRVectorPDFRenderer.drawCaption(caption, in: captionRect, context: ctx)
+                QRVectorPDFRenderer.drawCaption(caption, in: captionRect, context: ctx, contextHeight: page.height)
             }
         }
 
