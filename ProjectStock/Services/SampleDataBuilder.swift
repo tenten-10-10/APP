@@ -23,7 +23,7 @@ struct SampleDataBuilder {
     func makeSampleProject(in context: NSManagedObjectContext,
                            owner: String = NSLocalizedString("サンプル担当者", comment: "")) throws -> Project {
         let project = projects.createProject(name: NSLocalizedString("サンプル工房", comment: ""),
-                                             ownerDisplayName: owner, color: .teal, isSample: true,
+                                             ownerDisplayName: owner, color: .olive, isSample: true,
                                              in: context)
         project.note = NSLocalizedString("動作確認用のサンプルデータです。いつでも削除できます。", comment: "")
 
@@ -158,7 +158,7 @@ struct SampleDataBuilder {
     /// 製造・整備（工場）— 数量在庫＋工具貸出、低在庫バッジ。
     private func makeFactory(owner: String, in ctx: NSManagedObjectContext) -> Project {
         let p = projects.createProject(name: NSLocalizedString("第一工場 整備課", comment: ""),
-                                       ownerDisplayName: owner, color: .teal, isSample: true, in: ctx)
+                                       ownerDisplayName: owner, color: .gray, isSample: true, in: ctx)
         p.note = NSLocalizedString("部品在庫と工具の貸出をQRで管理。", comment: "")
         let wh = makeLocation(NSLocalizedString("資材倉庫", comment: ""), .site, in: p, context: ctx)
         let rack = makeLocation(NSLocalizedString("ラックB", comment: ""), .shelf, parent: wh, in: p, context: ctx)
