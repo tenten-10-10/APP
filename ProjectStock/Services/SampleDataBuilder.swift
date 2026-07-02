@@ -22,10 +22,10 @@ struct SampleDataBuilder {
     @discardableResult
     func makeSampleProject(in context: NSManagedObjectContext,
                            owner: String = NSLocalizedString("サンプル担当者", comment: "")) throws -> Project {
-        let project = projects.createProject(name: NSLocalizedString("サンプル工房", comment: ""),
+        let project = projects.createProject(name: NSLocalizedString("お試し工房", comment: ""),
                                              ownerDisplayName: owner, color: .olive, isSample: true,
                                              in: context)
-        project.note = NSLocalizedString("動作確認用のサンプルデータです。いつでも削除できます。", comment: "")
+        project.note = NSLocalizedString("使い方確認用のお試しデータです。設定またはこの画面上部からいつでも削除できます。", comment: "")
 
         // Locations
         let warehouse = makeLocation(NSLocalizedString("倉庫A", comment: ""), .site, in: project, context: context)

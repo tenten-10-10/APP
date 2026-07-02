@@ -10,10 +10,18 @@ struct SettingsView: View {
     @State private var deviceName = DeviceIdentity.shared.displayName
     @State private var shareItem: ShareableFile?
     @State private var confirmingExport = false
+    @State private var confirmingDemoDelete = false
     @State private var showTutorial = false
     @State private var error: PresentableError?
     @State private var infoAlert: String?
     @AppStorage("hideFirstRunGuide") private var hideFirstRunGuide = false
+
+    // Demo (お試し) projects, so the delete row only shows when there are any.
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Project.createdAt, ascending: true)],
+        predicate: NSPredicate(format: "isSample == YES"),
+        animation: .default
+    ) private var demoProjects: FetchedResults<Project>
 
     var body: some View {
         Form {
@@ -82,14 +90,29 @@ struct SettingsView: View {
                 Text(NSLocalizedString("QRを読み取った人が、アプリなしでWebフォームから氏名・期間・貸出先を記入して借用を申請できます。届いた申請はここで確認できます。", comment: ""))
             }
 
-            Section(NSLocalizedString("データ", comment: "")) {
+            Section {
                 Button {
                     createSample()
                 } label: {
-                    Label(NSLocalizedString("サンプルデータを作成", comment: ""), systemImage: "wand.and.stars")
+                    Label(NSLocalizedString("お試しデータを作成", comment: ""), systemImage: "wand.and.stars")
+                }
+                if !demoProjects.isEmpty {
+                    Button(role: .destructive) {
+                        confirmingDemoDelete = true
+                    } label: {
+                        Label(NSLocalizedString("お試しデータを削除", comment: ""), systemImage: "trash")
+                            .foregroundColor(.red)
+                    }
+                    .accessibilityIdentifier("deleteDemoDataButton")
                 }
                 Button { confirmingExport = true } label: {
                     Label(NSLocalizedString("データを書き出す (JSON)", comment: ""), systemImage: "square.and.arrow.up")
+                }
+            } header: {
+                Text(NSLocalizedString("データ", comment: ""))
+            } footer: {
+                if !demoProjects.isEmpty {
+                    Text(NSLocalizedString("お試しデータは使い方を確認するための架空のデータです。削除しても、自分で作成したプロジェクトには影響しません。", comment: ""))
                 }
             }
 
@@ -105,6 +128,12 @@ struct SettingsView: View {
             }
         }
         .navigationTitle(NSLocalizedString("設定", comment: ""))
+        .alert(NSLocalizedString("お試しデータを削除しますか？", comment: ""), isPresented: $confirmingDemoDelete) {
+            Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteDemoData() }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("お試し用プロジェクトと、その中の製品・QRラベル・履歴がすべて削除されます。自分で作成したプロジェクトには影響しません。", comment: ""))
+        }
         .alert(NSLocalizedString("データを書き出しますか？", comment: ""), isPresented: $confirmingExport) {
             Button(NSLocalizedString("書き出す", comment: "")) { exportData() }
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
@@ -134,8 +163,26 @@ struct SettingsView: View {
         switch result {
         case .success:
             infoAlert = existed
-                ? NSLocalizedString("サンプルデータは既に作成済みです", comment: "")
-                : NSLocalizedString("サンプルデータを作成しました", comment: "")
+                ? NSLocalizedString("お試しデータは既に作成済みです", comment: "")
+                : NSLocalizedString("お試しデータを作成しました", comment: "")
+        case .failure(let err): error = PresentableError(err)
+        }
+    }
+
+    /// Delete every demo (お試し) project. The Core Data model cascades from
+    /// Project to its folders/products/units/labels/events, so this removes the
+    /// demo data completely without touching user-created projects.
+    private func deleteDemoData() {
+        let result = container.performWrite { ctx in
+            let req: NSFetchRequest<Project> = Project.fetchRequest()
+            req.predicate = NSPredicate(format: "isSample == YES")
+            for project in try ctx.fetch(req) { ctx.delete(project) }
+        }
+        switch result {
+        case .success:
+            // Starting real operation now — bring the getting-started guide back.
+            hideFirstRunGuide = false
+            infoAlert = NSLocalizedString("お試しデータを削除しました", comment: "")
         case .failure(let err): error = PresentableError(err)
         }
     }

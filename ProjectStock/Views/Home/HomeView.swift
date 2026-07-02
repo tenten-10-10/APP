@@ -49,6 +49,8 @@ struct HomeView: View {
     private static let anyLabelRequest: NSFetchRequest<CodeAlias> = {
         let request: NSFetchRequest<CodeAlias> = CodeAlias.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \CodeAlias.createdAt, ascending: false)]
+        // Demo (お試し) labels don't count as the user's own setup progress.
+        request.predicate = NSPredicate(format: "project.isSample == NO")
         request.fetchLimit = 1
         return request
     }()
@@ -80,9 +82,14 @@ struct HomeView: View {
 
     // MARK: - First-run guide
 
-    private var hasProject: Bool { !projects.isEmpty }
+    /// The user's own projects. Demo (お試し) data is excluded everywhere the
+    /// guide or the pre-print hero reasons about setup progress, so trying the
+    /// demo never masks the real getting-started steps — and blank QRs minted
+    /// from Home never land inside demo data that will later be deleted.
+    private var realProjects: [Project] { projects.filter { !$0.isSample } }
+    private var hasProject: Bool { !realProjects.isEmpty }
     private var hasBlankLabel: Bool { !anyLabel.isEmpty }
-    private var hasProduct: Bool { !products.isEmpty }
+    private var hasProduct: Bool { products.contains { $0.project?.isSample != true } }
     // Sample-first flow: ① プロジェクト → ② 空QRを印刷して貼る → ③ スキャンして登録.
     private var setupComplete: Bool { hasProject && hasBlankLabel && hasProduct }
     private var showGuide: Bool { !hideSetupGuide && !setupComplete }
@@ -90,10 +97,10 @@ struct HomeView: View {
     /// Entry point for the "print blank QR labels" hero action. A project is
     /// required to mint codes, so bootstrap or disambiguate one first.
     private func startPrePrint() {
-        if projects.isEmpty {
+        if realProjects.isEmpty {
             showCreateProjectForPrePrint = true
-        } else if projects.count == 1 {
-            prePrintProject = projects.first
+        } else if realProjects.count == 1 {
+            prePrintProject = realProjects.first
         } else {
             showProjectPicker = true
         }
@@ -145,7 +152,7 @@ struct HomeView: View {
         }
         .confirmationDialog(NSLocalizedString("どのプロジェクトの空QRを印刷しますか？", comment: ""),
                             isPresented: $showProjectPicker, titleVisibility: .visible) {
-            ForEach(projects) { project in
+            ForEach(realProjects) { project in
                 Button(project.displayName) { prePrintProject = project }
             }
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}

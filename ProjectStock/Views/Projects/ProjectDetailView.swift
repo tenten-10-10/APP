@@ -3,6 +3,7 @@ import SwiftUI
 struct ProjectDetailView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var project: Project
 
     enum Segment: String, CaseIterable, Identifiable {
@@ -27,13 +28,16 @@ struct ProjectDetailView: View {
     @State private var newFolderName = ""
     @State private var showingEdit = false
     @State private var showingPrePrint = false
+    @State private var confirmingDemoDelete = false
     @State private var error: PresentableError?
+    @AppStorage("hideFirstRunGuide") private var hideFirstRunGuide = false
 
     private var canEdit: Bool { permission.canEdit }
 
     var body: some View {
         VStack(spacing: 0) {
             header
+            if project.isSample { demoBanner }
             Picker("", selection: $segment) {
                 ForEach(Segment.allCases) { Text($0.title).tag($0) }
             }
@@ -96,7 +100,57 @@ struct ProjectDetailView: View {
             Button(NSLocalizedString("作成", comment: "")) { addFolder() }
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { newFolderName = "" }
         }
+        .alert(NSLocalizedString("お試しデータを削除しますか？", comment: ""), isPresented: $confirmingDemoDelete) {
+            Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteDemoProject() }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("お試し用プロジェクトと、その中の製品・QRラベル・履歴がすべて削除されます。自分で作成したプロジェクトには影響しません。", comment: ""))
+        }
         .errorAlert($error)
+    }
+
+    // MARK: - Demo data banner
+
+    /// Shown only on the seeded demo (お試し) project so users always know this
+    /// data is disposable — and can dispose of it right here when they start
+    /// operating for real.
+    private var demoBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .foregroundColor(Brand.primary)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(NSLocalizedString("これはお試しデータです", comment: ""))
+                    .font(.caption.weight(.semibold))
+                Text(NSLocalizedString("使い方の確認用。実運用を始めるときは削除できます。", comment: ""))
+                    .font(.caption2).foregroundColor(.secondary)
+            }
+            Spacer()
+            Button(NSLocalizedString("削除", comment: "")) { confirmingDemoDelete = true }
+                .font(.caption.weight(.semibold))
+                .foregroundColor(.red)
+                .accessibilityIdentifier("deleteDemoProjectButton")
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(Brand.primary.opacity(0.08)))
+        .padding(.horizontal)
+        .padding(.bottom, 6)
+    }
+
+    /// Pop first, delete after the pop animation: deleting the object out from
+    /// under this pushed view would fault `@ObservedObject project` mid-render.
+    private func deleteDemoProject() {
+        let id = project.objectID
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            _ = container.performWrite { ctx in
+                guard let p = try ctx.existingObject(with: id) as? Project else { return }
+                ctx.delete(p)
+            }
+            // Starting real operation now — bring the getting-started guide back.
+            hideFirstRunGuide = false
+        }
     }
 
     // MARK: - Header

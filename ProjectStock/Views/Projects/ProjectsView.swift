@@ -157,7 +157,7 @@ struct ProjectsView: View {
                 Text(NSLocalizedString("最初のプロジェクトを作成", comment: ""))
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
-                Text(NSLocalizedString("在庫を整理するプロジェクトを作成するか、サンプルで使い方を試してみましょう。", comment: ""))
+                Text(NSLocalizedString("在庫を整理するプロジェクトを作成するか、お試しデータで使い方を見てみましょう。", comment: ""))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -175,7 +175,7 @@ struct ProjectsView: View {
                 Button {
                     createSample()
                 } label: {
-                    Label(NSLocalizedString("サンプルを生成", comment: ""), systemImage: "wand.and.stars")
+                    Label(NSLocalizedString("お試しデータを作成", comment: ""), systemImage: "wand.and.stars")
                 }
                 .font(.subheadline.weight(.medium))
             }
@@ -200,7 +200,7 @@ struct ProjectsView: View {
                     Button {
                         createSample()
                     } label: {
-                        Label(NSLocalizedString("サンプルを生成", comment: ""), systemImage: "wand.and.stars")
+                        Label(NSLocalizedString("お試しデータを作成", comment: ""), systemImage: "wand.and.stars")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -216,13 +216,13 @@ struct ProjectsView: View {
 
     private func createSample() {
         if projects.contains(where: { $0.isSample }) {
-            infoAlert = NSLocalizedString("サンプルデータは既に作成済みです", comment: ""); return
+            infoAlert = NSLocalizedString("お試しデータは既に作成済みです", comment: ""); return
         }
         let result = container.performWrite { ctx in
             _ = try container.sampleData.makeSampleProject(in: ctx, owner: settings.effectiveOperatorName)
         }
         switch result {
-        case .success: infoAlert = NSLocalizedString("サンプルデータを作成しました", comment: "")
+        case .success: infoAlert = NSLocalizedString("お試しデータを作成しました", comment: "")
         case .failure(let err): error = PresentableError(err)
         }
     }
@@ -298,7 +298,7 @@ private struct ProjectRow: View {
                     }
                     Text(project.displayName).font(.headline).lineLimit(1)
                     if project.isSample {
-                        Text(NSLocalizedString("サンプル", comment: ""))
+                        Text(NSLocalizedString("お試し", comment: ""))
                             .font(.caption2).padding(.horizontal, 5).padding(.vertical, 1)
                             .background(Capsule().fill(Color(.tertiarySystemFill)))
                     }

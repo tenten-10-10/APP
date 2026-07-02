@@ -160,7 +160,7 @@ struct OnboardingView: View {
                     if creatingSample {
                         ProgressView()
                     } else {
-                        Text(NSLocalizedString("サンプルデータで試す", comment: ""))
+                        Text(NSLocalizedString("お試しデータで見てみる", comment: ""))
                     }
                 }
                 .font(.subheadline.weight(.medium))

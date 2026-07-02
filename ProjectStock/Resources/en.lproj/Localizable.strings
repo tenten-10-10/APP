@@ -572,3 +572,20 @@
 "チームで共有" = "Share with your team";
 "プロジェクトは iCloud でチームと共有。ラベルは PDF などで書き出して、まとめて印刷できます。" = "Share projects with your team via iCloud. Export labels as PDF and print them in bulk.";
 "サンプルや備品を、QRコードで手早く管理。どこにあるか・誰が借りているかがひと目でわかります。" = "Manage samples and gear quickly with QR codes. See at a glance where things are and who has borrowed them.";
+
+/* 1.1.0 Demo data separation & deletion */
+"お試しデータを作成" = "Create demo data";
+"お試しデータを削除" = "Delete demo data";
+"お試しデータを削除しますか？" = "Delete the demo data?";
+"お試し用プロジェクトと、その中の製品・QRラベル・履歴がすべて削除されます。自分で作成したプロジェクトには影響しません。" = "The demo project and all products, QR labels and history inside it will be deleted. Projects you created yourself are not affected.";
+"お試しデータを削除しました" = "Demo data deleted";
+"お試しデータは既に作成済みです" = "Demo data already exists";
+"お試しデータを作成しました" = "Demo data created";
+"お試しデータは使い方を確認するための架空のデータです。削除しても、自分で作成したプロジェクトには影響しません。" = "Demo data is fictional data for exploring the app. Deleting it does not affect projects you created yourself.";
+"お試し" = "Demo";
+"これはお試しデータです" = "This is demo data";
+"使い方の確認用。実運用を始めるときは削除できます。" = "For exploring the app. Delete it when you start for real.";
+"お試しデータで見てみる" = "Explore with demo data";
+"在庫を整理するプロジェクトを作成するか、お試しデータで使い方を見てみましょう。" = "Create a project to organize your stock, or explore how it works with demo data.";
+"お試し工房" = "Demo Workshop";
+"使い方確認用のお試しデータです。設定またはこの画面上部からいつでも削除できます。" = "Demo data for exploring the app. You can delete it anytime from Settings or the banner at the top of this screen.";
