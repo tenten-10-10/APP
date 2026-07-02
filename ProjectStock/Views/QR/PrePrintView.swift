@@ -51,12 +51,14 @@ struct PrePrintView: View {
     }
     private var capacity: (columns: Int, rows: Int, perPage: Int) { sheetOptions.capacity }
 
-    /// How many distinct codes the fill-the-page button should mint so that
-    /// 種類 × 部数 fits one page (120 slots / 10 copies → 12 kinds).
-    private var fillCounts: (kinds: Int, total: Int) {
-        let copiesEach = max(1, Int(copies))
+    /// What the fill-the-page button should set so that 種類 × 部数 fits one
+    /// page (120 slots / 10 copies → 12 kinds). Copies are clamped to the page
+    /// capacity: with big labels a page may hold fewer slots than the copies
+    /// stepper allows, and the button must never promise more than one page.
+    private var fillCounts: (kinds: Int, copiesEach: Int, total: Int) {
+        let copiesEach = min(max(1, Int(copies)), max(1, capacity.perPage))
         let kinds = max(1, capacity.perPage / copiesEach)
-        return (kinds, kinds * copiesEach)
+        return (kinds, copiesEach, kinds * copiesEach)
     }
 
     private var capacityFooter: String {
@@ -96,7 +98,9 @@ struct PrePrintView: View {
                     }
                     .accessibilityIdentifier("copiesStepper")
                     Button {
-                        count = Double(fillCounts.kinds)
+                        let fill = fillCounts
+                        count = Double(fill.kinds)
+                        copies = Double(fill.copiesEach)
                     } label: {
                         Label(String(format: NSLocalizedString("%@いっぱいに敷き詰める（合計 %d 枚）", comment: ""),
                                      paper.localizedTitle, fillCounts.total),
