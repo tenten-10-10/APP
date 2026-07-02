@@ -18,6 +18,11 @@ on:
           - beta
           - release
           - produce_app
+  # workflow_dispatch はデフォルトブランチにファイルが乗るまで API から呼べないため、
+  # .testflight-lane（1行にレーン名: produce_app / beta / release）の push でも発火する。
+  push:
+    paths:
+      - ".testflight-lane"
 
 concurrency:
   group: plotname-testflight-${{ github.ref }}
@@ -30,6 +35,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # 実行するレーンを決定: workflow_dispatch なら入力、push なら .testflight-lane の1行目。
+      - name: Resolve lane
+        id: lane
+        run: |
+          LANE="${{ github.event.inputs.lane }}"
+          if [ -z "$LANE" ] && [ -f .testflight-lane ]; then
+            LANE="$(head -n1 .testflight-lane | tr -d '[:space:]')"
+          fi
+          case "$LANE" in
+            beta|release|produce_app) ;;
+            *) echo "Invalid or empty lane: '$LANE'"; exit 1 ;;
+          esac
+          echo "lane=$LANE" >> "$GITHUB_OUTPUT"
+          echo "Resolved lane: $LANE"
 
       - name: Select latest stable Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -74,8 +94,8 @@ jobs:
           rm -f Gemfile.lock
           bundle install
 
-      - name: Run fastlane lane (${{ inputs.lane }})
+      - name: Run fastlane lane (${{ steps.lane.outputs.lane }})
         working-directory: PlotNameAI/ios
         env:
           BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
-        run: bundle exec fastlane ${{ inputs.lane }}
+        run: bundle exec fastlane ${{ steps.lane.outputs.lane }}
