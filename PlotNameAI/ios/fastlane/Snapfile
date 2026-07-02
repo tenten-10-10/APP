@@ -2,9 +2,11 @@
 # One 6.9" iPhone + one 13" iPad in Japanese — the app is universal (iPhone
 # plot design + iPad name canvas), so both device families need screenshots.
 
+# 注意: デバイス名はランナーのXcodeに実在するシミュレータ名に合わせること。
+# （Xcode更新でシミュレータ一覧が変わり "not in list of available simulators" で失敗する）
 devices([
-  "iPhone 16 Pro Max",
-  "iPad Pro 13-inch (M4)"
+  "iPhone 17 Pro Max",
+  "iPad Pro 13-inch (M5)"
 ])
 languages(["ja-JP"])
 
