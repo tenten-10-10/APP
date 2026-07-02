@@ -8,7 +8,12 @@ struct PrePrintView: View {
     @Environment(\.dismiss) private var dismiss
     let project: Project
 
+    /// Number of DISTINCT codes to mint (種類). Every label is unique by
+    /// default — the sample workflow wants one QR per physical item.
     @State private var count: Double = 12
+    /// Copies printed of each code (部数). Kept at 1 for samples; raised when
+    /// several stickers of the SAME code are wanted (e.g. boxes of one lot).
+    @State private var copies: Double = 1
     @State private var labelSizeMM: Double = 16
     @State private var paper: PaperSize = .a4
     @State private var marginMM: Double = 8
@@ -46,11 +51,27 @@ struct PrePrintView: View {
     }
     private var capacity: (columns: Int, rows: Int, perPage: Int) { sheetOptions.capacity }
 
+    /// How many distinct codes the fill-the-page button should mint so that
+    /// 種類 × 部数 fits one page (120 slots / 10 copies → 12 kinds).
+    private var fillCounts: (kinds: Int, total: Int) {
+        let copiesEach = max(1, Int(copies))
+        let kinds = max(1, capacity.perPage / copiesEach)
+        return (kinds, kinds * copiesEach)
+    }
+
     private var capacityFooter: String {
         let cap = capacity
-        let pages = max(1, Int((count / Double(cap.perPage)).rounded(.up)))
-        return String(format: NSLocalizedString("この設定だと1ページに %d 枚（%d×%d）並びます。%d 枚だと %d ページになります。", comment: ""),
-                      cap.perPage, cap.columns, cap.rows, Int(count), pages)
+        let kinds = Int(count)
+        let copiesEach = Int(copies)
+        let total = kinds * copiesEach
+        let pages = max(1, Int((Double(total) / Double(cap.perPage)).rounded(.up)))
+        if copiesEach == 1 {
+            return String(format: NSLocalizedString("この設定だと1ページに %d 枚（%d×%d）並びます。%d 枚はすべて別々のQRです（%d ページ）。同じQRを複数枚（同じロットの箱に貼るなど）にしたい場合は「同じQRを◯枚ずつ」を増やせます。", comment: ""),
+                          cap.perPage, cap.columns, cap.rows, total, pages)
+        } else {
+            return String(format: NSLocalizedString("この設定だと1ページに %d 枚（%d×%d）並びます。%d 種類 × %d 枚ずつ = 合計 %d 枚（%d ページ）。同じQRは隣どうしに並びます。", comment: ""),
+                          cap.perPage, cap.columns, cap.rows, kinds, copiesEach, total, pages)
+        }
     }
 
     var body: some View {
@@ -68,12 +89,17 @@ struct PrePrintView: View {
                 }
                 Section {
                     Stepper(value: $count, in: 1...500, step: 1) {
-                        Text(String(format: NSLocalizedString("%d 枚のサンプル用QRを作成", comment: ""), Int(count)))
+                        Text(String(format: NSLocalizedString("%d 種類のQRを作成", comment: ""), Int(count)))
                     }
+                    Stepper(value: $copies, in: 1...20, step: 1) {
+                        Text(String(format: NSLocalizedString("同じQRを %d 枚ずつ", comment: ""), Int(copies)))
+                    }
+                    .accessibilityIdentifier("copiesStepper")
                     Button {
-                        count = Double(capacity.perPage)
+                        count = Double(fillCounts.kinds)
                     } label: {
-                        Label(String(format: NSLocalizedString("A4いっぱいに敷き詰める（%d枚）", comment: ""), capacity.perPage),
+                        Label(String(format: NSLocalizedString("%@いっぱいに敷き詰める（合計 %d 枚）", comment: ""),
+                                     paper.localizedTitle, fillCounts.total),
                               systemImage: "square.grid.3x3.fill")
                     }
                     .accessibilityIdentifier("fillPageButton")
@@ -138,17 +164,22 @@ struct PrePrintView: View {
     private func generate() {
         working = true
         let projectID = project.objectID
-        let n = Int(count)
+        let kinds = Int(count)
+        let copiesEach = max(1, Int(copies))
         var codes: [String] = []
         let writeResult = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: projectID) as? Project else { return }
-            let aliases = try container.aliases.createUnassignedBatch(count: n, in: p, context: ctx)
+            let aliases = try container.aliases.createUnassignedBatch(count: kinds, in: p, context: ctx)
             codes = aliases.map { $0.code }
         }
         if case .failure(let err) = writeResult { working = false; error = PresentableError(err); return }
 
         let options = sheetOptions
-        let entries: [(code: String, caption: String?)] = codes.map { (code: $0, caption: showCaption ? $0 : nil) }
+        // Copies of the same code are laid out consecutively so they sit next
+        // to each other on the sheet and are easy to cut as a group.
+        let entries: [(code: String, caption: String?)] = codes.flatMap { code in
+            Array(repeating: (code: code, caption: showCaption ? code : nil), count: copiesEach)
+        }
         let exportContext = QRExportService.ExportContext(projectName: project.displayName, targetName: "blank")
         do {
             let url = try container.qrExport.exportLabelSheet(codes: entries, options: options, context: exportContext)

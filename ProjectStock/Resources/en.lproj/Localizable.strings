@@ -596,3 +596,10 @@
 "タナミル_データ書き出し" = "Tanamiru_export";
 
 "タナミル_診断ログ" = "Tanamiru_diagnostics";
+
+/* 1.1.0 Blank QR: kinds × copies model */
+"%d 種類のQRを作成" = "Create %d distinct QR codes";
+"同じQRを %d 枚ずつ" = "%d copies of each QR";
+"%@いっぱいに敷き詰める（合計 %d 枚）" = "Fill the %@ sheet (%d labels total)";
+"この設定だと1ページに %d 枚（%d×%d）並びます。%d 枚はすべて別々のQRです（%d ページ）。同じQRを複数枚（同じロットの箱に貼るなど）にしたい場合は「同じQRを◯枚ずつ」を増やせます。" = "Fits %d labels per page (%d×%d). All %d labels are distinct QR codes (%d page(s)). Need several stickers of the same QR (e.g. boxes from one lot)? Increase \"copies of each QR\".";
+"この設定だと1ページに %d 枚（%d×%d）並びます。%d 種類 × %d 枚ずつ = 合計 %d 枚（%d ページ）。同じQRは隣どうしに並びます。" = "Fits %d labels per page (%d×%d). %d codes × %d copies each = %d labels (%d page(s)). Copies of the same QR are placed side by side.";
