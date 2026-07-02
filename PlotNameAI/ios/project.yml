@@ -16,6 +16,17 @@ settings:
     TARGETED_DEVICE_FAMILY: "1,2"   # iPhone + iPad（ユニバーサル）
     SWIFT_STRICT_CONCURRENCY: minimal
 
+# CI(xcodebuild)から使えるよう shared スキームを生成する。
+schemes:
+  PlotNameAI:
+    build:
+      targets:
+        PlotNameAI: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
 targets:
   PlotNameAI:
     type: application

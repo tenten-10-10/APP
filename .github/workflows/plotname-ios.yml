@@ -1,0 +1,64 @@
+name: PlotName AI iOS Build
+
+# PlotNameAI/ios のコンパイル検証。署名なしのシミュレータビルドなので
+# 証明書を消費しない（TestFlight とは別ワークフロー）。
+on:
+  pull_request:
+    paths:
+      - "PlotNameAI/ios/**"
+      - ".github/workflows/plotname-ios.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "PlotNameAI/ios/**"
+      - ".github/workflows/plotname-ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plotname-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: PlotNameAI/ios
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen & xcbeautify
+        run: brew install xcodegen xcbeautify
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (iOS Simulator, no signing)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project PlotNameAI.xcodeproj \
+            -scheme PlotNameAI \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tee build.log | xcbeautify --renderer github-actions || \
+            { echo '--- last 200 lines of raw log ---'; tail -n 200 build.log; exit 1; }
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plotname-ios-build-log
+          path: PlotNameAI/ios/build.log
