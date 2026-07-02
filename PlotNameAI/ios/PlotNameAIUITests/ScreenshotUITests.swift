@@ -8,14 +8,26 @@ import XCTest
 final class ScreenshotUITests: XCTestCase {
 
     private var app: XCUIApplication!
+    /// デバイス種別はテストプロセスの idiom で確実に判定する（UI要素の有無に依存しない）。
+    private let isPad = UIDevice.current.userInterfaceIdiom == .pad
 
     @MainActor
     override func setUpWithError() throws {
         continueAfterFailure = false
+        // iPad は 3 カラムを一望できる横向きで撮る。縦向きだとサイドバーが
+        // オーバーレイになり content に被るため、起動前に回転させておく。
+        if isPad {
+            XCUIDevice.shared.orientation = .landscapeLeft
+        }
         app = XCUIApplication()
         setupSnapshot(app)
         app.launchArguments += ["-screenshotMode"]
         app.launch()
+        if isPad {
+            // 起動後にも念押しで回転を確定させ、レイアウトを落ち着かせる。
+            XCUIDevice.shared.orientation = .landscapeLeft
+            sleep(2)
+        }
     }
 
     @MainActor
@@ -25,16 +37,11 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(sampleRow.waitForExistence(timeout: 25))
         sleep(2)
 
-        if isPadLayout {
+        if isPad {
             captureOnPad()
         } else {
             captureOnPhone(sampleRow: sampleRow)
         }
-    }
-
-    /// サイドバー（「作業」セクション）が見えていれば iPad の 3 カラム。
-    private var isPadLayout: Bool {
-        app.staticTexts["作業"].exists || app.staticTexts["現在のプロジェクト"].exists
     }
 
     // MARK: iPhone（スタック導線）
@@ -97,11 +104,7 @@ final class ScreenshotUITests: XCTestCase {
 
     @MainActor
     private func captureOnPad() {
-        // 横向きにすると 3 カラム（サイドバー｜中央｜インスペクタ）が常時表示になり、
-        // 縦向きで発生するサイドバーのオーバーレイ被りを避けられる（マーケ的にも映える）。
-        XCUIDevice.shared.orientation = .landscapeLeft
-        sleep(2)
-
+        // 横向き3カラム（サイドバー｜中央｜インスペクタ）は setUp で確定済み。
         // 分割ビュー全体（一覧＋キャンバス）。
         snapshot("01_Home")
 

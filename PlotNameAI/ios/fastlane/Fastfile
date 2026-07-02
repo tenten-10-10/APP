@@ -13,21 +13,27 @@ platform :ios do
   # have the Admin role to register bundle IDs / create apps).
   desc "Create the com.plotname.ai bundle ID + App Store Connect app record (idempotent)"
   lane :produce_app do
-    api_key = app_store_connect_api_key(
+    # NOTE: `produce` (create_app_online) does NOT accept an `api_key:` parameter.
+    # Instead we set the App Store Connect API token GLOBALLY here; produce (via
+    # Spaceship::ConnectAPI) picks it up automatically, so no Apple ID login is
+    # needed. The key must have the Admin role to register bundle IDs / create apps.
+    app_store_connect_api_key(
       key_id:       ENV.fetch("ASC_KEY_ID"),
       issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
-      key_filepath: ENV.fetch("ASC_KEY_PATH")
+      key_filepath: ENV.fetch("ASC_KEY_PATH"),
+      set_spaceship_token: true
     )
 
     # create_app_online == produce. language "ja" makes Japanese the primary
     # App Store locale (matches fastlane/metadata/ja). The SKU is internal-only
     # and never shown to users; it cannot be changed after creation.
+    # team_id is required so produce targets the correct Developer Portal team.
     produce(
-      api_key:        api_key,
       app_identifier: APP_ID,
       app_name:       "プロットネームAI",
       language:       "ja",
-      sku:            "plotname-ai-001"
+      sku:            "plotname-ai-001",
+      team_id:        ENV.fetch("TANAMIRU_TEAM_ID")
     )
 
     UI.success("App record for #{APP_ID} is ready on App Store Connect ✅")
