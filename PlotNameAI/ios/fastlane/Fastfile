@@ -27,8 +27,15 @@ platform :ios do
     # create_app_online == produce. language "ja" makes Japanese the primary
     # App Store locale (matches fastlane/metadata/ja). The SKU is internal-only
     # and never shown to users; it cannot be changed after creation.
-    # team_id is required so produce targets the correct Developer Portal team.
+    # team_id targets the correct Developer Portal team.
+    #
+    # NOTE on `username`: produce validates that a username OPTION is present
+    # even when authenticating via the App Store Connect API token (set above by
+    # set_spaceship_token). It errors "No value found for 'username'" otherwise.
+    # With the token set, this value is NOT used for an Apple-ID login — it only
+    # satisfies the config guard. Override with PRODUCE_USERNAME if desired.
     produce(
+      username:       ENV.fetch("PRODUCE_USERNAME", "appstoreconnect@api.key"),
       app_identifier: APP_ID,
       app_name:       "プロットネームAI",
       language:       "ja",
