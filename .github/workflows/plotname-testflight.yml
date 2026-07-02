@@ -1,0 +1,81 @@
+name: PlotName AI TestFlight
+
+# 手動実行のみ（Actions → "Run workflow"）。lane 入力で beta / release /
+# produce_app のいずれかを実行できます。
+# Note: no tag/push triggers on purpose. Cloud signing mints a new
+# distribution certificate per build and the Apple account previously hit its
+# cert cap, so automatic builds failed. Trigger a build manually only when you
+# actually need one (revoke stale certificates or set up match if you hit the cap).
+on:
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: "fastlane lane to run"
+        type: choice
+        required: true
+        default: beta
+        options:
+          - beta
+          - release
+          - produce_app
+
+concurrency:
+  group: plotname-testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fastlane:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # PlotNameAI.xcodeproj is not committed — it is generated from
+      # PlotNameAI/ios/project.yml (bundle id com.plotname.ai, shared scheme).
+      - name: Generate Xcode project
+        working-directory: PlotNameAI/ios
+        run: xcodegen generate
+
+      # Same App Store Connect API key secrets as the ProjectStock/タナミル
+      # TestFlight workflow — one Admin key serves every app on the team.
+      - name: Write App Store Connect API key (.p8)
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Write PlotNameAI/ios/fastlane/.env
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TANAMIRU_TEAM_ID: ${{ secrets.TANAMIRU_TEAM_ID }}
+        run: |
+          cat > PlotNameAI/ios/fastlane/.env <<EOF
+          ASC_KEY_ID=${ASC_KEY_ID}
+          ASC_ISSUER_ID=${ASC_ISSUER_ID}
+          ASC_KEY_PATH=${HOME}/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          TANAMIRU_TEAM_ID=${TANAMIRU_TEAM_ID}
+          EOF
+
+      # Reuse the root Gemfile (gem "fastlane") — no separate Gemfile for this app.
+      - name: Install Ruby dependencies
+        run: |
+          rm -f Gemfile.lock
+          bundle install
+
+      - name: Run fastlane lane (${{ inputs.lane }})
+        working-directory: PlotNameAI/ios
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
+        run: bundle exec fastlane ${{ inputs.lane }}

@@ -1,0 +1,170 @@
+default_platform(:ios)
+
+PROJECT = "PlotNameAI.xcodeproj"
+SCHEME  = "PlotNameAI"
+APP_ID  = "com.plotname.ai"
+
+platform :ios do
+  # One-time setup: register the bundle ID on the Developer Portal and create
+  # the app record on App Store Connect. Idempotent — produce skips anything
+  # that already exists, so it is safe to re-run.
+  #
+  # Uses the same App Store Connect API key as the build lanes (the key must
+  # have the Admin role to register bundle IDs / create apps).
+  desc "Create the com.plotname.ai bundle ID + App Store Connect app record (idempotent)"
+  lane :produce_app do
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    # create_app_online == produce. language "ja" makes Japanese the primary
+    # App Store locale (matches fastlane/metadata/ja). The SKU is internal-only
+    # and never shown to users; it cannot be changed after creation.
+    produce(
+      api_key:        api_key,
+      app_identifier: APP_ID,
+      app_name:       "プロットネームAI",
+      language:       "ja",
+      sku:            "plotname-ai-001"
+    )
+
+    UI.success("App record for #{APP_ID} is ready on App Store Connect ✅")
+  end
+
+  # Build a Release archive and upload it to TestFlight.
+  #
+  # Required environment variables (see fastlane/.env.example):
+  #   ASC_KEY_ID        App Store Connect API key id
+  #   ASC_ISSUER_ID     App Store Connect API issuer id
+  #   ASC_KEY_PATH      absolute path to the AuthKey_XXXX.p8 file
+  #   TANAMIRU_TEAM_ID  10-char Apple Developer Team ID (for code signing;
+  #                     same team/secret as the ProjectStock app)
+  #
+  # Cloud signing: -allowProvisioningUpdates + the API key let Xcode create the
+  # distribution certificate and provisioning profile automatically, so no
+  # certificates need to be installed beforehand.
+  #
+  # Cert-cap caveat: cloud signing mints a NEW distribution certificate per
+  # build until the account cap (2-3) is reached, after which builds fail.
+  # That is why the GitHub workflow is manual-dispatch only — run it when you
+  # actually need a build, and revoke stale certificates (or set up match)
+  # if you hit the cap.
+  #
+  # Prerequisite: the Xcode project must exist (`xcodegen generate` in
+  # PlotNameAI/ios) and the app record must exist (run `produce_app` once).
+  desc "Build and upload a new build to TestFlight"
+  lane :beta do
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    team_id = ENV.fetch("TANAMIRU_TEAM_ID")
+
+    # Next build number = highest already on TestFlight for this version + 1.
+    # Passed via xcargs so no file is mutated (the XcodeGen project pins
+    # CURRENT_PROJECT_VERSION in project.yml and has no agvtool setup).
+    next_build = latest_testflight_build_number(
+      api_key:        api_key,
+      app_identifier: APP_ID,
+      initial_build_number: 0
+    ) + 1
+
+    build_app(
+      project:          PROJECT,
+      scheme:           SCHEME,
+      configuration:    "Release",
+      export_method:    "app-store",
+      output_directory: "build",
+      clean:            true,
+      # Make the export step do automatic cloud signing explicitly (creates the
+      # app-store distribution profile via the Admin API key).
+      export_options: {
+        signingStyle: "automatic",
+        teamID:       team_id
+      },
+      # Authenticate xcodebuild for cloud signing with the App Store Connect API
+      # key. gym appends xcargs to BOTH the archive and the export invocations,
+      # so do NOT also set export_xcargs — that duplicates -authenticationKeyPath
+      # and makes xcodebuild fail with exit 64 (usage error).
+      xcargs: [
+        "-allowProvisioningUpdates",
+        "-authenticationKeyPath", ENV.fetch("ASC_KEY_PATH"),
+        "-authenticationKeyID", ENV.fetch("ASC_KEY_ID"),
+        "-authenticationKeyIssuerID", ENV.fetch("ASC_ISSUER_ID"),
+        "DEVELOPMENT_TEAM=#{team_id}",
+        "CURRENT_PROJECT_VERSION=#{next_build}"
+      ].join(" ")
+    )
+
+    upload_to_testflight(
+      api_key:                          api_key,
+      skip_waiting_for_build_processing: true,
+      distribute_external:              false
+    )
+
+    UI.success("Uploaded build #{next_build} to TestFlight 🚀")
+  end
+
+  # Push App Store metadata (text) and submit the latest processed build for
+  # App Store review. The binary itself is uploaded by the `beta` lane, so this
+  # lane uploads metadata only and then submits for review.
+  #
+  # Prerequisites that must be in place on App Store Connect first (these cannot
+  # be fully automated without assets / one-time answers):
+  #   * The app record exists (run the `produce_app` lane once).
+  #   * At least one build finished processing (run the `beta` lane).
+  #   * Screenshots for the required device sizes (add in ASC, or drop PNGs in
+  #     fastlane/screenshots/ja-JP and set skip_screenshots: false below).
+  #   * Real Support URL / Privacy Policy URL in fastlane/metadata/ja
+  #     (the committed values are placeholders — see fastlane/metadata/TODO_URLS.md).
+  #   * Age rating questionnaire answered once on App Store Connect.
+  #   * The 10 in-app purchases created + attached to the version (see
+  #     PlotNameAI/APP_STORE_CHECKLIST.md).
+  desc "Upload App Store metadata and submit the latest build for review"
+  lane :release do
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    deliver(
+      api_key:               api_key,
+      app_identifier:        APP_ID,
+      submit_for_review:     true,
+      automatic_release:     false,   # release manually after approval
+      force:                 true,    # skip the interactive HTML preview (CI)
+      skip_binary_upload:    true,    # the build comes from the `beta` lane
+      skip_screenshots:      false,   # upload the framed marketing screenshots
+      overwrite_screenshots: true,    # replace whatever is on the version
+      reject_if_possible:    true,    # if already in review, pull it back so the
+                                      # new screenshots/metadata can be applied + resubmitted
+      # Age rating is set once in App Store Connect (Apple's 2025 questionnaire
+      # added required keys that the old rating_config.json doesn't cover).
+      precheck_include_in_app_purchases: false,
+      submission_information: {
+        add_id_info_uses_idfa:                       false,
+        export_compliance_uses_encryption:           false,
+        content_rights_contains_third_party_content: false
+      }
+    )
+
+    UI.success("Submitted the latest build for App Store review 🚀")
+  end
+
+  # Capture RAW simulator screenshots only (no signing, no upload). The raw PNGs
+  # can be framed/captioned locally, then the finished marketing screenshots are
+  # uploaded via the `release` lane.
+  # See fastlane/Snapfile. NOTE: requires a UI test target with the snapshot
+  # helper (PlotNameAIUITests) — enable `only_testing` in the Snapfile once the
+  # target exists in project.yml.
+  desc "Capture raw simulator screenshots (frame/caption + upload happen later)"
+  lane :screenshots do
+    capture_screenshots # reads fastlane/Snapfile
+    UI.success("Captured raw screenshots 📸 — frame/caption locally, then upload via release")
+  end
+end
