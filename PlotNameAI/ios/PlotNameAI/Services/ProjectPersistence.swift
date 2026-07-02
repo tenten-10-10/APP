@@ -45,7 +45,9 @@ struct FileProjectPersistence: ProjectPersistence {
 
     let storeURL: URL
 
-    init(fileName: String = "projects.json") {
+    /// 保存先 URL を決めるだけなので MainActor 分離は不要。
+    /// （デフォルト引数式 `= FileProjectPersistence()` は非分離で評価されるため必須）
+    nonisolated init(fileName: String = "projects.json") {
         let dir = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first ?? FileManager.default.temporaryDirectory
