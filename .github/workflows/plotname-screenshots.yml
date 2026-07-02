@@ -74,6 +74,17 @@ jobs:
             echo "No screenshot changes."
           else
             git commit -m "スクショ: PlotName AI シミュレータ撮影結果 [skip ci]"
-            git pull --rebase origin "${{ github.ref_name }}" || true
-            git push origin "HEAD:${{ github.ref_name }}"
+            # bundle install が Gemfile.lock を書き換える等の未ステージ変更で
+            # rebase が拒否されるため、コミット済みのスクショ以外は破棄してから取り込む。
+            git checkout -- . 2>/dev/null || true
+            git clean -fd Gemfile.lock 2>/dev/null || true
+            # 競合に強い push: 失敗したら fetch→rebase→再push を数回試す。
+            for i in 1 2 3 4 5; do
+              git fetch origin "${{ github.ref_name }}"
+              git rebase "origin/${{ github.ref_name }}" || { git rebase --abort 2>/dev/null || true; }
+              if git push origin "HEAD:${{ github.ref_name }}"; then
+                echo "pushed screenshots"; break
+              fi
+              echo "push retry $i"; sleep 3
+            done
           fi

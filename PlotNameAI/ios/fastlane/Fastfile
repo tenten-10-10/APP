@@ -13,35 +13,58 @@ platform :ios do
   # have the Admin role to register bundle IDs / create apps).
   desc "Create the com.plotname.ai bundle ID + App Store Connect app record (idempotent)"
   lane :produce_app do
-    # NOTE: `produce` (create_app_online) does NOT accept an `api_key:` parameter.
-    # Instead we set the App Store Connect API token GLOBALLY here; produce (via
-    # Spaceship::ConnectAPI) picks it up automatically, so no Apple ID login is
-    # needed. The key must have the Admin role to register bundle IDs / create apps.
-    app_store_connect_api_key(
-      key_id:       ENV.fetch("ASC_KEY_ID"),
-      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
-      key_filepath: ENV.fetch("ASC_KEY_PATH"),
-      set_spaceship_token: true
-    )
-
-    # create_app_online == produce. language "ja" makes Japanese the primary
-    # App Store locale (matches fastlane/metadata/ja). The SKU is internal-only
-    # and never shown to users; it cannot be changed after creation.
-    # team_id targets the correct Developer Portal team.
+    # IMPORTANT: fastlane's `produce` action registers the bundle ID via the
+    # LEGACY Developer Portal client (Spaceship::Portal), which requires an
+    # Apple ID + password (+2FA) even when an App Store Connect API key is set.
+    # In API-key-only CI that fails with "Missing password ... non-interactive".
     #
-    # NOTE on `username`: produce validates that a username OPTION is present
-    # even when authenticating via the App Store Connect API token (set above by
-    # set_spaceship_token). It errors "No value found for 'username'" otherwise.
-    # With the token set, this value is NOT used for an Apple-ID login — it only
-    # satisfies the config guard. Override with PRODUCE_USERNAME if desired.
-    produce(
-      username:       ENV.fetch("PRODUCE_USERNAME", "appstoreconnect@api.key"),
-      app_identifier: APP_ID,
-      app_name:       "プロットネームAI",
-      language:       "ja",
-      sku:            "plotname-ai-001",
-      team_id:        ENV.fetch("TANAMIRU_TEAM_ID")
+    # So we bypass `produce` and talk to the App Store Connect API directly via
+    # Spaceship::ConnectAPI, which is 100% token-based (no Apple ID login).
+    require "spaceship"
+
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id:    ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      filepath:  File.absolute_path(ENV.fetch("ASC_KEY_PATH"))
     )
+    UI.message("Authenticated to App Store Connect via API key ✅")
+
+    app_name = "プロットネームAI"
+
+    # 1) Bundle ID (Developer Portal) — via ConnectAPI, token-only.
+    begin
+      bundle = Spaceship::ConnectAPI::BundleId.all.detect { |b| b.identifier == APP_ID }
+      if bundle
+        UI.success("Bundle ID #{APP_ID} already registered (#{bundle.id})")
+      else
+        bundle = Spaceship::ConnectAPI::BundleId.create(name: "PlotNameAI", identifier: APP_ID)
+        UI.success("Registered bundle ID #{APP_ID} (#{bundle.id})")
+      end
+    rescue => e
+      UI.error("Bundle ID step failed: #{e.class}: #{e.message}")
+      raise
+    end
+
+    # 2) App Store Connect app record (idempotent).
+    begin
+      app = Spaceship::ConnectAPI::App.find(APP_ID)
+      if app
+        UI.success("App #{APP_ID} already exists on App Store Connect (#{app.id})")
+      else
+        app = Spaceship::ConnectAPI::App.create(
+          name:           app_name,
+          version_string: "1.0",
+          sku:            "plotname-ai-001",
+          primary_locale: "ja",
+          bundle_id:      APP_ID,
+          platforms:      ["IOS"]
+        )
+        UI.success("Created App Store Connect app #{APP_ID} (#{app.id}) 🎉")
+      end
+    rescue => e
+      UI.error("App create step failed: #{e.class}: #{e.message}")
+      raise
+    end
 
     UI.success("App record for #{APP_ID} is ready on App Store Connect ✅")
   end
