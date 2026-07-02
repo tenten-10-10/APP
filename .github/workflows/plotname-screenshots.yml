@@ -1,10 +1,15 @@
 name: PlotName AI Screenshots
 
-# 手動実行のみ。シミュレータで PlotName AI のスクリーンショットを撮影し、
+# シミュレータで PlotName AI のスクリーンショットを撮影し、
 # 実行したブランチにコミットして返す（レビュー・UI調整ループ用）。
 # 署名・証明書は不要。
+# workflow_dispatch はデフォルトブランチにファイルが乗るまで API から呼べないため、
+# .screenshot-request（センチネル）の push でも発火できるようにしている。
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".screenshot-request"
 
 permissions:
   contents: write
