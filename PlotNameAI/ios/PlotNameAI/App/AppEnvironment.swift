@@ -25,6 +25,10 @@ final class AppEnvironment {
         let config = AppConfig()
         let store = store ?? ProjectStore()
         let billing = BillingService(plan: .free)
+        // スクショ撮影モード（fastlane snapshot）: キャンバス等を撮るため Pro 相当で起動する。
+        if ProcessInfo.processInfo.arguments.contains("-screenshotMode") {
+            billing.setPlan(.pro)
+        }
         let usage = UsageService(monthlyAllowance: billing.entitlement.limits.monthlyCredits)
         let safety = SafetyService()
 

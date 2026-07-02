@@ -17,13 +17,19 @@ settings:
     SWIFT_STRICT_CONCURRENCY: minimal
 
 # CI(xcodebuild)から使えるよう shared スキームを生成する。
+# test アクションにスクショ撮影用 UI テストを含める（fastlane snapshot が使用）。
 schemes:
   PlotNameAI:
     build:
       targets:
         PlotNameAI: all
+        PlotNameAIUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - PlotNameAIUITests
     archive:
       config: Release
 
@@ -45,3 +51,18 @@ targets:
         ENABLE_PREVIEWS: YES
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MACCATALYST: NO
+
+  # スクショ撮影用 UI テスト（fastlane snapshot から実行）。
+  PlotNameAIUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: PlotNameAIUITests
+    dependencies:
+      - target: PlotNameAI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.plotname.ai.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: PlotNameAI

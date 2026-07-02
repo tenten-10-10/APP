@@ -1,0 +1,106 @@
+import XCTest
+
+/// fastlane snapshot 用の App Store スクリーンショット撮影。
+/// `-screenshotMode` で起動するとアプリは Pro プラン相当で動作し（キャンバスのロック解除）、
+/// 同梱サンプル（夜明けのランナー 35P 完全データ）が初回シードされるため、
+/// ネットワーク・サインイン不要で代表画面を撮影できる。
+/// iPhone はナビゲーションスタック、iPad(regular) は 3 カラムなので導線を分岐する。
+final class ScreenshotUITests: XCTestCase {
+
+    private var app: XCUIApplication!
+
+    @MainActor
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        setupSnapshot(app)
+        app.launchArguments += ["-screenshotMode"]
+        app.launch()
+    }
+
+    @MainActor
+    func testCaptureScreens() {
+        // サンプルプロジェクトの一覧が出るまで待つ（初回シード）。
+        let sampleRow = app.staticTexts["夜明けのランナー"]
+        XCTAssertTrue(sampleRow.waitForExistence(timeout: 25))
+        sleep(2)
+
+        if isPadLayout {
+            captureOnPad()
+        } else {
+            captureOnPhone(sampleRow: sampleRow)
+        }
+    }
+
+    /// サイドバー（「作業」セクション）が見えていれば iPad の 3 カラム。
+    private var isPadLayout: Bool {
+        app.staticTexts["作業"].exists || app.staticTexts["現在のプロジェクト"].exists
+    }
+
+    // MARK: iPhone（スタック導線）
+
+    @MainActor
+    private func captureOnPhone(sampleRow: XCUIElement) {
+        snapshot("01_Home")
+
+        // プロジェクトハブへ。
+        sampleRow.tap()
+        guard app.staticTexts["ストーリー"].waitForExistence(timeout: 10) else { return }
+        sleep(1)
+
+        visit(row: "ストーリー", waitFor: "テーマ", name: "02_Story")
+        visit(row: "13フェーズ", waitFor: nil, name: "03_Phases")
+        visit(row: "ページプラン", waitFor: nil, name: "04_PagePlan")
+        visit(row: "ネームキャンバス", waitFor: nil, name: "05_Canvas")
+        visit(row: "使用状況", waitFor: nil, name: "06_Usage")
+    }
+
+    /// ハブの行をタップ → 描画待ち → 撮影 → 戻る。要素が無ければ静かにスキップ。
+    @MainActor
+    private func visit(row: String, waitFor marker: String?, name: String) {
+        let cell = app.staticTexts[row]
+        guard cell.waitForExistence(timeout: 8) else { return }
+        cell.tap()
+        if let marker {
+            _ = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", marker))
+                .firstMatch.waitForExistence(timeout: 8)
+        }
+        sleep(2)
+        snapshot(name)
+        goBack()
+    }
+
+    @MainActor
+    private func goBack() {
+        let back = app.navigationBars.buttons.element(boundBy: 0)
+        if back.exists { back.tap() }
+        sleep(1)
+    }
+
+    // MARK: iPad（3カラム導線）
+
+    @MainActor
+    private func captureOnPad() {
+        // 分割ビュー全体（プロジェクト一覧＋キャンバス）。
+        snapshot("01_Home")
+
+        tapSidebar("13フェーズ", name: "03_Phases")
+        tapSidebar("ページプラン", name: "04_PagePlan")   // 右カラムにキャンバスが並ぶ
+        tapSidebar("ストーリー", name: "02_Story")
+        tapSidebar("使用状況", name: "06_Usage")
+    }
+
+    @MainActor
+    private func tapSidebar(_ title: String, name: String) {
+        // サイドバーが折りたたまれていれば開く。
+        let item = app.staticTexts[title]
+        if !item.exists {
+            let toggle = app.navigationBars.buttons.element(boundBy: 0)
+            if toggle.exists { toggle.tap() }
+        }
+        guard item.waitForExistence(timeout: 8) else { return }
+        item.tap()
+        sleep(2)
+        snapshot(name)
+    }
+}

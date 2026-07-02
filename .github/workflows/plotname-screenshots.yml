@@ -1,0 +1,74 @@
+name: PlotName AI Screenshots
+
+# 手動実行のみ。シミュレータで PlotName AI のスクリーンショットを撮影し、
+# 実行したブランチにコミットして返す（レビュー・UI調整ループ用）。
+# 署名・証明書は不要。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plotname-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: PlotNameAI/ios
+        run: xcodegen generate
+
+      - name: Install Ruby dependencies
+        run: |
+          rm -f Gemfile.lock
+          bundle install
+
+      # fastlane は SnapshotHelper.swift が gem 同梱版と一致しないと拒否するため同期する。
+      - name: Sync SnapshotHelper with installed fastlane
+        run: |
+          HELPER="$(bundle show fastlane)/snapshot/lib/assets/SnapshotHelper.swift"
+          echo "Copying $HELPER"
+          cp "$HELPER" PlotNameAI/ios/PlotNameAIUITests/SnapshotHelper.swift
+
+      - name: Capture screenshots
+        working-directory: PlotNameAI/ios
+        run: bundle exec fastlane screenshots
+
+      - name: Upload screenshots artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plotname-screenshots
+          path: PlotNameAI/ios/fastlane/screenshots/**/*.png
+          if-no-files-found: ignore
+
+      # 撮影結果をブランチへコミット（このリポジトリ上で目視レビューするため）。
+      - name: Commit screenshots to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f PlotNameAI/ios/fastlane/screenshots
+          if git diff --cached --quiet; then
+            echo "No screenshot changes."
+          else
+            git commit -m "スクショ: PlotName AI シミュレータ撮影結果 [skip ci]"
+            git pull --rebase origin "${{ github.ref_name }}" || true
+            git push origin "HEAD:${{ github.ref_name }}"
+          fi
