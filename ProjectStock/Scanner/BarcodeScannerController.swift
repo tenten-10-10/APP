@@ -41,7 +41,7 @@ final class BarcodeScannerController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        start()
+        if !pausedByUI { start() }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -135,6 +135,17 @@ final class BarcodeScannerController: UIViewController {
         }
     }
 
+    /// While a scan result is being shown, the camera must neither keep
+    /// scanning nor deliver frames already in flight — otherwise a second QR
+    /// entering the view replaces the result the user is looking at.
+    private var pausedByUI = false
+
+    func setPaused(_ paused: Bool) {
+        guard paused != pausedByUI else { return }
+        pausedByUI = paused
+        if paused { stop() } else { start() }
+    }
+
     func resetDebounce() {
         lastAcceptedCode = nil
         lastAcceptedAt = .distantPast
@@ -172,6 +183,9 @@ extension BarcodeScannerController: AVCaptureMetadataOutputObjectsDelegate {
     func metadataOutput(_ output: AVCaptureMetadataOutput,
                         didOutput metadataObjects: [AVMetadataObject],
                         from connection: AVCaptureConnection) {
+        // stopRunning() is async on the session queue; frames already in
+        // flight still arrive here (delegate + setPaused both run on main).
+        guard !pausedByUI else { return }
         guard let object = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
               let value = object.stringValue, !value.isEmpty else { return }
 

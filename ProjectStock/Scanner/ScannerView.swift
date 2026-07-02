@@ -6,15 +6,20 @@ struct ScannerView: View {
     @Binding var torchOn: Bool
     @Binding var zoom: CGFloat
     var continuous: Bool
+    /// While true (a result sheet/alert is showing), the capture session is
+    /// stopped and no scans are delivered, so a second QR entering the frame
+    /// can't replace the result the user is reading.
+    var paused: Bool = false
     var onScan: (String) -> Void
     var onError: (String) -> Void
 
     var body: some View {
         if AppConfig.isUITesting {
-            MockScannerView(onScan: onScan)
+            MockScannerView(onScan: { code in if !paused { onScan(code) } })
         } else {
             CameraScannerRepresentable(torchOn: $torchOn, zoom: $zoom,
-                                       continuous: continuous, onScan: onScan, onError: onError)
+                                       continuous: continuous, paused: paused,
+                                       onScan: onScan, onError: onError)
         }
     }
 }
@@ -23,6 +28,7 @@ private struct CameraScannerRepresentable: UIViewControllerRepresentable {
     @Binding var torchOn: Bool
     @Binding var zoom: CGFloat
     var continuous: Bool
+    var paused: Bool
     var onScan: (String) -> Void
     var onError: (String) -> Void
 
@@ -31,6 +37,7 @@ private struct CameraScannerRepresentable: UIViewControllerRepresentable {
         controller.onScan = onScan
         controller.onSessionError = onError
         controller.allowsRepeatAfterDebounce = continuous
+        controller.setPaused(paused)
         return controller
     }
 
@@ -38,7 +45,7 @@ private struct CameraScannerRepresentable: UIViewControllerRepresentable {
         controller.allowsRepeatAfterDebounce = continuous
         controller.setTorch(on: torchOn)
         controller.setZoom(factor: zoom)
-        if !continuous { /* single-shot resets handled by parent */ }
+        controller.setPaused(paused)
     }
 }
 

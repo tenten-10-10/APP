@@ -56,9 +56,13 @@ struct ScanTabView: View {
         }
     }
 
+    /// A result is on screen — the camera must not keep scanning behind it.
+    private var resultShowing: Bool { outcome != nil || foreignValue != nil }
+
     private var scannerLayer: some View {
         ZStack {
             ScannerView(torchOn: $torchOn, zoom: $zoom, continuous: false,
+                        paused: resultShowing,
                         onScan: handleScan, onError: { _ in })
                 .ignoresSafeArea(edges: .bottom)
 
@@ -111,6 +115,9 @@ struct ScanTabView: View {
     }
 
     private func handleScan(_ raw: String) {
+        // Belt and braces: a frame already in flight when the session pauses
+        // must not replace the result the user is looking at.
+        guard !resultShowing else { return }
         let result = container.scanRouter.route(rawValue: raw, in: container.viewContext)
         switch result {
         case .known(let alias), .unassigned(let alias), .retired(let alias):

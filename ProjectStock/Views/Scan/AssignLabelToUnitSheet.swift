@@ -51,6 +51,7 @@ struct AssignLabelToUnitSheet: View {
     private var scannerLayer: some View {
         ZStack {
             ScannerView(torchOn: $torchOn, zoom: $zoom, continuous: false,
+                        paused: busy || error != nil,
                         onScan: handleScan, onError: { _ in })
                 .ignoresSafeArea(edges: .bottom)
 
@@ -78,7 +79,7 @@ struct AssignLabelToUnitSheet: View {
     }
 
     private func handleScan(_ raw: String) {
-        guard !busy else { return }
+        guard !busy, error == nil else { return }
         let result = container.scanRouter.route(rawValue: raw, in: container.viewContext)
         switch result {
         case .unassigned(let alias):
