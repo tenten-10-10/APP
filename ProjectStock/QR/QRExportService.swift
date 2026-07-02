@@ -82,22 +82,35 @@ public final class QRExportService {
             return LabelSheetItem(matrix: matrix, code: entry.code, caption: entry.caption)
         }
         let data = sheet.render(items: items, options: options)
-        let name = sanitize(context.projectName) + "_labels_\(Int(options.labelSizeMM))mm.pdf"
+        let name = "\(NSLocalizedString("空QRラベル", comment: ""))_\(sanitize(context.projectName))_\(Int(options.labelSizeMM))mm_\(Self.dateStamp()).pdf"
         return try write(data: data, filename: name)
     }
 
     public func exportCalibrationSheet(code: String, context: ExportContext) throws -> URL {
         let data = calibration.render(code: code)
-        let name = sanitize(context.projectName) + "_calibration.pdf"
+        let name = "\(NSLocalizedString("印刷校正シート", comment: ""))_\(Self.dateStamp()).pdf"
         return try write(data: data, filename: name)
     }
 
     // MARK: - Filenames & temp storage (spec §16: temp dir, purgeable)
 
-    /// `{project}_{target}_{code}_{size}mm.ext`
+    /// `QRラベル_{対象}_{コード}_{サイズ}mm_{日付}.ext` — human-readable in the
+    /// user's language, dated so exported files sort and don't get confused.
     func filename(context: ExportContext, code: String, sizeMM: Double, ext: String) -> String {
         let size = sizeMM == sizeMM.rounded() ? String(Int(sizeMM)) : String(format: "%.1f", sizeMM)
-        return "\(sanitize(context.projectName))_\(sanitize(context.targetName))_\(code)_\(size)mm.\(ext)"
+        return "\(NSLocalizedString("QRラベル", comment: ""))_\(sanitize(context.targetName))_\(code)_\(size)mm_\(Self.dateStamp()).\(ext)"
+    }
+
+    /// `2026-07-02` — locale-independent digits, filesystem-safe.
+    private static let fileDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
+    static func dateStamp(_ date: Date = Date()) -> String {
+        fileDateFormatter.string(from: date)
     }
 
     private func sanitize(_ raw: String) -> String {

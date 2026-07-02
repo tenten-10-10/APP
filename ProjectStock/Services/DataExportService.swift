@@ -71,7 +71,8 @@ struct DataExportService {
 
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("Exports", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let url = dir.appendingPathComponent("ProjectStock-export.json")
+        let name = "\(NSLocalizedString("タナミル_データ書き出し", comment: ""))_\(QRExportService.dateStamp()).json"
+        let url = dir.appendingPathComponent(name)
         try data.write(to: url, options: .atomic)
         return url
     }

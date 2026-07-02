@@ -69,7 +69,7 @@ struct DiagnosticsView: View {
         let text = lines.joined(separator: "\n")
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("Diagnostics", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let url = dir.appendingPathComponent("projectstock-diagnostics.txt")
+        let url = dir.appendingPathComponent("\(NSLocalizedString("タナミル_診断ログ", comment: ""))_\(QRExportService.dateStamp()).txt")
         try? text.data(using: .utf8)?.write(to: url, options: .atomic)
         shareItem = ShareableFile(url: url)
     }

@@ -589,3 +589,10 @@
 "在庫を整理するプロジェクトを作成するか、お試しデータで使い方を見てみましょう。" = "Create a project to organize your stock, or explore how it works with demo data.";
 "お試し工房" = "Demo Workshop";
 "使い方確認用のお試しデータです。設定またはこの画面上部からいつでも削除できます。" = "Demo data for exploring the app. You can delete it anytime from Settings or the banner at the top of this screen.";
+
+/* 1.1.0 Export file names (localized + date) */
+"空QRラベル" = "Blank_QR_labels";
+"印刷校正シート" = "Calibration_sheet";
+"タナミル_データ書き出し" = "Tanamiru_export";
+
+"タナミル_診断ログ" = "Tanamiru_diagnostics";
