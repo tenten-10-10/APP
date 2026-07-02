@@ -44,3 +44,4 @@ timeline.xctimeline
 playground.xcworkspace
 fastlane/.env
 *.p8
+link-site/.vercel/
