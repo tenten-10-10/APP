@@ -103,6 +103,10 @@ final class CloudSharingService: ObservableObject {
             completion(.failure(AppError.shareCreationFailed(NSLocalizedString("このビルドでは共有を利用できません。", comment: ""))))
             return
         }
+        guard persistence.cloudKitActive else {
+            completion(.failure(AppError.shareCreationFailed(NSLocalizedString("iCloud同期を開始できていないため、共有を作成できません。アプリを一度終了して開き直すと再接続します。設定 > Apple ID > iCloud で「タナミル」がオンになっているかもご確認ください。", comment: ""))))
+            return
+        }
         do {
             try projectService.validateShareReadiness(project)
         } catch {
@@ -122,7 +126,12 @@ final class CloudSharingService: ObservableObject {
                 guard let self else { return }
                 self.inFlight.remove(project.objectID)
                 if let error = error {
-                    completion(.failure(error)); return
+                    // Surface the underlying error plus the recovery step that
+                    // clears the common transient states (stale WAL snapshot,
+                    // mirroring not yet warmed up): relaunch and retry.
+                    let message = String(format: NSLocalizedString("共有を開始できませんでした（%@）。アプリを一度終了して開き直し、もう一度お試しください。", comment: ""),
+                                         error.localizedDescription)
+                    completion(.failure(AppError.shareCreationFailed(message))); return
                 }
                 guard let share = share, let container = container else {
                     completion(.failure(AppError.shareCreationFailed(NSLocalizedString("共有レコードを作成できませんでした。", comment: ""))))

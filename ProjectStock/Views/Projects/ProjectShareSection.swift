@@ -22,6 +22,13 @@ struct ProjectShareSection: View {
             if !container.persistence.cloudKitEnabled {
                 Text(AccountState.cloudKitDisabled.localizedMessage)
                     .font(.footnote).foregroundColor(.secondary)
+            } else if !container.persistence.cloudKitActive {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(NSLocalizedString("iCloud同期が開始できていません", comment: ""), systemImage: "icloud.slash")
+                        .font(.subheadline)
+                    Text(NSLocalizedString("アプリを一度終了して開き直すと再接続します。設定 > Apple ID > iCloud で「タナミル」がオンになっているかもご確認ください。", comment: ""))
+                        .font(.footnote).foregroundColor(.secondary)
+                }
             } else if syncMonitor.accountState != .available {
                 VStack(alignment: .leading, spacing: 6) {
                     Label(NSLocalizedString("iCloudが必要です", comment: ""), systemImage: "icloud.slash")

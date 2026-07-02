@@ -171,10 +171,11 @@ struct ProjectDetailView: View {
                 }
                 Spacer()
             }
+            // NOTE: no "label count" metric here on purpose — printed sheets
+            // include spoiled/unused labels, so the number reads as wrong.
             HStack(spacing: 16) {
                 MetricView(title: NSLocalizedString("製品数", comment: ""), value: "\(project.activeProductCount)")
                 MetricView(title: NSLocalizedString("要補充", comment: ""), value: "\(project.lowStockCount)")
-                MetricView(title: NSLocalizedString("ラベル", comment: ""), value: "\(project.labelArray.count)")
                 Spacer()
             }
         }

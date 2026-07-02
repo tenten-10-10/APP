@@ -28,6 +28,14 @@ final class PersistenceController {
     /// when running unsigned where the iCloud entitlement is unavailable.
     let cloudKitEnabled: Bool
 
+    /// True when a CloudKit-backed store failed to load and was re-added as a
+    /// plain local store. Sharing must not be offered in this state — the
+    /// mirroring metadata isn't there and share() fails with a file error.
+    private(set) var cloudKitFallbackActive = false
+
+    /// CloudKit is compiled in AND every store actually loaded with mirroring.
+    var cloudKitActive: Bool { cloudKitEnabled && !cloudKitFallbackActive }
+
     private let logger = Logger(subsystem: "ProjectStock", category: "Persistence")
 
     // MARK: - Init
@@ -122,6 +130,7 @@ final class PersistenceController {
         // stores. (That would raise an uncatchable Obj-C exception on save, not a
         // Swift error, which is exactly the create/sample-data crash.)
         for description in failed {
+            if description.cloudKitContainerOptions != nil { cloudKitFallbackActive = true }
             description.cloudKitContainerOptions = nil
             do {
                 let store = try container.persistentStoreCoordinator.addPersistentStore(
@@ -159,9 +168,11 @@ final class PersistenceController {
         viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
         viewContext.transactionAuthor = "viewContext"
         viewContext.name = "viewContext"
-        // Pin queries to the generation we have so cross-store faulting is
-        // stable while remote changes import in the background.
-        try? viewContext.setQueryGenerationFrom(.current)
+        // NOTE: deliberately NOT pinned to a query generation. A pinned WAL
+        // snapshot can be invalidated by checkpoints from the CloudKit
+        // mirroring writer (or any large write batch), after which reads —
+        // including NSPersistentCloudKitContainer.share() — fail with
+        // NSCocoaErrorDomain 256 「ファイル "private.sqlite" を開けませんでした」.
     }
 
     // MARK: - Contexts
