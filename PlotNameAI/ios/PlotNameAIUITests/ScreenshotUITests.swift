@@ -51,8 +51,24 @@ final class ScreenshotUITests: XCTestCase {
         visit(row: "ストーリー", waitFor: "テーマ", name: "02_Story")
         visit(row: "13フェーズ", waitFor: nil, name: "03_Phases")
         visit(row: "ページプラン", waitFor: nil, name: "04_PagePlan")
-        visit(row: "ネームキャンバス", waitFor: nil, name: "05_Canvas")
+        captureCanvas(name: "05_Canvas")
         visit(row: "使用状況", waitFor: nil, name: "06_Usage")
+    }
+
+    /// ネームキャンバスは複数コマのページ（P2＝6コマ）を撮る。
+    /// 1ページ目は大ゴマ1枚のフックなので、コマ割りが伝わる P2 へ進めてから撮影する。
+    @MainActor
+    private func captureCanvas(name: String) {
+        let cell = app.staticTexts["ネームキャンバス"]
+        guard cell.waitForExistence(timeout: 8) else { return }
+        cell.tap()
+        sleep(1)
+        // 「次のページ」（右開きなので進む＝左向きシェブロン）を1回押して P2 へ。
+        let next = app.buttons["次のページ"]
+        if next.waitForExistence(timeout: 6) { next.tap() }
+        sleep(2)
+        snapshot(name)
+        goBack()
     }
 
     /// ハブの行をタップ → 描画待ち → 撮影 → 戻る。要素が無ければ静かにスキップ。
@@ -81,7 +97,12 @@ final class ScreenshotUITests: XCTestCase {
 
     @MainActor
     private func captureOnPad() {
-        // 分割ビュー全体（プロジェクト一覧＋キャンバス）。
+        // 横向きにすると 3 カラム（サイドバー｜中央｜インスペクタ）が常時表示になり、
+        // 縦向きで発生するサイドバーのオーバーレイ被りを避けられる（マーケ的にも映える）。
+        XCUIDevice.shared.orientation = .landscapeLeft
+        sleep(2)
+
+        // 分割ビュー全体（一覧＋キャンバス）。
         snapshot("01_Home")
 
         tapSidebar("13フェーズ", name: "03_Phases")
@@ -92,11 +113,12 @@ final class ScreenshotUITests: XCTestCase {
 
     @MainActor
     private func tapSidebar(_ title: String, name: String) {
-        // サイドバーが折りたたまれていれば開く。
-        let item = app.staticTexts[title]
+        // 横向き 3 カラムではサイドバーは常時表示。念のため無ければトグルで開く。
+        var item = app.staticTexts[title]
         if !item.exists {
             let toggle = app.navigationBars.buttons.element(boundBy: 0)
-            if toggle.exists { toggle.tap() }
+            if toggle.exists { toggle.tap(); sleep(1) }
+            item = app.staticTexts[title]
         }
         guard item.waitForExistence(timeout: 8) else { return }
         item.tap()
