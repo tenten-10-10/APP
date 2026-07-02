@@ -26,6 +26,8 @@ schemes:
         PlotNameAIUITests: [test]
     run:
       config: Debug
+      # シミュレータでのサンドボックス購入テスト用 StoreKit 構成。
+      storeKitConfiguration: PlotNameAI/Resources/Products.storekit
     test:
       config: Debug
       targets:

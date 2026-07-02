@@ -19,5 +19,6 @@ extension View {
             .environment(env.config)
             .environment(env.auth)
             .environment(env.reward)
+            .environment(env.purchases)
     }
 }

@@ -17,6 +17,7 @@ final class AppEnvironment {
     let generation: GenerationService
     let auth: AuthService
     let reward: RewardService
+    let purchases: StoreService
 
     /// - Parameter store: 永続化バックエンドを差し替えたストア。
     ///   nil の場合はファイル永続化の既定ストアを使う（プレビュー・テスト用）。
@@ -41,6 +42,8 @@ final class AppEnvironment {
         // 認証は既定で Mock（自動サインイン）。リワードは Usage にクレジット付与する。
         self.auth = AuthService()
         self.reward = RewardService(usage: usage)
+        // StoreKit 2 の実購入。監視・商品ロードはアプリ起動時の start() で行う。
+        self.purchases = StoreService(billing: billing, usage: usage)
     }
 
     /// プレビュー・テスト用の軽量初期化。

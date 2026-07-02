@@ -50,8 +50,14 @@ struct PlotNameAIApp: App {
                 .environment(env.config)
                 .environment(env.auth)
                 .environment(env.reward)
+                .environment(env.purchases)
                 .tint(.accentColor)
                 .applyModelContainer(modelContainer)
+                .task {
+                    // StoreKit 2: トランザクション監視・商品ロード・
+                    // 現在のエンタイトルメント反映を開始する。
+                    await env.purchases.start()
+                }
         }
     }
 }

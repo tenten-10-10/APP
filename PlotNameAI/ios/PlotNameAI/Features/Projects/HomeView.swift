@@ -9,6 +9,7 @@ struct HomeView: View {
     @Environment(BillingService.self) private var billing
     @Environment(AuthService.self) private var auth
     @State private var showingNewProject = false
+    @State private var showingDeleteAccount = false
 
     var body: some View {
         List {
@@ -54,6 +55,13 @@ struct HomeView: View {
                     } label: {
                         Label("サインアウト", systemImage: "rectangle.portrait.and.arrow.right")
                     }
+                    Divider()
+                    // App Review 5.1.1(v): アカウント作成があるアプリは削除導線が必須。
+                    Button(role: .destructive) {
+                        showingDeleteAccount = true
+                    } label: {
+                        Label("アカウントを削除", systemImage: "person.crop.circle.badge.xmark")
+                    }
                 } label: {
                     Label("アカウント", systemImage: "person.crop.circle")
                 }
@@ -64,6 +72,24 @@ struct HomeView: View {
                 NewProjectView()
             }
         }
+        .confirmationDialog(
+            "アカウントを削除しますか？",
+            isPresented: $showingDeleteAccount,
+            titleVisibility: .visible
+        ) {
+            Button("アカウントとデータを削除", role: .destructive) {
+                deleteAccount()
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("すべてのプロジェクトとローカルデータが完全に削除されます。この操作は取り消せません。")
+        }
+    }
+
+    /// ローカルデータを消去してからアカウントを削除する（サインアウト状態になる）。
+    private func deleteAccount() {
+        store.deleteAllData()
+        Task { await auth.deleteAccount() }
     }
 
     private func handleNewProject() {

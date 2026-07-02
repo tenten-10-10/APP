@@ -140,6 +140,14 @@ final class ProjectStore {
         persist()
     }
 
+    /// 全ローカルデータを削除する（アカウント削除時に使用）。
+    /// 同梱サンプルも含めて空にし、空状態を永続化する。
+    func deleteAllData() {
+        bundles = []
+        selectedProjectID = nil
+        persist()
+    }
+
     // MARK: Persistence
 
     /// 即時保存（バックエンドへ委譲）。

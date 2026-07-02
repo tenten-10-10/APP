@@ -43,6 +43,9 @@ protocol AuthProviding: Sendable {
     func signInWithApple() async throws -> AppUser
     /// サインアウト。
     func signOut() async throws
+    /// アカウントを削除する（App Review 5.1.1(v) 対応）。
+    /// サーバー側のユーザーデータ削除まで行う想定。
+    func deleteAccount() async throws
 }
 
 // MARK: - MockAuthProvider
@@ -62,6 +65,12 @@ struct MockAuthProvider: AuthProviding {
 
     func signOut() async throws {
         // ローカルなので即時。
+    }
+
+    func deleteAccount() async throws {
+        // ローカルモック: サーバー側データは無いので疑似遅延のみ。
+        // ローカルデータの削除は呼び出し側（ProjectStore.deleteAllData）が行う。
+        try? await Task.sleep(nanoseconds: 200_000_000)
     }
 }
 
@@ -83,6 +92,12 @@ struct AppleAuthProvider: AuthProviding {
     func signOut() async throws {
         throw AuthError.notConfigured
     }
+
+    func deleteAccount() async throws {
+        // TODO: Sign in with Apple のトークン失効（Apple の revoke API）を
+        //       バックエンド経由で行い、ユーザーデータを削除する。
+        throw AuthError.notConfigured
+    }
 }
 
 // MARK: - SupabaseAuthProvider (STUB)
@@ -99,6 +114,11 @@ struct SupabaseAuthProvider: AuthProviding {
     }
 
     func signOut() async throws {
+        throw AuthError.notConfigured
+    }
+
+    func deleteAccount() async throws {
+        // TODO: Supabase の RPC / Edge Function でユーザー行と関連データを削除する。
         throw AuthError.notConfigured
     }
 }
@@ -156,6 +176,21 @@ final class AuthService {
         Task {
             try? await provider.signOut()
             currentUser = nil
+        }
+    }
+
+    /// アカウントを削除し、サインアウト状態にする（App Review 5.1.1(v) 対応）。
+    /// ローカルデータの削除は呼び出し側（ProjectStore.deleteAllData）が行う。
+    func deleteAccount() async {
+        guard !isAuthenticating else { return }
+        isAuthenticating = true
+        errorMessage = nil
+        defer { isAuthenticating = false }
+        do {
+            try await provider.deleteAccount()
+            currentUser = nil
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 }
