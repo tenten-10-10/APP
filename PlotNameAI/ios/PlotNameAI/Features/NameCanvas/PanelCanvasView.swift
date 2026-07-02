@@ -92,8 +92,10 @@ private struct PanelShape: View {
                     .allowsHitTesting(false)
             }
 
-            // 内容（説明＋セリフ）。
-            VStack(alignment: .leading, spacing: 2) {
+            // 内容（セリフ＋効果音）。
+            // 右開きの読者導線に合わせ、セリフはコマの右上（読み始め）に置く。
+            // 右上の読み順バッジと重ならないよう trailing に余白をとる。
+            VStack(alignment: .trailing, spacing: 2) {
                 if !panel.dialogue.isEmpty {
                     Text(panel.dialogue)
                         .font(.system(size: 9))
@@ -101,15 +103,17 @@ private struct PanelShape: View {
                         .padding(3)
                         .background(Color(.systemBackground).opacity(0.85),
                                     in: RoundedRectangle(cornerRadius: 3))
+                        .padding(.trailing, 20)   // バッジ回避
                 }
                 Spacer(minLength: 0)
                 if !panel.sfx.isEmpty {
                     Text(panel.sfx)
                         .font(.system(size: 11, weight: .heavy))
                         .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .padding(4)
 
             // 読み順バッジ（右上）。

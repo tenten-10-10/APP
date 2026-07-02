@@ -76,21 +76,28 @@ enum SampleData {
 
     static let pagePlans: [PagePlan] = {
         var pageToPhase: [Int: Int] = [:]
+        var firstPageOfPhase: [Int: Int] = [:]
+        var lastPageOfPhase: [Int: Int] = [:]
         for card in phaseCards {
             for p in card.pages { pageToPhase[p] = card.phaseNumber }
+            firstPageOfPhase[card.phaseNumber] = card.pages.first
+            lastPageOfPhase[card.phaseNumber] = card.pages.last
         }
         return (1...35).map { page in
             let phaseNum = pageToPhase[page] ?? 1
             let phase = Phase(rawValue: phaseNum) ?? .dailyLife
-            let isTurning = turningPoint(page: page, phase: phase)
+            let isPhaseFirst = firstPageOfPhase[phaseNum] == page
+            let isPhaseLast = lastPageOfPhase[phaseNum] == page
+            let isTurning = turningPoint(page: page, phase: phase, isPhaseLast: isPhaseLast)
             return PagePlan(
                 pageNumber: page,
                 phase: phaseNum,
-                pageGoal: pageGoal(page: page, phase: phase),
+                pageGoal: pageGoal(page: page, phase: phase,
+                                   isPhaseFirst: isPhaseFirst, isPhaseLast: isPhaseLast),
                 readerEmotion: readerEmotion(phase),
                 turningPoint: isTurning,
-                panelCount: panelCount(phase, isTurning: isTurning),
-                lastPanelHook: lastHook(page: page, phase: phase),
+                panelCount: panelCount(page: page, phase: phase, isTurning: isTurning),
+                lastPanelHook: lastHook(page: page, phase: phase, isPhaseLast: isPhaseLast),
                 dialogueDensity: dialogueDensity(phase),
                 visualDensity: visualDensity(phase, isTurning: isTurning),
                 whyThisPageExists: whyExists(page: page, phase: phase)
@@ -151,6 +158,9 @@ enum SampleData {
             targetReader: "青年",
             tone: ["ミステリー", "シリアス"],
             status: .draft,
+            // 完成サンプル（夜明けのランナー）より古い固定日時にして一覧の先頭を譲る。
+            createdAt: Date(timeIntervalSince1970: 1_699_500_000),
+            updatedAt: Date(timeIntervalSince1970: 1_699_600_000),
             isSample: true
         ),
         Project(
@@ -161,6 +171,8 @@ enum SampleData {
             targetReader: "全年齢",
             tone: ["日常", "ほのぼの"],
             status: .draft,
+            createdAt: Date(timeIntervalSince1970: 1_699_000_000),
+            updatedAt: Date(timeIntervalSince1970: 1_699_100_000),
             isSample: true
         )
     ]
@@ -263,14 +275,16 @@ private extension SampleData {
         }
     }
 
-    static func turningPoint(page: Int, phase: Phase) -> Bool {
+    static func turningPoint(page: Int, phase: Phase, isPhaseLast: Bool) -> Bool {
+        // 転換点は主要フェーズの「最終ページ」だけ（MockAIProviderと同一の規則）。
         switch phase {
-        case .incident, .achievement, .ruin, .showdown: return true
+        case .incident, .achievement, .ruin, .showdown: return isPhaseLast
         default: return page == 1
         }
     }
 
-    static func panelCount(_ phase: Phase, isTurning: Bool) -> Int {
+    static func panelCount(page: Int, phase: Phase, isTurning: Bool) -> Int {
+        if page == 1 { return 1 }   // 1ページ目は大ゴマ1枚のフック
         switch phase {
         case .dailyLife: return 6
         case .incident: return 5
@@ -281,14 +295,18 @@ private extension SampleData {
         }
     }
 
-    static func pageGoal(page: Int, phase: Phase) -> String {
+    static func pageGoal(page: Int, phase: Phase, isPhaseFirst: Bool, isPhaseLast: Bool) -> String {
         if page == 1 { return "読者を一瞬で引き込む（強いフック）。" }
-        switch phase {
-        case .achievement: return "中間の勝利を見せ、満足と油断を与える。"
-        case .ruin: return "ハルがすべてを失う破滅を印象づける。"
-        case .satisfaction: return "テーマを回収し、変化したハルで締める。"
-        default: return "\(phase.phaseName)の役割を1ページで前進させる。"
+        if isPhaseLast {
+            switch phase {
+            case .achievement: return "中間の勝利を見せ、満足と油断を与える。"
+            case .ruin: return "ハルがすべてを失う破滅を印象づける。"
+            case .satisfaction: return "テーマを回収し、変化したハルで締める。"
+            default: return "\(phase.phaseName)を締め、次の展開への期待を作る。"
+            }
         }
+        if isPhaseFirst { return "\(phase.phaseName)へ場面を切り替え、空気の変化を見せる。" }
+        return "\(phase.phaseName)を深め、ハルの感情を一段階動かす。"
     }
 
     static func readerEmotion(_ phase: Phase) -> String {
@@ -309,14 +327,17 @@ private extension SampleData {
         }
     }
 
-    static func lastHook(page: Int, phase: Phase) -> String {
+    static func lastHook(page: Int, phase: Phase, isPhaseLast: Bool) -> String {
         if page == 1 { return "「もう、二度と走らないと決めたんだ——」" }
         if page == 35 { return "（完）朝日の中、ハルが駆け出す最終コマ。" }
         switch phase {
         case .achievement: return "勝ったはずなのに、膝に走る鈍い痛み。"
         case .ruin: return "崩れ落ちるハル。観客の声が遠ざかる。"
         case .showdown: return "残り10メートル——というところで次ページへ。"
-        default: return "次ページをめくらせる小さな引き。"
+        default:
+            return isPhaseLast
+                ? "\(phase.phaseName)の結末を見せ切らずに次ページへ引く。"
+                : "小さな違和感やセリフの余韻で次ページへつなぐ。"
         }
     }
 
@@ -342,17 +363,26 @@ private extension SampleData {
     }
 
     static func dialogueLine(phase: Phase, panel: Int) -> String {
+        // コマ数(最大6)ぶん重複しないよう各フェーズ6本。""は意図的な無言コマ（間）。
         let pool: [String]
         switch phase {
-        case .dailyLife: pool = ["……いつも通りの朝だ。", "ハル、また部活サボり？", "もう走らないって決めたんだ。", ""]
-        case .incident: pool = ["陸上部、廃部だって……！", "そんな……", "先輩、お願いします！", ""]
-        case .resolve: pool = ["……最後に、もう一度だけ。", "オレが走る。", "もう逃げない。", ""]
-        case .achievement: pool = ["予選突破だ！", "やったぞ……！", "……この痛み、なんだ？", ""]
-        case .ruin: pool = ["うっ……！", "……また、ダメだった。", "", ""]
-        case .trigger: pool = ["先輩の背中を見て走り始めたんです。", "走る理由は……", "立て、ハル。", ""]
-        case .showdown: pool = ["ここで……終わらせる！", "過去の自分に勝つ。", "うおおおっ！", ""]
-        case .satisfaction: pool = ["……ありがとう、みんな。", "また明日、走ろう。", "", ""]
-        default: pool = ["行こう。", "大丈夫、きっと。", "……", ""]
+        case .dailyLife: pool = ["……いつも通りの朝だ。", "ハル、また部活サボり？", "もう走らないって決めたんだ。",
+                                 "……別に、いいだろ。", "（グラウンドの歓声が遠くに聞こえる）", ""]
+        case .incident: pool = ["陸上部、廃部だって……！", "部員が足りないんです……", "先輩、お願いします！",
+                                "……オレには関係ない。", "（言葉とは裏腹に、足が止まる）", ""]
+        case .resolve: pool = ["……最後に、もう一度だけ。", "本気なの？", "オレが走る。",
+                               "もう逃げない。", "見ててくれ。", ""]
+        case .achievement: pool = ["予選突破だ！", "やったぞ……！", "ハル、お前すげえよ！",
+                                   "……この痛み、なんだ？", "……気のせいだ。", ""]
+        case .ruin: pool = ["うっ……！", "ハル！！", "……また、ダメだった。",
+                            "", "（雨の音だけが残る）", ""]
+        case .trigger: pool = ["先輩の背中を見て走り始めたんです。", "……オレの、背中？", "走る理由は、速さだけじゃない。",
+                               "立て、ハル。", "……ああ。", ""]
+        case .showdown: pool = ["ここで……終わらせる！", "過去の自分に勝つ。", "ハル、いけーっ！",
+                                "（心臓の音）", "うおおおっ！", ""]
+        case .satisfaction: pool = ["……ありがとう、みんな。", "また明日、走ろう。", "うん、また明日。",
+                                    "（新しい朝の光）", "", ""]
+        default: pool = ["行こう。", "大丈夫、きっと。", "……", "ああ。", "先は長いぞ。", ""]
         }
         return pool[(panel - 1) % pool.count]
     }

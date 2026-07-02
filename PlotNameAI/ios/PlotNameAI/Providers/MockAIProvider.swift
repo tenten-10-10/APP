@@ -80,29 +80,38 @@ struct MockAIProvider: AIProvider {
     ) async throws -> [PagePlan] {
         try await Self.simulateDelay()
 
-        // ページ番号 -> フェーズ番号の対応表を作る。
+        // ページ番号 -> フェーズ番号の対応表と、各フェーズの先頭/末尾ページを作る。
         var pageToPhase: [Int: Int] = [:]
+        var firstPageOfPhase: [Int: Int] = [:]
+        var lastPageOfPhase: [Int: Int] = [:]
         for card in phases {
             for p in card.pages { pageToPhase[p] = card.phaseNumber }
+            firstPageOfPhase[card.phaseNumber] = card.pages.first
+            lastPageOfPhase[card.phaseNumber] = card.pages.last
         }
 
         var plans: [PagePlan] = []
         for page in 1...pageCount {
             let phaseNum = pageToPhase[page] ?? Self.fallbackPhase(forPage: page, of: pageCount)
             let phase = Phase(rawValue: phaseNum) ?? .dailyLife
+            let isPhaseFirst = firstPageOfPhase[phaseNum] == page
+            let isPhaseLast = lastPageOfPhase[phaseNum] == page
 
-            let isTurning = Self.isTurningPoint(page: page, phase: phase, pageCount: pageCount)
-            let panelCount = Self.panelCount(for: phase, isTurning: isTurning)
+            let isTurning = Self.isTurningPoint(page: page, phase: phase, isPhaseLast: isPhaseLast)
+            let panelCount = Self.panelCount(page: page, phase: phase, isTurning: isTurning)
 
             plans.append(
                 PagePlan(
                     pageNumber: page,
                     phase: phaseNum,
-                    pageGoal: Self.pageGoal(page: page, phase: phase, brief: brief),
+                    pageGoal: Self.pageGoal(page: page, phase: phase,
+                                            isPhaseFirst: isPhaseFirst, isPhaseLast: isPhaseLast,
+                                            brief: brief),
                     readerEmotion: Self.readerEmotion(for: phase),
                     turningPoint: isTurning,
                     panelCount: panelCount,
-                    lastPanelHook: Self.lastHook(page: page, phase: phase, pageCount: pageCount, brief: brief),
+                    lastPanelHook: Self.lastHook(page: page, phase: phase, pageCount: pageCount,
+                                                 isPhaseLast: isPhaseLast, brief: brief),
                     dialogueDensity: Self.dialogueDensity(for: phase),
                     visualDensity: Self.visualDensity(for: phase, isTurning: isTurning),
                     whyThisPageExists: Self.whyExists(page: page, phase: phase)
@@ -391,15 +400,16 @@ private extension MockAIProvider {
 
     // MARK: ページプラン本文
 
-    static func isTurningPoint(page: Int, phase: Phase, pageCount: Int) -> Bool {
-        // 各フェーズの最終ページ付近をターニングポイントにする主要フェーズ。
+    static func isTurningPoint(page: Int, phase: Phase, isPhaseLast: Bool) -> Bool {
+        // 転換点は主要フェーズの「最終ページ」だけに付ける（全ページに付くと意味が薄れる）。
         switch phase {
-        case .incident, .achievement, .ruin, .showdown: return true
+        case .incident, .achievement, .ruin, .showdown: return isPhaseLast
         default: return page == 1
         }
     }
 
-    static func panelCount(for phase: Phase, isTurning: Bool) -> Int {
+    static func panelCount(page: Int, phase: Phase, isTurning: Bool) -> Int {
+        if page == 1 { return 1 }       // 1ページ目は大ゴマ1枚のフック
         switch phase {
         case .dailyLife: return 6
         case .incident: return 5
@@ -410,14 +420,19 @@ private extension MockAIProvider {
         }
     }
 
-    static func pageGoal(page: Int, phase: Phase, brief: StoryBrief) -> String {
+    static func pageGoal(page: Int, phase: Phase, isPhaseFirst: Bool, isPhaseLast: Bool, brief: StoryBrief) -> String {
         if page == 1 { return "読者を一瞬で引き込む（強いフック）。" }
-        switch phase {
-        case .achievement: return "中間の勝利を見せ、読者に満足と油断を与える。"
-        case .ruin: return "主人公がすべてを失う破滅を印象づける。"
-        case .satisfaction: return "テーマを回収し、変化した主人公で締める。"
-        default: return "\(phase.phaseName)の役割を1ページで前進させる。"
+        // フェーズの締めページには決定的な役割を与える。
+        if isPhaseLast {
+            switch phase {
+            case .achievement: return "中間の勝利を見せ、読者に満足と油断を与える。"
+            case .ruin: return "主人公がすべてを失う破滅を印象づける。"
+            case .satisfaction: return "テーマを回収し、変化した主人公で締める。"
+            default: return "\(phase.phaseName)を締め、次の展開への期待を作る。"
+            }
         }
+        if isPhaseFirst { return "\(phase.phaseName)へ場面を切り替え、空気の変化を見せる。" }
+        return "\(phase.phaseName)を深め、\(brief.protagonist.name)の感情を一段階動かす。"
     }
 
     static func readerEmotion(for phase: Phase) -> String {
@@ -438,14 +453,17 @@ private extension MockAIProvider {
         }
     }
 
-    static func lastHook(page: Int, phase: Phase, pageCount: Int, brief: StoryBrief) -> String {
+    static func lastHook(page: Int, phase: Phase, pageCount: Int, isPhaseLast: Bool, brief: StoryBrief) -> String {
         if page == 1 { return "「これは、ただの始まりに過ぎなかった——」" }
         if page == pageCount { return "（完）静かな最終コマで余韻を残す。" }
         switch phase {
         case .achievement: return "勝ったはずなのに、背後に不穏な影。"
         case .ruin: return "崩れ落ちる主人公。次ページへ引く沈黙。"
         case .showdown: return "次の一撃で決着——というところで次ページへ。"
-        default: return "次ページをめくらせる小さな引き。"
+        default:
+            return isPhaseLast
+                ? "\(phase.phaseName)の結末を見せ切らずに次ページへ引く。"
+                : "小さな違和感やセリフの余韻で次ページへつなぐ。"
         }
     }
 
@@ -515,26 +533,37 @@ private extension MockAIProvider {
     static func dialogueLines(page: PagePlan, count: Int, brief: StoryBrief) -> [String] {
         let phase = page.phaseEnum ?? .dailyLife
         let hero = brief.protagonist.name
+        // コマ数(最大6)ぶん重複しないよう、各フェーズ6本のセリフを持つ。
+        // ""は意図的な「無言コマ」（間）。
         let pool: [String]
         switch phase {
         case .dailyLife:
-            pool = ["いつも通りの朝だ。", "……何も変わらない毎日。", "\(hero)、また遅刻するよ！", ""]
+            pool = ["いつも通りの朝だ。", "……何も変わらない毎日。", "\(hero)、また遅刻するよ！",
+                    "うるさいな……。", "（遠くから聞こえる歓声）", ""]
         case .incident:
-            pool = ["なっ……！？", "嘘だろ、こんなことが……", "誰か——！", ""]
+            pool = ["なっ……！？", "嘘だろ、こんなことが……", "誰か——！",
+                    "落ち着け、まず状況を……", "……もう、戻れない。", ""]
         case .resolve:
-            pool = ["……決めた。", "オレがやるしかない。", "もう逃げない。", ""]
+            pool = ["……決めた。", "本気なのか？", "オレがやるしかない。",
+                    "もう逃げない。", "見ていてくれ。", ""]
         case .achievement:
-            pool = ["やった……勝ったんだ！", "これで終わりだ。", "……本当に？", ""]
+            pool = ["やった……勝ったんだ！", "すごいぞ、\(hero)！", "これで終わりだ。",
+                    "……本当に？", "ああ——終わった、はずだ。", ""]
         case .ruin:
-            pool = ["そんな……", "……全部、消えた。", "", ""]
+            pool = ["そんな……", "\(hero)！！", "……全部、消えた。",
+                    "", "（雨の音だけが残る）", ""]
         case .trigger:
-            pool = ["……まだだ。", "本当に大切なものは……", "立ち上がれ、\(hero)。", ""]
+            pool = ["……まだだ。", "本当に大切なものは……", "思い出せ、始めた日のことを。",
+                    "立ち上がれ、\(hero)。", "……ああ。", ""]
         case .showdown:
-            pool = ["ここで……終わらせる！", "覚悟しろ。", "うおおおおっ！", ""]
+            pool = ["ここで……終わらせる！", "覚悟しろ。", "（心臓の音）",
+                    "負けるかよ……！", "うおおおおっ！", ""]
         case .satisfaction:
-            pool = ["……ありがとう。", "また明日。", "", ""]
+            pool = ["……ありがとう。", "また明日。", "うん、また明日。",
+                    "（新しい朝の光）", "", ""]
         default:
-            pool = ["行こう。", "大丈夫、きっと。", "……", ""]
+            pool = ["行こう。", "大丈夫、きっと。", "……",
+                    "ああ。", "先は長いぞ。", ""]
         }
         return (0..<count).map { pool[$0 % pool.count] }
     }
