@@ -11,7 +11,6 @@ struct ProjectShareSection: View {
     @ObservedObject var project: Project
     @Binding var permission: SharePermission
 
-    @State private var presentation: SharePresentation?
     @State private var error: PresentableError?
     @State private var inviteSheet: InviteText?
 
@@ -76,44 +75,35 @@ struct ProjectShareSection: View {
             Text(NSLocalizedString("プロジェクトと、その中のフォルダ・製品・場所・在庫イベントがまとめて共有されます。共有は「今すぐ同期」ではなく、変更が自動で反映されます。", comment: ""))
                 .font(.caption2)
         }
-        .sheet(item: $presentation) { item in
-            CloudSharingControllerView(persistence: container.persistence,
-                                       objectID: item.objectID,
-                                       title: project.displayName,
-                                       existingShare: item.existingShare,
-                                       onSaved: {
-                                           syncMonitor.logShareEvent(NSLocalizedString("共有を保存しました", comment: ""))
-                                           refreshPermission()
-                                       },
-                                       onStopSharing: {
-                                           syncMonitor.logShareEvent(NSLocalizedString("共有を停止しました", comment: ""))
-                                           refreshPermission()
-                                       },
-                                       onError: { err in
-                                           // Record the full failure into 診断 so we can
-                                           // finally SEE why a share fails on-device, and
-                                           // surface the REAL nested reason to the user
-                                           // (not just "Failed to modify some records").
-                                           syncMonitor.logShareEvent(NSLocalizedString("共有に失敗しました", comment: ""), error: err)
-                                           error = PresentableError(AppError.shareCreationFailed(
-                                               CloudKitErrorMapper.rawDescription(for: err)))
-                                       })
-        }
         .errorAlert($error)
         .onAppear { syncMonitor.refreshAccountStatus() }
     }
 
     private func startShare() {
-        // Present the sharing controller directly. For a not-yet-shared project
-        // we pass existingShare = nil so the controller creates the CKShare
-        // itself at the correct time (Apple's preparationHandler pattern, see
-        // CloudSharingControllerView); for an already-shared one we hand it the
-        // existing CKShare so it opens in "manage" mode.
+        // Present the sharing controller DIRECTLY via UIKit (see
+        // CloudSharePresenter) rather than through a SwiftUI `.sheet`. The share
+        // section re-renders on every CloudKit sync event (it observes
+        // syncMonitor), and a `.sheet`-hosted UICloudSharingController is torn
+        // down by those re-renders — that is the "flashes open then closes on
+        // the first tap" bug. A direct UIKit presentation is immune to it.
+        //
+        // existingShare == nil → the controller creates the CKShare itself at
+        // the right time (preparationHandler); otherwise it opens in "manage"
+        // mode for the existing share.
         let existing = container.sharing.existingShare(for: project)
-        syncMonitor.logShareEvent(existing == nil
-            ? NSLocalizedString("共有シートを開きます（新規作成）", comment: "")
-            : NSLocalizedString("共有シートを開きます（既存の共有を管理）", comment: ""))
-        presentation = SharePresentation(objectID: project.objectID, existingShare: existing)
+        CloudSharePresenter.present(persistence: container.persistence,
+                                    objectID: project.objectID,
+                                    title: project.displayName,
+                                    existingShare: existing,
+                                    syncMonitor: syncMonitor,
+                                    onSaved: refreshPermission,
+                                    onStopSharing: refreshPermission,
+                                    onError: { err in
+                                        // Surface the REAL nested reason (the
+                                        // per-record CloudKit server message).
+                                        error = PresentableError(AppError.shareCreationFailed(
+                                            CloudKitErrorMapper.rawDescription(for: err)))
+                                    })
     }
 
     private func refreshPermission() {
@@ -135,12 +125,6 @@ struct ProjectShareSection: View {
             project.displayName, AppConfig.appStoreURL, url.absoluteString)
         inviteSheet = InviteText(text: message)
     }
-}
-
-struct SharePresentation: Identifiable {
-    let id = UUID()
-    let objectID: NSManagedObjectID
-    let existingShare: CKShare?
 }
 
 /// Identifiable wrapper so an invitation message can drive `.sheet(item:)`.

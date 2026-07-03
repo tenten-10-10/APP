@@ -50,7 +50,7 @@ CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.example.projectstock
 // -----------------------------------------------------------------------------
 
 // Marketing version (CFBundleShortVersionString), e.g. 1.0.0
-MARKETING_VERSION = 1.1.16
+MARKETING_VERSION = 1.1.17
 
 // Build number (CFBundleVersion). Increment for every TestFlight upload.
 CURRENT_PROJECT_VERSION = 1

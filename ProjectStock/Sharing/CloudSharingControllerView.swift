@@ -2,44 +2,47 @@ import SwiftUI
 import CloudKit
 import CoreData
 import UIKit
+import ObjectiveC
 
-/// SwiftUI wrapper around `UICloudSharingController` (spec §10), using the
-/// initializer Apple actually requires:
+/// Presents `UICloudSharingController` DIRECTLY through UIKit rather than wrapping
+/// it in a SwiftUI `.sheet` (spec §10).
 ///
-///  * Project NOT yet shared → `init(preparationHandler:)`. The CKShare is
-///    created INSIDE the handler via `NSPersistentCloudKitContainer.share(_:to:)`
-///    and we only call the controller's completion once Core Data has scheduled
-///    the export — so the controller uploads the share/records itself before the
-///    invite step. (Passing a freshly-created share to `init(share:container:)`
-///    is explicitly warned against by Apple and is what produced
-///    `failedToSaveShareWithError` = 「共有するためのリンクを作成できませんでした」.)
-///  * Project ALREADY shared → `init(share:container:)`.
+/// Why not `.sheet`: the share section observes `CloudKitSyncMonitor`, which
+/// publishes on every CloudKit import/export event. While sync is active (or in
+/// an error/retry loop) those events fire constantly, re-rendering the section —
+/// and a `.sheet`-hosted `UIViewControllerRepresentable` gets torn down and
+/// re-presented on that re-render, so the share sheet "flashes open then closes"
+/// on the first tap and only survives a later tap that happens not to collide
+/// with an event. Presenting the controller straight from the key window's top
+/// view controller makes it immune to SwiftUI re-renders entirely.
 ///
-/// After the controller saves, `persistUpdatedShare(_:in:)` writes the share
-/// back into the private store — Core Data does NOT do this automatically for
-/// changes `UICloudSharingController` makes.
-struct CloudSharingControllerView: UIViewControllerRepresentable {
+/// Initializer choice (unchanged, and correct):
+///  * NOT yet shared → `init(preparationHandler:)`, creating the CKShare INSIDE
+///    the handler via `NSPersistentCloudKitContainer.share(_:to:)`.
+///  * ALREADY shared → `init(share:container:)`.
+/// After a save, `persistUpdatedShare(_:in:)` writes the share back into the
+/// private store (Core Data does not do this automatically).
+enum CloudSharePresenter {
 
-    let persistence: PersistenceController
-    let objectID: NSManagedObjectID
-    let title: String
-    let existingShare: CKShare?
-    var onSaved: () -> Void = {}
-    var onStopSharing: () -> Void = {}
-    var onError: (Error) -> Void = { _ in }
+    static func present(persistence: PersistenceController,
+                        objectID: NSManagedObjectID,
+                        title: String,
+                        existingShare: CKShare?,
+                        syncMonitor: CloudKitSyncMonitor,
+                        onSaved: @escaping () -> Void = {},
+                        onStopSharing: @escaping () -> Void = {},
+                        onError: @escaping (Error) -> Void = { _ in }) {
+        guard let top = topViewController() else {
+            onError(AppError.shareCreationFailed(
+                NSLocalizedString("共有画面を表示できませんでした。もう一度お試しください。", comment: "")))
+            return
+        }
 
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    func makeUIViewController(context: Context) -> UICloudSharingController {
         let ckContainer = CKContainer(identifier: AppConfig.cloudKitContainerIdentifier)
         let controller: UICloudSharingController
-
         if let existingShare {
             controller = UICloudSharingController(share: existingShare, container: ckContainer)
         } else {
-            let persistence = self.persistence
-            let objectID = self.objectID
-            let title = self.title
             controller = UICloudSharingController { _, completion in
                 let context = persistence.viewContext
                 guard let object = try? context.existingObject(with: objectID) else {
@@ -56,36 +59,81 @@ struct CloudSharingControllerView: UIViewControllerRepresentable {
             }
         }
 
-        controller.delegate = context.coordinator
+        let coordinator = Coordinator(persistence: persistence, title: title,
+                                      syncMonitor: syncMonitor,
+                                      onSaved: onSaved, onStopSharing: onStopSharing, onError: onError)
+        controller.delegate = coordinator
+        // `delegate` is weak — keep the coordinator alive exactly as long as the
+        // controller by hanging it off the controller as an associated object.
+        objc_setAssociatedObject(controller, &Coordinator.associationKey, coordinator, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         controller.availablePermissions = [.allowReadWrite, .allowReadOnly, .allowPrivate]
-        controller.modalPresentationStyle = .formSheet
-        return controller
+
+        // iPad requires a popover anchor or it traps.
+        if let popover = controller.popoverPresentationController {
+            popover.sourceView = top.view
+            popover.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+
+        syncMonitor.logShareEvent(existingShare == nil
+            ? NSLocalizedString("共有シートを開きます（新規作成）", comment: "")
+            : NSLocalizedString("共有シートを開きます（既存の共有を管理）", comment: ""))
+        top.present(controller, animated: true)
     }
 
-    func updateUIViewController(_ uiViewController: UICloudSharingController, context: Context) {}
+    /// The front-most presented view controller of the active key window.
+    private static func topViewController() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes
+        let scene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+            ?? scenes.compactMap { $0 as? UIWindowScene }.first
+        guard let window = scene?.windows.first(where: { $0.isKeyWindow }) ?? scene?.windows.first else { return nil }
+        var top = window.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        return top
+    }
 
     final class Coordinator: NSObject, UICloudSharingControllerDelegate {
-        let parent: CloudSharingControllerView
-        init(_ parent: CloudSharingControllerView) { self.parent = parent }
+        static var associationKey: UInt8 = 0
+        let persistence: PersistenceController
+        let title: String
+        let syncMonitor: CloudKitSyncMonitor
+        let onSaved: () -> Void
+        let onStopSharing: () -> Void
+        let onError: (Error) -> Void
 
-        func itemTitle(for csc: UICloudSharingController) -> String? { parent.title }
+        init(persistence: PersistenceController, title: String, syncMonitor: CloudKitSyncMonitor,
+             onSaved: @escaping () -> Void, onStopSharing: @escaping () -> Void, onError: @escaping (Error) -> Void) {
+            self.persistence = persistence
+            self.title = title
+            self.syncMonitor = syncMonitor
+            self.onSaved = onSaved
+            self.onStopSharing = onStopSharing
+            self.onError = onError
+        }
 
-        func cloudSharingController(_ csc: UICloudSharingController,
-                                    failedToSaveShareWithError error: Error) {
-            parent.onError(error)
+        func itemTitle(for csc: UICloudSharingController) -> String? { title }
+
+        func cloudSharingController(_ csc: UICloudSharingController, failedToSaveShareWithError error: Error) {
+            syncMonitor.logShareEvent(NSLocalizedString("共有に失敗しました", comment: ""), error: error)
+            onError(error)
         }
 
         func cloudSharingControllerDidSaveShare(_ csc: UICloudSharingController) {
-            if let share = csc.share, let store = parent.persistence.privateStore {
-                parent.persistence.container.persistUpdatedShare(share, in: store) { [weak self] _, error in
-                    if let error = error { self?.parent.onError(error) }
+            if let share = csc.share, let store = persistence.privateStore {
+                persistence.container.persistUpdatedShare(share, in: store) { [weak self] _, error in
+                    if let error = error {
+                        self?.syncMonitor.logShareEvent(NSLocalizedString("共有の保存後処理に失敗", comment: ""), error: error)
+                        self?.onError(error)
+                    }
                 }
             }
-            parent.onSaved()
+            syncMonitor.logShareEvent(NSLocalizedString("共有を保存しました", comment: ""))
+            onSaved()
         }
 
         func cloudSharingControllerDidStopSharing(_ csc: UICloudSharingController) {
-            parent.onStopSharing()
+            syncMonitor.logShareEvent(NSLocalizedString("共有を停止しました", comment: ""))
+            onStopSharing()
         }
 
         func itemThumbnailData(for csc: UICloudSharingController) -> Data? { nil }
