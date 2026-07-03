@@ -281,6 +281,19 @@ final class PersistenceController {
         guard let shared = sharedStore else { return false }
         return object.objectID.persistentStore === shared
     }
+
+#if DEBUG
+    /// DEBUG-only: push the current model's schema to the CloudKit **Development**
+    /// environment. A Debug build run from Xcode uses the Development
+    /// environment, where `initializeCloudKitSchema` is allowed to CREATE all
+    /// `CD_<Entity>` record types + fields (Production forbids that — hence the
+    /// "Cannot create new type … in production" error on TestFlight). Run this
+    /// ONCE from Xcode, then deploy Development → Production in the CloudKit
+    /// Dashboard. Compiled out of Release/TestFlight/App Store builds.
+    func initializeCloudKitSchemaForDevelopment() throws {
+        try container.initializeCloudKitSchema(options: [])
+    }
+#endif
 }
 
 // MARK: - Preview / test factories

@@ -10,9 +10,44 @@ struct DiagnosticsView: View {
     @ObservedObject private var loadFailure = StoreLoadFailure.shared
     @State private var shareItem: ShareableFile?
     @State private var copied = false
+#if DEBUG
+    @State private var schemaResult: String?
+    @State private var schemaRunning = false
+#endif
 
     var body: some View {
         List {
+#if DEBUG
+            Section {
+                Button {
+                    schemaRunning = true; schemaResult = nil
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        let message: String
+                        do {
+                            try container.persistence.initializeCloudKitSchemaForDevelopment()
+                            message = "✅ 成功: CloudKit の Development 環境に全レコードタイプを作成しました。次は CloudKit Dashboard で「Deploy Schema Changes… → Production」を実行してください。"
+                        } catch {
+                            message = "❌ 失敗: \(error.localizedDescription)"
+                        }
+                        DispatchQueue.main.async { schemaResult = message; schemaRunning = false }
+                    }
+                } label: {
+                    if schemaRunning {
+                        HStack(spacing: 8) { ProgressView(); Text("スキーマ作成中… (数十秒かかります)") }
+                    } else {
+                        Label("CloudKitスキーマを初期化（開発環境）", systemImage: "wrench.and.screwdriver")
+                    }
+                }
+                .disabled(schemaRunning)
+                if let schemaResult {
+                    Text(schemaResult).font(.caption).textSelection(.enabled)
+                }
+            } header: {
+                Text("開発用ツール（DEBUGビルドのみ）")
+            } footer: {
+                Text("Xcodeから実行したときだけ表示されます。CloudKitのDevelopment環境に全レコードタイプ（CD_*）を作成します。")
+            }
+#endif
             if LaunchCrashGuard.safeModeActive || LaunchCrashGuard.lastException != nil {
                 Section {
                     Label(NSLocalizedString("前回の起動でアプリが停止しました", comment: ""), systemImage: "exclamationmark.triangle.fill")
