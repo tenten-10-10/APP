@@ -53,27 +53,17 @@ final class PersistenceController {
     /// - Parameters:
     ///   - inMemory: use in-memory stores (tests / SwiftUI previews).
     ///   - cloudKitEnabled: attach CloudKit options to the store descriptions.
-    /// The managed object model, loaded from the compiled `.momd` exactly ONCE
-    /// for the whole process. Passing this explicit instance to every container
-    /// (app, previews, tests, `.shared`) guarantees the model is never
-    /// instantiated twice — a second instance makes two `NSEntityDescription`s
-    /// claim each subclass, after which `NSManagedObject.entity()` returns nil
-    /// and SwiftUI's `@FetchRequest` crashes with "A fetch request must have an
-    /// entity." (We also build every fetch request by entity NAME, which is the
-    /// primary guard; this is defense-in-depth.)
-    private static let managedObjectModel: NSManagedObjectModel = {
-        guard let url = Bundle.main.url(forResource: "ProjectStock", withExtension: "momd"),
-              let model = NSManagedObjectModel(contentsOf: url) else {
-            fatalError("ProjectStock: failed to load managed object model")
-        }
-        return model
-    }()
-
     init(inMemory: Bool = false, cloudKitEnabled: Bool = true) {
         self.cloudKitEnabled = cloudKitEnabled && !inMemory
 
-        container = NSPersistentCloudKitContainer(name: "ProjectStock",
-                                                  managedObjectModel: Self.managedObjectModel)
+        // Let the container load the model from the (versioned) .momd itself: it
+        // resolves the current version AND keeps the older version available as a
+        // lightweight-migration source for existing stores. (We do NOT force an
+        // explicit single NSManagedObjectModel here — that would strand the v1
+        // migration source. The launch crash that looked like a double-model
+        // problem is actually fixed by building every @FetchRequest by entity
+        // NAME; see the views.)
+        container = NSPersistentCloudKitContainer(name: "ProjectStock")
 
         guard let privateDescription = container.persistentStoreDescriptions.first else {
             fatalError("ProjectStock: missing default store description")
@@ -96,7 +86,7 @@ final class PersistenceController {
         // tests. History tracking is not available for in-memory stores.
         privateDescription.type = NSInMemoryStoreType
         privateDescription.url = URL(fileURLWithPath: "/dev/null/private")
-        privateDescription.configuration = "Default"
+        privateDescription.configuration = nil   // implicit default configuration (all entities)
         privateDescription.cloudKitContainerOptions = nil
 
         let sharedDescription = privateDescription.copy() as! NSPersistentStoreDescription
@@ -108,7 +98,14 @@ final class PersistenceController {
     private func configureOnDisk(_ privateDescription: NSPersistentStoreDescription) {
         let storeFolder = privateDescription.url!.deletingLastPathComponent()
         privateDescription.url = storeFolder.appendingPathComponent("private.sqlite")
-        privateDescription.configuration = "Default"
+        // Use the IMPLICIT default configuration (nil), NOT the name "Default".
+        // The model has no configuration literally named "Default"; passing that
+        // string makes NSPersistentCloudKitContainer fail EVERY store load with
+        // NSCocoaErrorDomain 134060 "Unable to find a configuration named
+        // 'Default' in the specified managed object model." — which is what has
+        // silently disabled iCloud sync/sharing all along. Apple's canonical
+        // two-store sample passes nil here.
+        privateDescription.configuration = nil
 
         let sharedDescription = privateDescription.copy() as! NSPersistentStoreDescription
         sharedDescription.url = storeFolder.appendingPathComponent("shared.sqlite")
