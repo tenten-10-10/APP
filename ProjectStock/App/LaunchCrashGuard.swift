@@ -33,12 +33,14 @@ enum LaunchCrashGuard {
 
     /// Call once, as the very first thing in `App.init`.
     static func beginLaunch() {
+        // The handler is a C function pointer, so it must NOT capture any
+        // context — reference only globals and string literals inside it
+        // (hence the hard-coded key rather than `exceptionKey`).
         NSSetUncaughtExceptionHandler { exception in
             let name = exception.name.rawValue
             let reason = exception.reason ?? ""
-            let text = "\(name): \(reason)"
             let ud = UserDefaults.standard
-            ud.set(text, forKey: exceptionKey)
+            ud.set("\(name): \(reason)", forKey: "launch.lastException")
             ud.synchronize()
         }
 
