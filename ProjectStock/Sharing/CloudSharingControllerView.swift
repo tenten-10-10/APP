@@ -77,8 +77,8 @@ struct CloudSharingControllerView: UIViewControllerRepresentable {
 
         func cloudSharingControllerDidSaveShare(_ csc: UICloudSharingController) {
             if let share = csc.share, let store = parent.persistence.privateStore {
-                parent.persistence.container.persistUpdatedShare(share, in: store) { _, error in
-                    if let error = error { parent.onError(error) }
+                parent.persistence.container.persistUpdatedShare(share, in: store) { [weak self] _, error in
+                    if let error = error { self?.parent.onError(error) }
                 }
             }
             parent.onSaved()
