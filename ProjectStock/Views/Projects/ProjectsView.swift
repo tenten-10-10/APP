@@ -193,7 +193,16 @@ struct ProjectsView: View {
 
     @ToolbarContentBuilder private var toolbarContent: some ToolbarContent {
             ToolbarItem(placement: .navigationBarLeading) {
-                SyncStatusBadge(state: syncMonitor.syncState)
+                // Tappable: re-check the iCloud account + sync state (the badge
+                // used to be inert, which looked broken when tapped).
+                Button {
+                    Haptics.tap()
+                    syncMonitor.clearError()
+                    syncMonitor.refreshAccountStatus()
+                } label: {
+                    SyncStatusBadge(state: syncMonitor.syncState)
+                }
+                .buttonStyle(.plain)
             }
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 EditButton()

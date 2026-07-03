@@ -29,7 +29,11 @@ struct ProjectShareSection: View {
                     Text(NSLocalizedString("アプリを一度終了して開き直すと再接続します。設定 > Apple ID > iCloud で「タナミル」がオンになっているかもご確認ください。", comment: ""))
                         .font(.footnote).foregroundColor(.secondary)
                 }
-            } else if syncMonitor.accountState != .available {
+            } else if syncMonitor.accountState == .noAccount || syncMonitor.accountState == .restricted {
+                // Only block for a DEFINITIVE account problem (not signed in /
+                // restricted). We do NOT block on `.couldNotDetermine` /
+                // `.temporarilyUnavailable`: those are transient and used to
+                // hide the share button even though sync was clearly working.
                 VStack(alignment: .leading, spacing: 6) {
                     Label(NSLocalizedString("iCloudが必要です", comment: ""), systemImage: "icloud.slash")
                         .font(.subheadline)
@@ -85,6 +89,7 @@ struct ProjectShareSection: View {
                                        onError: { error = PresentableError($0) })
         }
         .errorAlert($error)
+        .onAppear { syncMonitor.refreshAccountStatus() }
     }
 
     private func startShare() {

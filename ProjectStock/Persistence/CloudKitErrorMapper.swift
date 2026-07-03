@@ -48,31 +48,37 @@ enum CloudKitErrorMapper {
     /// record type / field the app now uses (its `ServerErrorDescription` names
     /// the exact field). Returns nil when there is no per-record breakdown.
     static func partialFailureDetail(for error: Error) -> String? {
-        var perItem: [Error] = []
-        var current: NSError? = error as NSError
-        var depth = 0
-        while let e = current, depth < maxErrorDepth {
-            if let ck = e as? CKError, let byID = ck.partialErrorsByItemID, !byID.isEmpty {
-                perItem.append(contentsOf: byID.values)
-            }
-            let next = e.userInfo[NSUnderlyingErrorKey] as? NSError
-            current = (next !== e) ? next : nil
-            depth += 1
-        }
-        guard !perItem.isEmpty else { return nil }
-
         var seen = Set<String>()
         var lines: [String] = []
-        for item in perItem {
-            let ns = item as NSError
-            let server = ns.userInfo["ServerErrorDescription"] as? String
-            let reason = server ?? ns.localizedFailureReason ?? ns.localizedDescription
-            let line = "[\(ns.code)] \(reason)"
-            if seen.insert(line).inserted {
-                lines.append(line)
-                if lines.count >= 4 { break }
+
+        // Record the most specific reason on any error node in the tree — the
+        // server description names the offending record type / field.
+        func record(_ e: NSError) {
+            let server = e.userInfo["ServerErrorDescription"] as? String
+                ?? e.userInfo["CKErrorDescription"] as? String
+            let reason = server
+                ?? (e.domain == CKErrorDomain ? e.localizedDescription : e.localizedFailureReason)
+            guard let reason, !reason.isEmpty else { return }
+            let line = "[\(e.domain.replacingOccurrences(of: "Domain", with: ""))#\(e.code)] \(reason)"
+            if seen.insert(line).inserted && lines.count < 5 { lines.append(line) }
+        }
+
+        // Walk underlying errors + CloudKit per-record errors + detailed errors.
+        func walk(_ e: NSError, _ depth: Int) {
+            guard depth < maxErrorDepth else { return }
+            record(e)
+            if let ck = e as? CKError, let byID = ck.partialErrorsByItemID {
+                for value in byID.values { walk(value as NSError, depth + 1) }
+            }
+            if let detailed = e.userInfo["NSDetailedErrorsKey"] as? [NSError] {
+                for d in detailed { walk(d, depth + 1) }
+            }
+            if let underlying = e.userInfo[NSUnderlyingErrorKey] as? NSError, underlying !== e {
+                walk(underlying, depth + 1)
             }
         }
+
+        walk(error as NSError, 0)
         return lines.isEmpty ? nil : lines.joined(separator: " ; ")
     }
 
