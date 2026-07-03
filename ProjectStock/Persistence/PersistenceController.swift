@@ -161,9 +161,35 @@ final class PersistenceController {
                 assignStore(store, for: description)
             } catch {
                 StoreLoadFailure.shared.record(error)
+                // Last resort: the on-disk store can't be opened even as a plain
+                // local store (corrupt, or a model change that can't migrate the
+                // existing file). Attach an in-memory store for this slot so the
+                // coordinator ALWAYS has a store for every entity — otherwise the
+                // first @FetchRequest hits a coordinator with no store and throws
+                // an uncatchable Obj-C exception, crash-looping the app on launch.
+                // The on-disk file is left untouched, so no data is lost and a
+                // later launch (or app update) can still recover it.
+                attachInMemoryFallback(for: description)
             }
         }
         if !reportLines.isEmpty { cloudKitFailureReport = reportLines.joined(separator: "\n") }
+    }
+
+    /// Absolute last-resort store so the coordinator is never left without a
+    /// backing store for an entity (which makes the first fetch throw). Uses the
+    /// same "Default" configuration (all entities) so every entity is covered.
+    /// In-memory stores don't support history tracking, so pass no options.
+    private func attachInMemoryFallback(for description: NSPersistentStoreDescription) {
+        do {
+            let store = try container.persistentStoreCoordinator.addPersistentStore(
+                ofType: NSInMemoryStoreType,
+                configurationName: description.configuration,
+                at: nil,
+                options: nil)
+            assignStore(store, for: description)
+        } catch {
+            StoreLoadFailure.shared.record(error)
+        }
     }
 
     /// Map an already-loaded store (looked up by URL) to the private/shared slot.
