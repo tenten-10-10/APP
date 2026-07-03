@@ -52,10 +52,20 @@ enum CloudKitErrorMapper {
         return lines.joined(separator: "\n")
     }
 
+    /// Deepest error nesting we'll print. Core Data / CloudKit error chains can
+    /// be self-referential (an error's NSUnderlyingError eventually points back),
+    /// so a hard depth cap is required — otherwise this recurses until the stack
+    /// overflows and the app crashes on launch.
+    private static let maxErrorDepth = 6
+
     private static func appendDescription(of error: NSError, depth: Int, into lines: inout [String]) {
         let indent = String(repeating: "  ", count: depth)
         lines.append("\(indent)\(error.domain) (\(error.code))")
         lines.append("\(indent)\(error.localizedDescription)")
+        guard depth < maxErrorDepth else {
+            lines.append("\(indent)…")
+            return
+        }
 
         let info = error.userInfo
         // The most useful field for CloudKit/Core Data setup failures.
@@ -65,12 +75,12 @@ enum CloudKitErrorMapper {
         if let reason = error.localizedFailureReason, reason != error.localizedDescription {
             lines.append("\(indent)理由: \(reason)")
         }
-        if let underlying = info[NSUnderlyingErrorKey] as? NSError {
+        if let underlying = info[NSUnderlyingErrorKey] as? NSError, underlying !== error {
             appendDescription(of: underlying, depth: depth + 1, into: &lines)
         }
         // NSDetailedErrorsKey isn't exposed as a Swift symbol; use its raw value.
         if let detailed = info["NSDetailedErrorsKey"] as? [NSError] {
-            for detail in detailed.prefix(5) {
+            for detail in detailed.prefix(5) where detail !== error {
                 appendDescription(of: detail, depth: depth + 1, into: &lines)
             }
         }
