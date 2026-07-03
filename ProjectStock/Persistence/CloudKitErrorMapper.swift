@@ -113,8 +113,25 @@ enum CloudKitErrorMapper {
         if let debug = info[NSDebugDescriptionErrorKey] as? String {
             lines.append("\(indent)» \(debug)")
         }
+        // The CloudKit *server*'s own explanation of why a record was rejected —
+        // e.g. a missing record type / field in the Production schema. This is
+        // the single most useful line for a failed share, so surface it directly.
+        if let server = info["ServerErrorDescription"] as? String {
+            lines.append("\(indent)サーバー: \(server)")
+        }
+        if let ckDesc = info["CKErrorDescription"] as? String, ckDesc != info["ServerErrorDescription"] as? String {
+            lines.append("\(indent)CK: \(ckDesc)")
+        }
         if let reason = error.localizedFailureReason, reason != error.localizedDescription {
             lines.append("\(indent)理由: \(reason)")
+        }
+        // A share save fails as a CKError partialFailure whose per-record errors
+        // carry the real reason; the generic top-level message alone is useless.
+        if let ck = error as? CKError, let byID = ck.partialErrorsByItemID {
+            for perRecord in byID.values.prefix(5) {
+                let ns = perRecord as NSError
+                if ns !== error { appendDescription(of: ns, depth: depth + 1, into: &lines) }
+            }
         }
         if let underlying = info[NSUnderlyingErrorKey] as? NSError, underlying !== error {
             appendDescription(of: underlying, depth: depth + 1, into: &lines)

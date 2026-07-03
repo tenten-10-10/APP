@@ -29,6 +29,8 @@
 	<true/>
 	<key>CloudKitContainerIdentifier</key>
 	<string>$(CLOUDKIT_CONTAINER_IDENTIFIER)</string>
+	<key>CKSharingSupported</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>QRコードを読み取り、在庫の確認・更新・移動を行うためにカメラを使用します。</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -1,5 +1,6 @@
 import SwiftUI
 import CloudKit
+import CoreData
 
 /// Share segment of the project detail (spec §10, §12.3). Surfaces account
 /// state, lets the owner start/manage a CKShare, and reflects participant
@@ -11,7 +12,6 @@ struct ProjectShareSection: View {
     @Binding var permission: SharePermission
 
     @State private var presentation: SharePresentation?
-    @State private var preparing = false
     @State private var error: PresentableError?
     @State private var inviteSheet: InviteText?
 
@@ -54,14 +54,9 @@ struct ProjectShareSection: View {
                     Button {
                         startShare()
                     } label: {
-                        if preparing {
-                            ProgressView()
-                        } else {
-                            Label(permission == .owner ? NSLocalizedString("共有を管理", comment: "") : NSLocalizedString("このプロジェクトを共有", comment: ""),
-                                  systemImage: "person.crop.circle.badge.plus")
-                        }
+                        Label(permission == .owner ? NSLocalizedString("共有を管理", comment: "") : NSLocalizedString("このプロジェクトを共有", comment: ""),
+                              systemImage: "person.crop.circle.badge.plus")
                     }
-                    .disabled(preparing)
                     .accessibilityIdentifier("shareProjectButton")
 
                     if permission == .owner {
@@ -82,32 +77,32 @@ struct ProjectShareSection: View {
                 .font(.caption2)
         }
         .sheet(item: $presentation) { item in
-            CloudSharingControllerView(share: item.share, container: item.container,
+            CloudSharingControllerView(persistence: container.persistence,
+                                       objectID: item.objectID,
                                        title: project.displayName,
+                                       existingShare: item.existingShare,
                                        onSaved: refreshPermission,
                                        onStopSharing: refreshPermission,
-                                       onError: { error = PresentableError($0) })
+                                       onError: { err in
+                                           // Surface the REAL nested reason (CloudKit
+                                           // per-record server message), not just
+                                           // "Failed to modify some records".
+                                           error = PresentableError(AppError.shareCreationFailed(
+                                               CloudKitErrorMapper.rawDescription(for: err)))
+                                       })
         }
         .errorAlert($error)
         .onAppear { syncMonitor.refreshAccountStatus() }
     }
 
     private func startShare() {
-        preparing = true
-        container.sharing.prepareShare(for: project) { result in
-            preparing = false
-            switch result {
-            case .success(let prep):
-                let (share, ckContainer): (CKShare, CKContainer)
-                switch prep {
-                case .existing(let s, let c): (share, ckContainer) = (s, c)
-                case .created(let s, let c):  (share, ckContainer) = (s, c)
-                }
-                presentation = SharePresentation(share: share, container: ckContainer)
-            case .failure(let err):
-                error = PresentableError(err)
-            }
-        }
+        // Present the sharing controller directly. For a not-yet-shared project
+        // we pass existingShare = nil so the controller creates the CKShare
+        // itself at the correct time (Apple's preparationHandler pattern, see
+        // CloudSharingControllerView); for an already-shared one we hand it the
+        // existing CKShare so it opens in "manage" mode.
+        presentation = SharePresentation(objectID: project.objectID,
+                                         existingShare: container.sharing.existingShare(for: project))
     }
 
     private func refreshPermission() {
@@ -133,8 +128,8 @@ struct ProjectShareSection: View {
 
 struct SharePresentation: Identifiable {
     let id = UUID()
-    let share: CKShare
-    let container: CKContainer
+    let objectID: NSManagedObjectID
+    let existingShare: CKShare?
 }
 
 /// Identifiable wrapper so an invitation message can drive `.sheet(item:)`.
