@@ -1,10 +1,11 @@
 import UIKit
 
-/// Downscales product photos before they go into Core Data / CloudKit. The
-/// model attribute uses external binary storage; we still cap the long edge at
-/// ~1280px and JPEG-compress so synced records stay small (spec §5.3).
+/// Downscales product photos before they go into Core Data / CloudKit. Photos
+/// are stored INLINE (not external binary storage, which CloudKit mirroring
+/// can't sync), so callers pass a small `maxEdge` (product photos use ~250px)
+/// and JPEG-compress to keep each synced record tiny (a few KB).
 enum ImageResizer {
-    static func jpegData(from image: UIImage, maxEdge: CGFloat = 1280, quality: CGFloat = 0.7) -> Data? {
+    static func jpegData(from image: UIImage, maxEdge: CGFloat = 250, quality: CGFloat = 0.7) -> Data? {
         let size = image.size
         let longest = max(size.width, size.height)
         let scale = longest > maxEdge ? maxEdge / longest : 1

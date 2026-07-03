@@ -87,7 +87,7 @@ struct ProductDetailView: View {
     private var headerSection: some View {
         Section {
             HStack(alignment: .top, spacing: 14) {
-                if let data = product.photoData, let image = UIImage(data: data) {
+                if let data = product.photoThumbnail, let image = UIImage(data: data) {
                     Image(uiImage: image).resizable().scaledToFill()
                         .frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 8))
                         .accessibilityLabel(Text(NSLocalizedString("製品写真", comment: "")))

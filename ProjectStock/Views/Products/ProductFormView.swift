@@ -153,7 +153,7 @@ struct ProductFormView: View {
         note = editing.note ?? ""
         folderID = editing.folder?.objectID
         locationID = editing.defaultLocation?.objectID
-        if let data = editing.photoData { photo = UIImage(data: data) }
+        if let data = editing.photoThumbnail { photo = UIImage(data: data) }
     }
 
     private func checkSKU() {
@@ -217,7 +217,7 @@ struct ProductFormView: View {
         let projectID = project.objectID
         let editingID = editing?.objectID
         let actor = settings.effectiveOperatorName
-        let photoData = photo.flatMap { ImageResizer.jpegData(from: $0) }
+        let photoThumbnail = photo.flatMap { ImageResizer.jpegData(from: $0, maxEdge: 250) }
 
         let result = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: projectID) as? Project else { return }
@@ -239,7 +239,7 @@ struct ProductFormView: View {
             product.note = values.note
             product.folder = folderObj
             product.defaultLocation = locationObj
-            if let photoData { product.photoData = photoData }
+            if let photoThumbnail { product.photoThumbnail = photoThumbnail }
             product.touch()
 
             if editingID == nil && values.mode == .quantity && values.initial > 0 {

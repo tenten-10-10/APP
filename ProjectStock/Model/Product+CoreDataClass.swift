@@ -47,7 +47,11 @@ extension Product {
     @NSManaged public var isArchived: Bool
     @NSManaged public var createdAt: Date?
     @NSManaged public var updatedAt: Date?
-    @NSManaged public var photoData: Data?
+    /// A small (~250px) JPEG thumbnail of the product photo, stored INLINE.
+    /// (Formerly `photoData` with external binary storage, which CloudKit
+    /// mirroring does not support — that incompatibility blocked all iCloud
+    /// sync/sharing. See model version v1→v2 migration.)
+    @NSManaged public var photoThumbnail: Data?
 
     @NSManaged public var project: Project?
     @NSManaged public var folder: Folder?

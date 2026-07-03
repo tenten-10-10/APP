@@ -97,10 +97,16 @@ final class PersistenceController {
         sharedDescription.url = storeFolder.appendingPathComponent("shared.sqlite")
 
         // Persistent history + remote-change notifications are required for
-        // CloudKit mirroring and to keep the two stores merged.
+        // CloudKit mirroring and to keep the two stores merged. Automatic
+        // lightweight migration is required so existing stores (model v1, with
+        // the old external-binary `photoData`) migrate to v2 (inline
+        // `photoThumbnail`) on launch — the v1 model is kept in the .momd as the
+        // migration source, so the store always opens instead of failing.
         for description in [privateDescription, sharedDescription] {
             description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
             description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+            description.shouldMigrateStoreAutomatically = true
+            description.shouldInferMappingModelAutomatically = true
         }
 
         if cloudKitEnabled {
