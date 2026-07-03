@@ -8,10 +8,16 @@ struct ProjectStockApp: App {
     @StateObject private var settings: AppSettings
 
     init() {
+        // MUST be first: install the uncaught-exception recorder and read the
+        // crash-loop counter before anything can crash.
+        LaunchCrashGuard.beginLaunch()
+
         // Tests/UI-tests run on isolated in-memory stores without CloudKit so
         // they are deterministic and need no iCloud account (spec §17, §19).
         let useInMemory = AppConfig.isUITesting
-        let cloudKitEnabled = !AppConfig.isRunningTests
+        // Disable CloudKit if the previous launch crashed before stabilising, so
+        // the app always opens locally instead of crash-looping.
+        let cloudKitEnabled = !AppConfig.isRunningTests && !LaunchCrashGuard.safeModeActive
         let persistence = PersistenceController(inMemory: useInMemory, cloudKitEnabled: cloudKitEnabled)
         let appSettings = AppSettings.shared
         _container = StateObject(wrappedValue: ServiceContainer(persistence: persistence, settings: appSettings))
@@ -39,6 +45,12 @@ struct ProjectStockApp: App {
                     container.refreshExpiryNotifications()
                     // Pull any web borrow requests (and auto-apply if enabled).
                     if !AppConfig.isRunningTests { await container.webBorrow.refresh() }
+                }
+                .task {
+                    // Survived a few seconds without crashing → this launch is
+                    // stable, so the next one may try CloudKit again.
+                    try? await Task.sleep(nanoseconds: 4_000_000_000)
+                    LaunchCrashGuard.markStable()
                 }
         }
     }

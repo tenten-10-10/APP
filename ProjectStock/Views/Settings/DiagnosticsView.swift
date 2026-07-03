@@ -13,6 +13,38 @@ struct DiagnosticsView: View {
 
     var body: some View {
         List {
+            if LaunchCrashGuard.safeModeActive || LaunchCrashGuard.lastException != nil {
+                Section {
+                    Label(NSLocalizedString("前回の起動でアプリが停止しました", comment: ""), systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline.weight(.semibold)).foregroundColor(.orange)
+                    if LaunchCrashGuard.safeModeActive {
+                        Text(NSLocalizedString("安全のため、今回はiCloud同期をオフにして起動しています。", comment: ""))
+                            .font(.caption).foregroundColor(.secondary)
+                    }
+                    if let ex = LaunchCrashGuard.lastException {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(NSLocalizedString("停止した理由", comment: ""))
+                                .font(.caption.weight(.semibold))
+                            Text(ex)
+                                .font(.system(.caption2, design: .monospaced))
+                                .textSelection(.enabled)
+                        }.padding(.vertical, 2)
+                        Button { copyText(ex) } label: {
+                            Label(copied ? NSLocalizedString("コピーしました", comment: "") : NSLocalizedString("この理由をコピー", comment: ""),
+                                  systemImage: copied ? "checkmark" : "doc.on.doc")
+                        }
+                    }
+                    Button { LaunchCrashGuard.resetForRetry() } label: {
+                        Label(NSLocalizedString("次回起動で同期を再試行", comment: ""), systemImage: "arrow.clockwise")
+                    }
+                } header: {
+                    Text(NSLocalizedString("クラッシュからの復帰", comment: ""))
+                } footer: {
+                    Text(NSLocalizedString("「停止した理由」の文面を開発者に送っていただけると、原因を特定できます。", comment: ""))
+                        .font(.caption2)
+                }
+            }
+
             Section(NSLocalizedString("現在の状態", comment: "")) {
                 SyncStatusBadge(state: syncMonitor.syncState)
                 Text(syncMonitor.accountState.localizedMessage).font(.caption).foregroundColor(.secondary)
@@ -89,8 +121,10 @@ struct DiagnosticsView: View {
 
     /// Copy the whole diagnostics text to the clipboard — the most reliable way
     /// to get it to the developer when AirDrop / file share is finicky.
-    private func copyDiagnostics() {
-        UIPasteboard.general.string = diagnosticsText()
+    private func copyDiagnostics() { copyText(diagnosticsText()) }
+
+    private func copyText(_ text: String) {
+        UIPasteboard.general.string = text
         Haptics.success()
         copied = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
@@ -102,7 +136,11 @@ struct DiagnosticsView: View {
         lines.append("Version: \(AppConfig.marketingVersion) (\(AppConfig.buildNumber))")
         lines.append("CloudKit: \(container.persistence.cloudKitEnabled)")
         lines.append("CloudKitActive: \(container.persistence.cloudKitActive)")
+        lines.append("SafeMode: \(LaunchCrashGuard.safeModeActive)")
         lines.append("Container: \(AppConfig.cloudKitContainerIdentifier)")
+        if let ex = LaunchCrashGuard.lastException {
+            lines.append("LastUncaughtException: \(ex)")
+        }
         if let report = container.persistence.cloudKitFailureReport {
             lines.append("--- CloudKit load failure ---")
             lines.append(report)

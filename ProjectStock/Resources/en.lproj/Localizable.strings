@@ -624,3 +624,12 @@
 "診断ログをコピー" = "Copy diagnostics";
 "コピーしました" = "Copied";
 "コピーして貼り付ければ確実に送れます。診断ログには製品名やメモは含まれません。" = "Copy and paste to send it reliably. The diagnostics contain no product names or notes.";
+
+/* 1.1.7 Safe mode / crash recovery */
+"前回の起動でアプリが停止しました" = "The app stopped on the previous launch";
+"安全のため、今回はiCloud同期をオフにして起動しています。" = "For safety, iCloud sync is turned off for this launch.";
+"停止した理由" = "Reason it stopped";
+"この理由をコピー" = "Copy this reason";
+"次回起動で同期を再試行" = "Retry sync on next launch";
+"クラッシュからの復帰" = "Crash recovery";
+"「停止した理由」の文面を開発者に送っていただけると、原因を特定できます。" = "Send the “Reason it stopped” text to the developer so we can pinpoint the cause.";
