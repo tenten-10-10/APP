@@ -38,6 +38,11 @@ final class PersistenceController {
     /// swallowed once the local fallback succeeds).
     private(set) var cloudKitLoadError: Error?
 
+    /// Human-readable report of every CloudKit store that failed to load, with
+    /// its scope (private/shared) and the full nested error — this is what
+    /// pinpoints a generic 134060.
+    private(set) var cloudKitFailureReport: String?
+
     /// CloudKit is compiled in AND every store actually loaded with mirroring.
     var cloudKitActive: Bool { cloudKitEnabled && !cloudKitFallbackActive }
 
@@ -134,12 +139,16 @@ final class PersistenceController {
         // usable store, so a write never hits a coordinator with zero / ambiguous
         // stores. (That would raise an uncatchable Obj-C exception on save, not a
         // Swift error, which is exactly the create/sample-data crash.)
+        var reportLines: [String] = []
         for (description, error) in failed {
-            if description.cloudKitContainerOptions != nil {
+            if let options = description.cloudKitContainerOptions {
                 cloudKitFallbackActive = true
                 // Keep the real reason sync isn't running so Diagnostics can
                 // show it (and record it into the shared bag the UI already reads).
                 if cloudKitLoadError == nil { cloudKitLoadError = error }
+                let scope = options.databaseScope == .shared ? "shared" : "private"
+                reportLines.append("[\(scope) / \(description.url?.lastPathComponent ?? "?")]")
+                reportLines.append(CloudKitErrorMapper.rawDescription(for: error))
                 StoreLoadFailure.shared.record(error)
             }
             description.cloudKitContainerOptions = nil
@@ -154,6 +163,7 @@ final class PersistenceController {
                 StoreLoadFailure.shared.record(error)
             }
         }
+        if !reportLines.isEmpty { cloudKitFailureReport = reportLines.joined(separator: "\n") }
     }
 
     /// Map an already-loaded store (looked up by URL) to the private/shared slot.

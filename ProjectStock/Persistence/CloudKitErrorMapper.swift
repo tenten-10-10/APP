@@ -42,9 +42,37 @@ enum CloudKitErrorMapper {
     }
 
     /// The verbatim error text, shown only in a details / diagnostics screen.
+    /// Core Data reports CloudKit setup failures as a generic 134060 whose real
+    /// reason lives in the nested userInfo (debug description / underlying /
+    /// detailed errors), so walk the whole tree — that's what actually pinpoints
+    /// the cause.
     static func rawDescription(for error: Error) -> String {
-        let nsError = error as NSError
-        return "\(nsError.domain) (\(nsError.code))\n\(nsError.localizedDescription)"
+        var lines: [String] = []
+        appendDescription(of: error as NSError, depth: 0, into: &lines)
+        return lines.joined(separator: "\n")
+    }
+
+    private static func appendDescription(of error: NSError, depth: Int, into lines: inout [String]) {
+        let indent = String(repeating: "  ", count: depth)
+        lines.append("\(indent)\(error.domain) (\(error.code))")
+        lines.append("\(indent)\(error.localizedDescription)")
+
+        let info = error.userInfo
+        // The most useful field for CloudKit/Core Data setup failures.
+        if let debug = info[NSDebugDescriptionErrorKey] as? String {
+            lines.append("\(indent)» \(debug)")
+        }
+        if let reason = error.localizedFailureReason, reason != error.localizedDescription {
+            lines.append("\(indent)理由: \(reason)")
+        }
+        if let underlying = info[NSUnderlyingErrorKey] as? NSError {
+            appendDescription(of: underlying, depth: depth + 1, into: &lines)
+        }
+        if let detailed = info[NSDetailedErrorsKey] as? [NSError] {
+            for detail in detailed.prefix(5) {
+                appendDescription(of: detail, depth: depth + 1, into: &lines)
+            }
+        }
     }
 }
 
