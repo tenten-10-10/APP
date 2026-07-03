@@ -68,7 +68,8 @@ enum CloudKitErrorMapper {
         if let underlying = info[NSUnderlyingErrorKey] as? NSError {
             appendDescription(of: underlying, depth: depth + 1, into: &lines)
         }
-        if let detailed = info[NSDetailedErrorsKey] as? [NSError] {
+        // NSDetailedErrorsKey isn't exposed as a Swift symbol; use its raw value.
+        if let detailed = info["NSDetailedErrorsKey"] as? [NSError] {
             for detail in detailed.prefix(5) {
                 appendDescription(of: detail, depth: depth + 1, into: &lines)
             }
