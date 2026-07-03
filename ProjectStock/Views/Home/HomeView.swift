@@ -34,8 +34,15 @@ struct HomeView: View {
         animation: .default
     ) private var checkedOutUnits: FetchedResults<StockUnit>
 
-    // Existence check for any pre-printed QR label (fetchLimit 1 keeps it cheap).
-    @FetchRequest(fetchRequest: HomeView.anyLabelRequest) private var anyLabel: FetchedResults<CodeAlias>
+    // All QR labels. We deliberately DON'T filter by `project.isSample` in the
+    // fetch predicate: a relationship-traversing predicate requires a SQL JOIN
+    // that CloudKit's mirrored multi-store (private + shared) coordinator can't
+    // execute, and it throws an uncatchable exception on launch. Filtering in
+    // Swift (object-level relationship access) is store-safe.
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \CodeAlias.createdAt, ascending: false)],
+        animation: .default
+    ) private var labels: FetchedResults<CodeAlias>
 
     @State private var showSearch = false
     // Pre-print (blank QR) flow driven from the Home hero.
@@ -45,15 +52,6 @@ struct HomeView: View {
     @State private var showProjectPicker = false
     @State private var goScan = false
     @AppStorage("hideFirstRunGuide") private var hideSetupGuide = false
-
-    private static let anyLabelRequest: NSFetchRequest<CodeAlias> = {
-        let request: NSFetchRequest<CodeAlias> = CodeAlias.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \CodeAlias.createdAt, ascending: false)]
-        // Demo (お試し) labels don't count as the user's own setup progress.
-        request.predicate = NSPredicate(format: "project.isSample == NO")
-        request.fetchLimit = 1
-        return request
-    }()
 
     // MARK: - Derived
 
@@ -88,7 +86,8 @@ struct HomeView: View {
     /// from Home never land inside demo data that will later be deleted.
     private var realProjects: [Project] { projects.filter { !$0.isSample } }
     private var hasProject: Bool { !realProjects.isEmpty }
-    private var hasBlankLabel: Bool { !anyLabel.isEmpty }
+    // Exclude demo (お試し) labels here in Swift, not in the fetch predicate.
+    private var hasBlankLabel: Bool { labels.contains { $0.project?.isSample != true } }
     private var hasProduct: Bool { products.contains { $0.project?.isSample != true } }
     // Sample-first flow: ① プロジェクト → ② 空QRを印刷して貼る → ③ スキャンして登録.
     private var setupComplete: Bool { hasProject && hasBlankLabel && hasProduct }
