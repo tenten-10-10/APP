@@ -173,6 +173,18 @@ final class PersistenceController {
             }
         }
         if !reportLines.isEmpty { cloudKitFailureReport = reportLines.joined(separator: "\n") }
+
+        // Absolute guarantee against the confirmed launch crash
+        // (NSInvalidArgumentException "executeFetchRequest: A fetch request must
+        // have an entity."): if EVERY store failed and none of the fallbacks
+        // attached, the coordinator has no store, the model's entities aren't
+        // resolvable, and the first @FetchRequest crashes the app on launch.
+        // Never allow that — attach one in-memory store so the app always opens.
+        if container.persistentStoreCoordinator.persistentStores.isEmpty {
+            let fallbackDescription = container.persistentStoreDescriptions.first
+                ?? NSPersistentStoreDescription()
+            attachInMemoryFallback(for: fallbackDescription)
+        }
     }
 
     /// Absolute last-resort store so the coordinator is never left without a
