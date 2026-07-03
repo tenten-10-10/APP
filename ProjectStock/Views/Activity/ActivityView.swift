@@ -5,13 +5,20 @@ struct ActivityView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \InventoryEvent.occurredAt, ascending: false)],
-        animation: .default
-    ) private var events: FetchedResults<InventoryEvent>
+    // Entity-NAME-based requests (see HomeView): the `sortDescriptors:` convenience
+    // form resolves via NSManagedObject.entity(), which returns nil under CloudKit
+    // mirroring and crashes SwiftUI with "A fetch request must have an entity."
+    @FetchRequest(fetchRequest: {
+        let r = InventoryEvent.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \InventoryEvent.occurredAt, ascending: false)]
+        return r
+    }(), animation: .default) private var events: FetchedResults<InventoryEvent>
 
-    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \Project.name, ascending: true)])
-    private var projects: FetchedResults<Project>
+    @FetchRequest(fetchRequest: {
+        let r = Project.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \Project.name, ascending: true)]
+        return r
+    }()) private var projects: FetchedResults<Project>
 
     @State private var selectedProjectID: NSManagedObjectID?
     @State private var selectedType: InventoryEventType?

@@ -6,14 +6,18 @@ struct ProjectsView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var syncMonitor: CloudKitSyncMonitor
 
-    @FetchRequest(
-        sortDescriptors: [
+    // Entity-NAME-based request (see HomeView): the `sortDescriptors:` convenience
+    // form resolves via NSManagedObject.entity(), which returns nil under CloudKit
+    // mirroring and crashes SwiftUI with "A fetch request must have an entity."
+    @FetchRequest(fetchRequest: {
+        let r = Project.fetchRequest()
+        r.sortDescriptors = [
             NSSortDescriptor(key: "isPinned", ascending: false),
             NSSortDescriptor(key: "sortIndex", ascending: true),
             NSSortDescriptor(keyPath: \Project.updatedAt, ascending: false)
-        ],
-        animation: .default
-    ) private var projects: FetchedResults<Project>
+        ]
+        return r
+    }(), animation: .default) private var projects: FetchedResults<Project>
 
     @State private var searchText = ""
     @State private var showArchived = false

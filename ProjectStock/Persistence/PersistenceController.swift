@@ -53,10 +53,27 @@ final class PersistenceController {
     /// - Parameters:
     ///   - inMemory: use in-memory stores (tests / SwiftUI previews).
     ///   - cloudKitEnabled: attach CloudKit options to the store descriptions.
+    /// The managed object model, loaded from the compiled `.momd` exactly ONCE
+    /// for the whole process. Passing this explicit instance to every container
+    /// (app, previews, tests, `.shared`) guarantees the model is never
+    /// instantiated twice — a second instance makes two `NSEntityDescription`s
+    /// claim each subclass, after which `NSManagedObject.entity()` returns nil
+    /// and SwiftUI's `@FetchRequest` crashes with "A fetch request must have an
+    /// entity." (We also build every fetch request by entity NAME, which is the
+    /// primary guard; this is defense-in-depth.)
+    private static let managedObjectModel: NSManagedObjectModel = {
+        guard let url = Bundle.main.url(forResource: "ProjectStock", withExtension: "momd"),
+              let model = NSManagedObjectModel(contentsOf: url) else {
+            fatalError("ProjectStock: failed to load managed object model")
+        }
+        return model
+    }()
+
     init(inMemory: Bool = false, cloudKitEnabled: Bool = true) {
         self.cloudKitEnabled = cloudKitEnabled && !inMemory
 
-        container = NSPersistentCloudKitContainer(name: "ProjectStock")
+        container = NSPersistentCloudKitContainer(name: "ProjectStock",
+                                                  managedObjectModel: Self.managedObjectModel)
 
         guard let privateDescription = container.persistentStoreDescriptions.first else {
             fatalError("ProjectStock: missing default store description")

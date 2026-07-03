@@ -17,11 +17,15 @@ struct SettingsView: View {
     @AppStorage("hideFirstRunGuide") private var hideFirstRunGuide = false
 
     // Demo (お試し) projects, so the delete row only shows when there are any.
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Project.createdAt, ascending: true)],
-        predicate: NSPredicate(format: "isSample == YES"),
-        animation: .default
-    ) private var demoProjects: FetchedResults<Project>
+    // Entity-NAME-based request (see HomeView): the `sortDescriptors:` convenience
+    // form resolves via NSManagedObject.entity(), which returns nil under CloudKit
+    // mirroring and crashes SwiftUI with "A fetch request must have an entity."
+    @FetchRequest(fetchRequest: {
+        let r = Project.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \Project.createdAt, ascending: true)]
+        r.predicate = NSPredicate(format: "isSample == YES")
+        return r
+    }(), animation: .default) private var demoProjects: FetchedResults<Project>
 
     var body: some View {
         Form {

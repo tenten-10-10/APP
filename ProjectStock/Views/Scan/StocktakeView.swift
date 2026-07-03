@@ -1,10 +1,17 @@
 import SwiftUI
+import CoreData
 
 /// Pick a project to start a stocktake session (spec §11).
 struct StocktakeStartView: View {
     @EnvironmentObject private var container: ServiceContainer
-    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \Project.updatedAt, ascending: false)])
-    private var projects: FetchedResults<Project>
+    // Entity-NAME-based request (see HomeView): the `sortDescriptors:` convenience
+    // form resolves via NSManagedObject.entity(), which returns nil under CloudKit
+    // mirroring and crashes SwiftUI with "A fetch request must have an entity."
+    @FetchRequest(fetchRequest: {
+        let r = Project.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \Project.updatedAt, ascending: false)]
+        return r
+    }()) private var projects: FetchedResults<Project>
 
     var body: some View {
         List {

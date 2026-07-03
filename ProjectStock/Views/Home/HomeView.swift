@@ -9,40 +9,51 @@ struct HomeView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var webBorrow: WebBorrowInbox
 
-    // Broad fetches — filter in Swift (computed properties can't be predicates)
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Project.updatedAt, ascending: false)],
-        predicate: NSPredicate(format: "archivedAt == nil"),
-        animation: .default
-    ) private var projects: FetchedResults<Project>
+    // Broad fetches — filter in Swift (computed properties can't be predicates).
+    // Every request is built by ENTITY NAME (via each subclass's fetchRequest())
+    // rather than the `sortDescriptors:` convenience form, which resolves the
+    // entity through NSManagedObject.entity(). Under CloudKit mirroring that
+    // returns nil (two NSEntityDescriptions claim the subclass) and SwiftUI then
+    // crashes with "A fetch request must have an entity." Name-based requests
+    // resolve the entity from the context's model at execute time — never nil.
+    @FetchRequest(fetchRequest: {
+        let r = Project.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \Project.updatedAt, ascending: false)]
+        r.predicate = NSPredicate(format: "archivedAt == nil")
+        return r
+    }(), animation: .default) private var projects: FetchedResults<Project>
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Product.name, ascending: true)],
-        predicate: NSPredicate(format: "isArchived == NO"),
-        animation: .default
-    ) private var products: FetchedResults<Product>
+    @FetchRequest(fetchRequest: {
+        let r = Product.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \Product.name, ascending: true)]
+        r.predicate = NSPredicate(format: "isArchived == NO")
+        return r
+    }(), animation: .default) private var products: FetchedResults<Product>
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \StockUnit.expiresAt, ascending: true)],
-        predicate: NSPredicate(format: "kindRaw == %@ AND expiresAt != nil", UnitKind.lot.rawValue),
-        animation: .default
-    ) private var lotUnits: FetchedResults<StockUnit>
+    @FetchRequest(fetchRequest: {
+        let r = StockUnit.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \StockUnit.expiresAt, ascending: true)]
+        r.predicate = NSPredicate(format: "kindRaw == %@ AND expiresAt != nil", UnitKind.lot.rawValue)
+        return r
+    }(), animation: .default) private var lotUnits: FetchedResults<StockUnit>
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: true)],
-        predicate: NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue),
-        animation: .default
-    ) private var checkedOutUnits: FetchedResults<StockUnit>
+    @FetchRequest(fetchRequest: {
+        let r = StockUnit.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: true)]
+        r.predicate = NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue)
+        return r
+    }(), animation: .default) private var checkedOutUnits: FetchedResults<StockUnit>
 
     // All QR labels. We deliberately DON'T filter by `project.isSample` in the
     // fetch predicate: a relationship-traversing predicate requires a SQL JOIN
     // that CloudKit's mirrored multi-store (private + shared) coordinator can't
     // execute, and it throws an uncatchable exception on launch. Filtering in
     // Swift (object-level relationship access) is store-safe.
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \CodeAlias.createdAt, ascending: false)],
-        animation: .default
-    ) private var labels: FetchedResults<CodeAlias>
+    @FetchRequest(fetchRequest: {
+        let r = CodeAlias.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \CodeAlias.createdAt, ascending: false)]
+        return r
+    }(), animation: .default) private var labels: FetchedResults<CodeAlias>
 
     @State private var showSearch = false
     // Pre-print (blank QR) flow driven from the Home hero.

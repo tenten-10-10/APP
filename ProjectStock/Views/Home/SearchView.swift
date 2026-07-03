@@ -6,16 +6,21 @@ import CoreData
 struct SearchView: View {
     @EnvironmentObject private var container: ServiceContainer
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Product.name, ascending: true)],
-        predicate: NSPredicate(format: "isArchived == NO"),
-        animation: .default
-    ) private var products: FetchedResults<Product>
+    // Entity-NAME-based requests (see HomeView): the `sortDescriptors:` convenience
+    // form resolves via NSManagedObject.entity(), which returns nil under CloudKit
+    // mirroring and crashes SwiftUI with "A fetch request must have an entity."
+    @FetchRequest(fetchRequest: {
+        let r = Product.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \Product.name, ascending: true)]
+        r.predicate = NSPredicate(format: "isArchived == NO")
+        return r
+    }(), animation: .default) private var products: FetchedResults<Product>
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: false)],
-        animation: .default
-    ) private var units: FetchedResults<StockUnit>
+    @FetchRequest(fetchRequest: {
+        let r = StockUnit.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: false)]
+        return r
+    }(), animation: .default) private var units: FetchedResults<StockUnit>
 
     @State private var searchText = ""
     @Environment(\.dismiss) private var dismiss

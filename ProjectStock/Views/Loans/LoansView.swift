@@ -7,11 +7,15 @@ struct LoansView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: true)],
-        predicate: NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue),
-        animation: .default
-    ) private var checkedOutUnits: FetchedResults<StockUnit>
+    // Entity-NAME-based request (see HomeView): the `sortDescriptors:` convenience
+    // form resolves via NSManagedObject.entity(), which returns nil under CloudKit
+    // mirroring and crashes SwiftUI with "A fetch request must have an entity."
+    @FetchRequest(fetchRequest: {
+        let r = StockUnit.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: true)]
+        r.predicate = NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue)
+        return r
+    }(), animation: .default) private var checkedOutUnits: FetchedResults<StockUnit>
 
     @State private var error: PresentableError?
 
