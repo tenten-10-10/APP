@@ -10,6 +10,8 @@ struct DiagnosticsView: View {
     @ObservedObject private var loadFailure = StoreLoadFailure.shared
     @State private var shareItem: ShareableFile?
     @State private var copied = false
+    @State private var probeResult: String?
+    @State private var probeRunning = false
 #if DEBUG
     @State private var schemaResult: String?
     @State private var schemaRunning = false
@@ -83,6 +85,40 @@ struct DiagnosticsView: View {
             Section(NSLocalizedString("現在の状態", comment: "")) {
                 SyncStatusBadge(state: syncMonitor.syncState)
                 Text(syncMonitor.accountState.localizedMessage).font(.caption).foregroundColor(.secondary)
+            }
+
+            // Directly ask CloudKit whether a share can be created for our record
+            // type, and show the server's exact reason. This surfaces the schema /
+            // sharing problem that the normal sync error hides (it only reports a
+            // generic CKError #2). No Mac / Console / Dashboard needed.
+            Section {
+                Button {
+                    probeRunning = true; probeResult = nil
+                    CloudKitSchemaProbe.run { result in
+                        probeResult = result; probeRunning = false
+                    }
+                } label: {
+                    if probeRunning {
+                        HStack(spacing: 8) { ProgressView(); Text(NSLocalizedString("テスト中… (数秒)", comment: "")) }
+                    } else {
+                        Label(NSLocalizedString("共有できるかを直接テスト", comment: ""), systemImage: "stethoscope")
+                    }
+                }
+                .disabled(probeRunning || !container.persistence.cloudKitActive)
+                if let probeResult {
+                    Text(probeResult)
+                        .font(.system(.caption2, design: .monospaced))
+                        .textSelection(.enabled)
+                    Button { copyText(probeResult) } label: {
+                        Label(copied ? NSLocalizedString("コピーしました", comment: "") : NSLocalizedString("結果をコピー", comment: ""),
+                              systemImage: copied ? "checkmark" : "doc.on.doc")
+                    }
+                }
+            } header: {
+                Text(NSLocalizedString("共有の自己診断", comment: ""))
+            } footer: {
+                Text(NSLocalizedString("CloudKitに直接問い合わせ、共有できない本当の理由を表示します。結果をそのままコピーして送ってください。テスト用データは自動で削除されます。", comment: ""))
+                    .font(.caption2)
             }
 
             Section {
