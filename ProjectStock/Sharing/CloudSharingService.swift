@@ -126,11 +126,19 @@ final class CloudSharingService: ObservableObject {
                 guard let self else { return }
                 self.inFlight.remove(project.objectID)
                 if let error = error {
-                    // Surface the underlying error plus the recovery step that
-                    // clears the common transient states (stale WAL snapshot,
-                    // mirroring not yet warmed up): relaunch and retry.
-                    let message = String(format: NSLocalizedString("共有を開始できませんでした（%@）。アプリを一度終了して開き直し、もう一度お試しください。", comment: ""),
-                                         error.localizedDescription)
+                    let raw = error.localizedDescription
+                    // The most common failure is that CloudKit mirroring never
+                    // finished initialising — almost always because the
+                    // container's schema isn't fully deployed to the Production
+                    // environment yet. Show a clean, honest message instead of
+                    // the raw multi-line CKError dump (the detail is in
+                    // 設定 > 診断 for the developer).
+                    let mirroringNotReady = raw.contains("mirroring delegate never successfully initialized")
+                        || raw.contains("production schema")
+                        || raw.contains("Cannot create new type")
+                    let message = mirroringNotReady
+                        ? NSLocalizedString("iCloud共有の準備がまだ完了していないため、共有できません。しばらく待ってから、もう一度お試しください。（状態は「設定 > 診断」で確認できます）", comment: "")
+                        : String(format: NSLocalizedString("共有を開始できませんでした（%@）。アプリを一度終了して開き直し、もう一度お試しください。", comment: ""), raw)
                     completion(.failure(AppError.shareCreationFailed(message))); return
                 }
                 guard let share = share, let container = container else {

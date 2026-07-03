@@ -8,16 +8,21 @@ struct ProjectStockApp: App {
     @StateObject private var settings: AppSettings
 
     init() {
-        // MUST be first: install the uncaught-exception recorder and read the
-        // crash-loop counter before anything can crash.
+        // Keep recording the reason of any uncaught launch exception (for the
+        // diagnostics screen) — but we NO LONGER disable CloudKit after a crash.
+        // The launch crash that motivated "safe mode" is fixed (fetch requests
+        // are entity-name based), and auto-disabling sync made the app need a
+        // throw-away first launch ("restart once to sync") — which we remove here.
         LaunchCrashGuard.beginLaunch()
+        LaunchCrashGuard.markStable()   // clear any leftover crash counter immediately
 
         // Tests/UI-tests run on isolated in-memory stores without CloudKit so
         // they are deterministic and need no iCloud account (spec §17, §19).
         let useInMemory = AppConfig.isUITesting
-        // Disable CloudKit if the previous launch crashed before stabilising, so
-        // the app always opens locally instead of crash-looping.
-        let cloudKitEnabled = !AppConfig.isRunningTests && !LaunchCrashGuard.safeModeActive
+        // CloudKit is ON whenever we're not running automated tests. iCloud
+        // availability itself is handled gracefully by PersistenceController's
+        // local fallback, so there is nothing to "restart" for.
+        let cloudKitEnabled = !AppConfig.isRunningTests
         let persistence = PersistenceController(inMemory: useInMemory, cloudKitEnabled: cloudKitEnabled)
         let appSettings = AppSettings.shared
         _container = StateObject(wrappedValue: ServiceContainer(persistence: persistence, settings: appSettings))

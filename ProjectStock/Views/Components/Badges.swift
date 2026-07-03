@@ -1,17 +1,26 @@
 import SwiftUI
 
 /// Compact sync-state chip (spec §13). Uses an icon + text, never color alone
-/// (spec §15 accessibility).
+/// (spec §15 accessibility). While syncing, the leading glyph is a live spinner
+/// so it's obvious iCloud is actively working rather than stuck.
 struct SyncStatusBadge: View {
     let state: SyncState
+    private var isSyncing: Bool { if case .syncing = state { return true }; return false }
     var body: some View {
-        Label(state.localizedTitle, systemImage: state.systemImageName)
-            .font(.caption2)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(Color(.secondarySystemBackground)))
-            .foregroundColor(state.isError ? .red : .secondary)
-            .accessibilityLabel(Text(NSLocalizedString("同期状態", comment: "")) + Text(": ") + Text(state.localizedTitle))
+        HStack(spacing: 4) {
+            if isSyncing {
+                ProgressView().controlSize(.mini)
+            } else {
+                Image(systemName: state.systemImageName)
+            }
+            Text(state.localizedTitle)
+        }
+        .font(.caption2)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Capsule().fill(Color(.secondarySystemBackground)))
+        .foregroundColor(state.isError ? .red : .secondary)
+        .accessibilityLabel(Text(NSLocalizedString("同期状態", comment: "")) + Text(": ") + Text(state.localizedTitle))
     }
 }
 
