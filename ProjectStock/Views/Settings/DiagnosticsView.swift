@@ -16,7 +16,33 @@ struct DiagnosticsView: View {
                 Text(syncMonitor.accountState.localizedMessage).font(.caption).foregroundColor(.secondary)
             }
 
-            if let error = loadFailure.lastError {
+            Section {
+                LabeledRow(title: NSLocalizedString("iCloud同期", comment: ""),
+                           value: container.persistence.cloudKitActive
+                               ? NSLocalizedString("有効", comment: "")
+                               : NSLocalizedString("停止中", comment: ""))
+                LabeledRow(title: NSLocalizedString("コンテナID", comment: ""),
+                           value: AppConfig.cloudKitContainerIdentifier)
+                if let error = container.persistence.cloudKitLoadError {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(NSLocalizedString("同期が停止している理由", comment: ""))
+                            .font(.caption.weight(.semibold))
+                        Text(CloudKitErrorMapper.rawDescription(for: error))
+                            .font(.system(.caption2, design: .monospaced))
+                            .textSelection(.enabled)
+                    }
+                    .padding(.vertical, 2)
+                }
+            } header: {
+                Text(NSLocalizedString("iCloud同期の詳細", comment: ""))
+            } footer: {
+                if container.persistence.cloudKitLoadError != nil {
+                    Text(NSLocalizedString("この「理由」の文面を長押しでコピーして開発者に送っていただくと、原因を特定できます。", comment: ""))
+                        .font(.caption2)
+                }
+            }
+
+            if let error = loadFailure.lastError, container.persistence.cloudKitLoadError == nil {
                 Section(NSLocalizedString("ストア読み込みエラー", comment: "")) {
                     Text(CloudKitErrorMapper.rawDescription(for: error))
                         .font(.system(.caption, design: .monospaced))
@@ -59,6 +85,11 @@ struct DiagnosticsView: View {
         lines.append("タナミル (ProjectStock) Diagnostics")
         lines.append("Version: \(AppConfig.marketingVersion) (\(AppConfig.buildNumber))")
         lines.append("CloudKit: \(container.persistence.cloudKitEnabled)")
+        lines.append("CloudKitActive: \(container.persistence.cloudKitActive)")
+        lines.append("Container: \(AppConfig.cloudKitContainerIdentifier)")
+        if let error = container.persistence.cloudKitLoadError {
+            lines.append("CloudKitLoadError: \(CloudKitErrorMapper.rawDescription(for: error))")
+        }
         lines.append("Account: \(syncMonitor.accountState)")
         lines.append("SyncState: \(syncMonitor.syncState.localizedTitle)")
         lines.append("Device: \(DeviceIdentity.shared.deviceID)")

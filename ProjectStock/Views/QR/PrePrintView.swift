@@ -17,9 +17,13 @@ struct PrePrintView: View {
     @State private var labelSizeMM: Double = 16
     @State private var paper: PaperSize = .a4
     @State private var marginMM: Double = 8
-    @State private var spacingMM: Double = 3
+    // Default to zero gap so labels sit edge-to-edge and the whole sheet can be
+    // cut with a few straight lines (grid) instead of trimming every label.
+    @State private var spacingMM: Double = 0
     @State private var showCaption = true
-    @State private var cutStyle: CutStyle = .cropMarks
+    // With no gap, a shared-edge grid (枠線) is the guide to cut along; corner
+    // crop marks (トンボ) only make sense when there's a gap between labels.
+    @State private var cutStyle: CutStyle = .border
     @State private var shareItem: ShareableFile?
     @State private var error: PresentableError?
     @State private var working = false
@@ -140,7 +144,7 @@ struct PrePrintView: View {
                 } header: {
                     Text(NSLocalizedString("ラベルシート調整", comment: ""))
                 } footer: {
-                    Text(NSLocalizedString("お使いのラベルシートに合わせて、余白・間隔・ラベルサイズを調整してください。トンボを目印に貼り付け・カットできます。", comment: ""))
+                    Text(NSLocalizedString("初期設定は「間隔0mm＋枠線」で、QR同士がすき間なく並びます。カッターで縦横をまっすぐ切るだけで切り離せます。ラベルシートを使う場合は間隔・余白・サイズを合わせてください。", comment: ""))
                         .font(.caption2)
                 }
                 Section {

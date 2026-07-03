@@ -33,6 +33,11 @@ final class PersistenceController {
     /// mirroring metadata isn't there and share() fails with a file error.
     private(set) var cloudKitFallbackActive = false
 
+    /// The actual error from the CloudKit store that failed to load, kept so the
+    /// diagnostics screen can show WHY sync isn't running (otherwise it's
+    /// swallowed once the local fallback succeeds).
+    private(set) var cloudKitLoadError: Error?
+
     /// CloudKit is compiled in AND every store actually loaded with mirroring.
     var cloudKitActive: Bool { cloudKitEnabled && !cloudKitFallbackActive }
 
@@ -112,12 +117,12 @@ final class PersistenceController {
     }
 
     private func loadStores() {
-        var failed: [NSPersistentStoreDescription] = []
+        var failed: [(description: NSPersistentStoreDescription, error: Error)] = []
         container.loadPersistentStores { [weak self] description, error in
             guard let self else { return }
             if let error = error {
                 self.logger.error("Store '\(description.url?.lastPathComponent ?? "?", privacy: .public)' failed to load: \(error.localizedDescription, privacy: .public). Falling back to local-only storage.")
-                failed.append(description)
+                failed.append((description, error))
             } else {
                 self.mapStore(description)
             }
@@ -129,8 +134,14 @@ final class PersistenceController {
         // usable store, so a write never hits a coordinator with zero / ambiguous
         // stores. (That would raise an uncatchable Obj-C exception on save, not a
         // Swift error, which is exactly the create/sample-data crash.)
-        for description in failed {
-            if description.cloudKitContainerOptions != nil { cloudKitFallbackActive = true }
+        for (description, error) in failed {
+            if description.cloudKitContainerOptions != nil {
+                cloudKitFallbackActive = true
+                // Keep the real reason sync isn't running so Diagnostics can
+                // show it (and record it into the shared bag the UI already reads).
+                if cloudKitLoadError == nil { cloudKitLoadError = error }
+                StoreLoadFailure.shared.record(error)
+            }
             description.cloudKitContainerOptions = nil
             do {
                 let store = try container.persistentStoreCoordinator.addPersistentStore(

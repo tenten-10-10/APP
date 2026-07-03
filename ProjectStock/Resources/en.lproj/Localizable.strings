@@ -609,3 +609,13 @@
 "共有を開始できませんでした（%@）。アプリを一度終了して開き直し、もう一度お試しください。" = "Couldn't start sharing (%@). Quit and reopen the app, then try again.";
 "iCloud同期が開始できていません" = "iCloud sync hasn't started";
 "アプリを一度終了して開き直すと再接続します。設定 > Apple ID > iCloud で「タナミル」がオンになっているかもご確認ください。" = "Quit and reopen the app to reconnect. Also check that Tanamiru is enabled under Settings > Apple ID > iCloud.";
+
+/* 1.1.2 QR zero-gap default + sync diagnostics */
+"初期設定は「間隔0mm＋枠線」で、QR同士がすき間なく並びます。カッターで縦横をまっすぐ切るだけで切り離せます。ラベルシートを使う場合は間隔・余白・サイズを合わせてください。" = "The default is 0 mm gap with borders, so the QR codes sit edge to edge. Just cut straight across and down to separate them. For label sheets, match the gap, margin and size instead.";
+"iCloud同期の詳細" = "iCloud sync details";
+"iCloud同期" = "iCloud sync";
+"有効" = "On";
+"停止中" = "Stopped";
+"コンテナID" = "Container ID";
+"同期が停止している理由" = "Why sync is stopped";
+"この「理由」の文面を長押しでコピーして開発者に送っていただくと、原因を特定できます。" = "Long-press to copy this reason and send it to the developer so we can pinpoint the cause.";
