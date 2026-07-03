@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Sync diagnostics (spec §13, §16): shows recent CloudKit import/export events
 /// and lets the user share a diagnostics text file that contains NO product
@@ -8,6 +9,7 @@ struct DiagnosticsView: View {
     @EnvironmentObject private var syncMonitor: CloudKitSyncMonitor
     @ObservedObject private var loadFailure = StoreLoadFailure.shared
     @State private var shareItem: ShareableFile?
+    @State private var copied = false
 
     var body: some View {
         List {
@@ -69,11 +71,15 @@ struct DiagnosticsView: View {
             }
 
             Section {
+                Button { copyDiagnostics() } label: {
+                    Label(copied ? NSLocalizedString("コピーしました", comment: "") : NSLocalizedString("診断ログをコピー", comment: ""),
+                          systemImage: copied ? "checkmark" : "doc.on.doc")
+                }
                 Button { shareDiagnostics() } label: {
                     Label(NSLocalizedString("診断ログを共有", comment: ""), systemImage: "square.and.arrow.up")
                 }
             } footer: {
-                Text(NSLocalizedString("診断ログには製品名やメモは含まれません。", comment: "")).font(.caption2)
+                Text(NSLocalizedString("コピーして貼り付ければ確実に送れます。診断ログには製品名やメモは含まれません。", comment: "")).font(.caption2)
             }
         }
         .navigationTitle(NSLocalizedString("診断", comment: ""))
@@ -81,7 +87,16 @@ struct DiagnosticsView: View {
         .sheet(item: $shareItem) { item in ShareSheet(items: [item.url]) }
     }
 
-    private func shareDiagnostics() {
+    /// Copy the whole diagnostics text to the clipboard — the most reliable way
+    /// to get it to the developer when AirDrop / file share is finicky.
+    private func copyDiagnostics() {
+        UIPasteboard.general.string = diagnosticsText()
+        Haptics.success()
+        copied = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
+    }
+
+    private func diagnosticsText() -> String {
         var lines: [String] = []
         lines.append("タナミル (ProjectStock) Diagnostics")
         lines.append("Version: \(AppConfig.marketingVersion) (\(AppConfig.buildNumber))")
@@ -101,10 +116,16 @@ struct DiagnosticsView: View {
         for entry in syncMonitor.recentEvents {
             lines.append("\(DateFormatters.dateTime.string(from: entry.date)) \(entry.typeDescription) \(entry.succeeded ? "OK" : "FAIL") \(entry.message)")
         }
-        let text = lines.joined(separator: "\n")
+        return lines.joined(separator: "\n")
+    }
+
+    private func shareDiagnostics() {
+        let text = diagnosticsText()
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("Diagnostics", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let url = dir.appendingPathComponent("\(NSLocalizedString("タナミル_診断ログ", comment: ""))_\(QRExportService.dateStamp()).txt")
+        // ASCII filename: non-ASCII (Japanese) names can make AirDrop fail with
+        // "AirDropを実行できませんでした" on the receiving side.
+        let url = dir.appendingPathComponent("Tanamiru-diagnostics-\(QRExportService.dateStamp()).txt")
         try? text.data(using: .utf8)?.write(to: url, options: .atomic)
         shareItem = ShareableFile(url: url)
     }

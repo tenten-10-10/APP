@@ -619,3 +619,8 @@
 "コンテナID" = "Container ID";
 "同期が停止している理由" = "Why sync is stopped";
 "この「理由」の文面を長押しでコピーして開発者に送っていただくと、原因を特定できます。" = "Long-press to copy this reason and send it to the developer so we can pinpoint the cause.";
+
+/* 1.1.6 Copy diagnostics */
+"診断ログをコピー" = "Copy diagnostics";
+"コピーしました" = "Copied";
+"コピーして貼り付ければ確実に送れます。診断ログには製品名やメモは含まれません。" = "Copy and paste to send it reliably. The diagnostics contain no product names or notes.";
