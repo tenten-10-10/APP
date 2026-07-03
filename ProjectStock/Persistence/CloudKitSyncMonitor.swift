@@ -121,7 +121,12 @@ final class CloudKitSyncMonitor: ObservableObject {
 
         if let error = event.error {
             let mapped = CloudKitErrorMapper.userMessage(for: error)
-            log(SyncLogEntry(type: event.type, succeeded: false, message: mapped))
+            // Record the SPECIFIC per-record reason in the diagnostics log (the
+            // status badge stays friendly). This is what pinpoints e.g. a
+            // Production CloudKit schema missing a field the app now uses.
+            let detail = CloudKitErrorMapper.partialFailureDetail(for: error)
+            let logMessage = detail.map { "\(mapped) — \($0)" } ?? mapped
+            log(SyncLogEntry(type: event.type, succeeded: false, message: logMessage))
             syncState = .error(mapped)
             mapAccountError(error)
         } else if !isStart {

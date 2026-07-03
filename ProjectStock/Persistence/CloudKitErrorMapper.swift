@@ -41,6 +41,41 @@ enum CloudKitErrorMapper {
         }
     }
 
+    /// When CloudKit reports a *partial* failure (some records synced, some
+    /// didn't — the generic "一部のデータを同期できませんでした"), dig out the
+    /// DISTINCT underlying per-record reasons so diagnostics can pinpoint WHY.
+    /// The usual culprit is a Production CloudKit schema that is missing a
+    /// record type / field the app now uses (its `ServerErrorDescription` names
+    /// the exact field). Returns nil when there is no per-record breakdown.
+    static func partialFailureDetail(for error: Error) -> String? {
+        var perItem: [Error] = []
+        var current: NSError? = error as NSError
+        var depth = 0
+        while let e = current, depth < maxErrorDepth {
+            if let ck = e as? CKError, let byID = ck.partialErrorsByItemID, !byID.isEmpty {
+                perItem.append(contentsOf: byID.values)
+            }
+            let next = e.userInfo[NSUnderlyingErrorKey] as? NSError
+            current = (next !== e) ? next : nil
+            depth += 1
+        }
+        guard !perItem.isEmpty else { return nil }
+
+        var seen = Set<String>()
+        var lines: [String] = []
+        for item in perItem {
+            let ns = item as NSError
+            let server = ns.userInfo["ServerErrorDescription"] as? String
+            let reason = server ?? ns.localizedFailureReason ?? ns.localizedDescription
+            let line = "[\(ns.code)] \(reason)"
+            if seen.insert(line).inserted {
+                lines.append(line)
+                if lines.count >= 4 { break }
+            }
+        }
+        return lines.isEmpty ? nil : lines.joined(separator: " ; ")
+    }
+
     /// The verbatim error text, shown only in a details / diagnostics screen.
     /// Core Data reports CloudKit setup failures as a generic 134060 whose real
     /// reason lives in the nested userInfo (debug description / underlying /
