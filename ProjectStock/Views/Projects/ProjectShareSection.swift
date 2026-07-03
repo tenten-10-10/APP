@@ -81,12 +81,20 @@ struct ProjectShareSection: View {
                                        objectID: item.objectID,
                                        title: project.displayName,
                                        existingShare: item.existingShare,
-                                       onSaved: refreshPermission,
-                                       onStopSharing: refreshPermission,
+                                       onSaved: {
+                                           syncMonitor.logShareEvent(NSLocalizedString("共有を保存しました", comment: ""))
+                                           refreshPermission()
+                                       },
+                                       onStopSharing: {
+                                           syncMonitor.logShareEvent(NSLocalizedString("共有を停止しました", comment: ""))
+                                           refreshPermission()
+                                       },
                                        onError: { err in
-                                           // Surface the REAL nested reason (CloudKit
-                                           // per-record server message), not just
-                                           // "Failed to modify some records".
+                                           // Record the full failure into 診断 so we can
+                                           // finally SEE why a share fails on-device, and
+                                           // surface the REAL nested reason to the user
+                                           // (not just "Failed to modify some records").
+                                           syncMonitor.logShareEvent(NSLocalizedString("共有に失敗しました", comment: ""), error: err)
                                            error = PresentableError(AppError.shareCreationFailed(
                                                CloudKitErrorMapper.rawDescription(for: err)))
                                        })
@@ -101,8 +109,11 @@ struct ProjectShareSection: View {
         // itself at the correct time (Apple's preparationHandler pattern, see
         // CloudSharingControllerView); for an already-shared one we hand it the
         // existing CKShare so it opens in "manage" mode.
-        presentation = SharePresentation(objectID: project.objectID,
-                                         existingShare: container.sharing.existingShare(for: project))
+        let existing = container.sharing.existingShare(for: project)
+        syncMonitor.logShareEvent(existing == nil
+            ? NSLocalizedString("共有シートを開きます（新規作成）", comment: "")
+            : NSLocalizedString("共有シートを開きます（既存の共有を管理）", comment: ""))
+        presentation = SharePresentation(objectID: project.objectID, existingShare: existing)
     }
 
     private func refreshPermission() {

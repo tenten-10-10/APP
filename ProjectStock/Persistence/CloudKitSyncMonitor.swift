@@ -122,10 +122,15 @@ final class CloudKitSyncMonitor: ObservableObject {
         if let error = event.error {
             let mapped = CloudKitErrorMapper.userMessage(for: error)
             // Record the SPECIFIC per-record reason in the diagnostics log (the
-            // status badge stays friendly). This is what pinpoints e.g. a
-            // Production CloudKit schema missing a field the app now uses.
+            // status badge stays friendly). The short per-record summary pinpoints
+            // e.g. a Production schema missing/mismatched field; the full tree
+            // dump is the safety net that surfaces whatever hidden userInfo key
+            // holds the real server reason this time.
             let detail = CloudKitErrorMapper.partialFailureDetail(for: error)
-            let logMessage = detail.map { "\(mapped) — \($0)" } ?? mapped
+            let full = CloudKitErrorMapper.fullDiagnosticDump(for: error)
+            let logMessage = [mapped, detail, full]
+                .compactMap { $0 }
+                .joined(separator: "\n")
             log(SyncLogEntry(type: event.type, succeeded: false, message: logMessage))
             syncState = .error(mapped)
             mapAccountError(error)
@@ -171,6 +176,17 @@ final class CloudKitSyncMonitor: ObservableObject {
                 self.recomputeState()
             }
         }
+    }
+
+    /// Record a share-flow milestone (start / prepared / saved / failed) into the
+    /// SAME diagnostics feed the user copies from 設定 > 診断. The UICloudSharingController
+    /// delegate reports its own errors OUT of band from CloudKit's export events,
+    /// so without this a failed share leaves no trace in diagnostics and we're
+    /// blind to WHY it failed. `error`, if present, is dumped in full.
+    func logShareEvent(_ message: String, error: Error? = nil) {
+        let full = error.flatMap { CloudKitErrorMapper.fullDiagnosticDump(for: $0) }
+        let composed = full.map { "\(message)\n\($0)" } ?? message
+        log(SyncLogEntry(type: .export, succeeded: error == nil, message: "[共有] \(composed)"))
     }
 
     /// Clear a sticky error so the UI can re-evaluate after a retry.

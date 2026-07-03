@@ -82,6 +82,77 @@ enum CloudKitErrorMapper {
         return lines.isEmpty ? nil : lines.joined(separator: " ; ")
     }
 
+    /// The single most aggressive dump we have: walk the ENTIRE error tree and
+    /// print every domain/code plus EVERY userInfo key/value (truncated),
+    /// including CloudKit's per-record errors. Core Data frequently hides the
+    /// real reason for an export partial-failure behind a key we weren't
+    /// explicitly reading (ServerErrorDescription / CKErrorDescription /
+    /// NSDebugDescription live at different depths depending on the failure), so
+    /// when diagnosing "why did this record fail to sync/share" we dump them ALL
+    /// rather than guess which key holds it this time. Returns nil if the tree is
+    /// somehow empty.
+    static func fullDiagnosticDump(for error: Error) -> String? {
+        var lines: [String] = []
+        var seenPointers = Set<ObjectIdentifier>()
+        deepDump(error as NSError, depth: 0, into: &lines, seen: &seenPointers)
+        let joined = lines.joined(separator: "\n")
+        return joined.isEmpty ? nil : joined
+    }
+
+    private static func deepDump(_ error: NSError, depth: Int, into lines: inout [String], seen: inout Set<ObjectIdentifier>) {
+        guard depth < maxErrorDepth else { lines.append(String(repeating: "  ", count: depth) + "…"); return }
+        // Guard against self-referential error graphs (an error whose
+        // NSUnderlyingError eventually points back to itself) — otherwise this
+        // recurses until the stack overflows.
+        let ptr = ObjectIdentifier(error)
+        if !seen.insert(ptr).inserted { return }
+        let indent = String(repeating: "  ", count: depth)
+        lines.append("\(indent)• \(error.domain) #\(error.code)")
+
+        // The keys that actually carry a human/server reason, most useful first.
+        let reasonKeys = ["ServerErrorDescription", "CKErrorDescription",
+                          NSDebugDescriptionErrorKey, NSLocalizedFailureReasonErrorKey]
+        for key in reasonKeys {
+            if let value = error.userInfo[key] as? String, !value.isEmpty {
+                lines.append("\(indent)  \(shortKey(key)): \(truncate(value))")
+            }
+        }
+        // Any OTHER string values in userInfo we didn't already print — this is
+        // the safety net that catches whatever key holds the reason this time.
+        for (key, value) in error.userInfo {
+            guard !reasonKeys.contains(key), key != NSUnderlyingErrorKey,
+                  key != "NSDetailedErrorsKey", key != "CKPartialErrorsByItemIDKey",
+                  let string = value as? String, !string.isEmpty else { continue }
+            lines.append("\(indent)  \(key): \(truncate(string))")
+        }
+
+        // CloudKit per-record errors — THE place a schema/field problem shows up.
+        if let ck = error as? CKError, let byID = ck.partialErrorsByItemID {
+            for (id, perRecord) in byID.prefix(8) {
+                lines.append("\(indent)  record \(truncate("\(id)", max: 60)):")
+                deepDump(perRecord as NSError, depth: depth + 2, into: &lines, seen: &seen)
+            }
+        }
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
+            deepDump(underlying, depth: depth + 1, into: &lines, seen: &seen)
+        }
+        if let detailed = error.userInfo["NSDetailedErrorsKey"] as? [NSError] {
+            for detail in detailed.prefix(8) { deepDump(detail, depth: depth + 1, into: &lines, seen: &seen) }
+        }
+    }
+
+    private static func shortKey(_ key: String) -> String {
+        switch key {
+        case NSDebugDescriptionErrorKey: return "debug"
+        case NSLocalizedFailureReasonErrorKey: return "reason"
+        default: return key
+        }
+    }
+
+    private static func truncate(_ s: String, max: Int = 240) -> String {
+        s.count <= max ? s : String(s.prefix(max)) + "…"
+    }
+
     /// The verbatim error text, shown only in a details / diagnostics screen.
     /// Core Data reports CloudKit setup failures as a generic 134060 whose real
     /// reason lives in the nested userInfo (debug description / underlying /
