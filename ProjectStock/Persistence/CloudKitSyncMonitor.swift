@@ -136,6 +136,13 @@ final class CloudKitSyncMonitor: ObservableObject {
             mapAccountError(error)
         } else if !isStart {
             log(SyncLogEntry(type: event.type, succeeded: true, message: NSLocalizedString("完了", comment: "")))
+            // A completed import/export means CloudKit is talking to the server
+            // again — release a sticky error HERE, because recomputeState()
+            // deliberately holds `.error` and would return without clearing it.
+            // Without this, one failed export at launch (e.g. the pending-share
+            // batch) pinned the badge on 同期エラー forever and the user had to
+            // tap 再確認 manually every single time they opened the app.
+            if syncState.isError { syncState = .syncing }
             recomputeState()
         } else {
             recomputeState()
