@@ -27,6 +27,11 @@ struct PrePrintView: View {
     @State private var shareItem: ShareableFile?
     @State private var error: PresentableError?
     @State private var working = false
+    /// Codes minted by the most recent 発行 in this sheet. While non-empty, the
+    /// primary button RE-EXPORTS these instead of minting again — without this,
+    /// a user unsure whether the export worked taps the button again and
+    /// silently reserves a brand-new batch of codes every time.
+    @State private var lastBatchCodes: [String] = []
 
     /// Trim/registration guide drawn around each label.
     enum CutStyle: String, CaseIterable, Identifiable {
@@ -87,7 +92,7 @@ struct PrePrintView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Label(NSLocalizedString("これは何?", comment: ""), systemImage: "lightbulb.fill")
                             .font(.subheadline.weight(.semibold)).foregroundColor(Brand.primary)
-                        Text(NSLocalizedString("サンプルが届く前に、空のQRラベルをまとめて発行できます。サンプルや棚・箱に先に貼っておき、届いたらスキャンして「これは○○」と登録します。", comment: ""))
+                        Text(NSLocalizedString("品物が手元に届く前でも、空のQRラベルをまとめて発行できます。品物・棚・箱に先に貼っておき、あとでスキャンして「これは○○」と登録します。", comment: ""))
                             .font(.caption).foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -148,20 +153,37 @@ struct PrePrintView: View {
                         .font(.caption2)
                 }
                 Section {
+                    if !lastBatchCodes.isEmpty {
+                        Label(String(format: NSLocalizedString("%d 種類のQRを発行しました。下のボタンは同じQRをもう一度書き出します（新しいQRは作られません）。", comment: ""), lastBatchCodes.count),
+                              systemImage: "checkmark.circle.fill")
+                            .font(.footnote).foregroundColor(.green)
+                    }
                     Button {
                         generate()
                     } label: {
                         if working { ProgressView() }
-                        else { Label(NSLocalizedString("作成して書き出す", comment: ""), systemImage: "printer") }
+                        else if lastBatchCodes.isEmpty { Label(NSLocalizedString("作成して書き出す", comment: ""), systemImage: "printer") }
+                        else { Label(NSLocalizedString("同じQRをもう一度書き出す", comment: ""), systemImage: "printer") }
                     }
                     .disabled(working)
                     .accessibilityIdentifier("prePrintGenerate")
+                    if !lastBatchCodes.isEmpty {
+                        Button {
+                            lastBatchCodes = []
+                            generate()
+                        } label: {
+                            Label(String(format: NSLocalizedString("新しいQRを %d 種類 追加で発行", comment: ""), Int(count)),
+                                  systemImage: "plus.square.on.square")
+                        }
+                        .disabled(working)
+                        .accessibilityIdentifier("prePrintGenerateMore")
+                    }
                 } footer: {
                     Text(NSLocalizedString("ここで作成したコードは一意に予約されます。現場で貼り、スキャンして製品・個体・場所へ後から割り当てられます。", comment: ""))
                         .font(.caption2)
                 }
             }
-            .navigationTitle(NSLocalizedString("サンプル用QRをまとめて発行", comment: ""))
+            .navigationTitle(NSLocalizedString("空のQRをまとめて発行", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("閉じる", comment: "")) { dismiss() } } }
             .sheet(item: $shareItem) { item in ShareSheet(items: [item.url]) }
@@ -174,13 +196,18 @@ struct PrePrintView: View {
         let projectID = project.objectID
         let kinds = Int(count)
         let copiesEach = max(1, Int(copies))
-        var codes: [String] = []
-        let writeResult = container.performWrite { ctx in
-            guard let p = try ctx.existingObject(with: projectID) as? Project else { return }
-            let aliases = try container.aliases.createUnassignedBatch(count: kinds, in: p, context: ctx)
-            codes = aliases.map { $0.code }
+        // Re-export the already-minted batch when one exists; only mint fresh
+        // codes on the first run (or after 追加発行 explicitly cleared the batch).
+        var codes: [String] = lastBatchCodes
+        if codes.isEmpty {
+            let writeResult = container.performWrite { ctx in
+                guard let p = try ctx.existingObject(with: projectID) as? Project else { return }
+                let aliases = try container.aliases.createUnassignedBatch(count: kinds, in: p, context: ctx)
+                codes = aliases.map { $0.code }
+            }
+            if case .failure(let err) = writeResult { working = false; error = PresentableError(err); return }
+            lastBatchCodes = codes
         }
-        if case .failure(let err) = writeResult { working = false; error = PresentableError(err); return }
 
         let options = sheetOptions
         // Copies of the same code are laid out consecutively so they sit next

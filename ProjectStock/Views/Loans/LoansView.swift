@@ -18,6 +18,9 @@ struct LoansView: View {
     }(), animation: .default) private var checkedOutUnits: FetchedResults<StockUnit>
 
     @State private var error: PresentableError?
+    /// Loan pending the return confirmation dialog. Returning rewrites the
+    /// ledger, so a mis-tap should not commit it silently.
+    @State private var confirmingReturn: Loan?
 
     private var loans: [Loan] {
         checkedOutUnits.compactMap { container.inventory.currentLoan(for: $0) }
@@ -58,6 +61,21 @@ struct LoansView: View {
             }
         }
         .navigationTitle(NSLocalizedString("貸出中", comment: ""))
+        .confirmationDialog(NSLocalizedString("返却を記録しますか？", comment: ""),
+                            isPresented: Binding(get: { confirmingReturn != nil },
+                                                 set: { if !$0 { confirmingReturn = nil } }),
+                            titleVisibility: .visible) {
+            Button(NSLocalizedString("返却する", comment: "")) {
+                if let loan = confirmingReturn { returnLoan(loan) }
+                confirmingReturn = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { confirmingReturn = nil }
+        } message: {
+            if let loan = confirmingReturn {
+                Text(String(format: NSLocalizedString("%@（%@）を返却済みにします。", comment: ""),
+                            loan.unit.displaySerial, loan.borrowerDisplay))
+            }
+        }
         .errorAlert($error)
     }
 
@@ -81,21 +99,42 @@ struct LoansView: View {
                     Text("·")
                     Text(String(format: NSLocalizedString("期限: %@", comment: ""), DateFormatters.dateTime.string(from: due)))
                         .foregroundColor(loan.isOverdue ? .red : .secondary)
+                    if loan.isOverdue, let days = overdueDays(due), days > 0 {
+                        Text(String(format: NSLocalizedString("%d日超過", comment: ""), days))
+                            .foregroundColor(.red).fontWeight(.semibold)
+                    }
                 }
             }
             .font(.caption2).foregroundColor(.secondary)
+            // A visible return button: swipe actions are invisible to many
+            // non-technical users, and returning is THE core action here.
+            if container.sharing.canEdit(loan.unit.project) {
+                Button {
+                    confirmingReturn = loan
+                } label: {
+                    Label(NSLocalizedString("返却する", comment: ""), systemImage: "arrow.uturn.left")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .tint(.green)
+                .padding(.top, 2)
+            }
         }
         .padding(.vertical, 2)
         .swipeActions(edge: .trailing) {
             if container.sharing.canEdit(loan.unit.project) {
                 Button {
-                    returnLoan(loan)
+                    confirmingReturn = loan
                 } label: {
                     Label(NSLocalizedString("返却", comment: ""), systemImage: "arrow.uturn.left")
                 }
                 .tint(.green)
             }
         }
+    }
+
+    private func overdueDays(_ due: Date) -> Int? {
+        Calendar.current.dateComponents([.day], from: due, to: Date()).day
     }
 
     private func returnLoan(_ loan: Loan) {

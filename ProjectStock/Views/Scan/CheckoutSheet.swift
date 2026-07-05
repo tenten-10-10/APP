@@ -23,9 +23,15 @@ struct CheckoutSheet: View {
                 Section {
                     LabeledRow(title: NSLocalizedString("対象", comment: ""), value: unit.displaySerial)
                 }
-                Section(NSLocalizedString("貸出先", comment: "")) {
+                Section {
                     TextField(NSLocalizedString("借り手の名前", comment: ""), text: $borrower)
                         .accessibilityIdentifier("borrowerField")
+                } header: {
+                    Text(NSLocalizedString("貸出先", comment: ""))
+                } footer: {
+                    if borrower.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(NSLocalizedString("空欄のまま貸出すると「貸出先なし」で記録され、あとで誰に貸したか分からなくなります。", comment: ""))
+                    }
                 }
                 Section {
                     Toggle(NSLocalizedString("返却期限を設定", comment: ""), isOn: $hasDueDate.animation())

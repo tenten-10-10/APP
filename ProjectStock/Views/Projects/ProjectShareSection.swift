@@ -50,22 +50,44 @@ struct ProjectShareSection: View {
                     Text(NSLocalizedString("このプロジェクトは編集可能な権限で共有されています。", comment: ""))
                         .font(.footnote).foregroundColor(.secondary)
                 case .owner, .notShared:
-                    Button {
-                        startShare()
-                    } label: {
-                        Label(permission == .owner ? NSLocalizedString("共有を管理", comment: "") : NSLocalizedString("このプロジェクトを共有", comment: ""),
-                              systemImage: "person.crop.circle.badge.plus")
-                    }
-                    .accessibilityIdentifier("shareProjectButton")
-
                     if permission == .owner {
+                        // Participation at a glance — without this the owner has
+                        // no way to tell whether anyone actually joined.
+                        if let share = container.sharing.existingShare(for: project) {
+                            let others = share.participants.filter { $0.role != .owner }
+                            Label(others.isEmpty
+                                    ? NSLocalizedString("まだ参加者はいません。招待リンクを送りましょう。", comment: "")
+                                    : String(format: NSLocalizedString("現在 %d 人と共有中", comment: ""), others.count),
+                                  systemImage: "person.2")
+                                .font(.footnote).foregroundColor(.secondary)
+                        }
+                        // The friendly invite (App Store link + join link in one
+                        // message) is the PRIMARY action for non-technical users;
+                        // Apple's management sheet is secondary.
                         Button {
                             sendInvite()
                         } label: {
                             Label(NSLocalizedString("招待リンクを送る", comment: ""), systemImage: "envelope")
+                                .font(.body.weight(.semibold))
+                                .foregroundColor(Brand.primary)
                         }
                         .accessibilityIdentifier("sendInviteButton")
                         .sheet(item: $inviteSheet) { ShareSheet(items: [$0.text]) }
+                        Text(NSLocalizedString("アプリの入手先と参加リンクをまとめて送信します。", comment: ""))
+                            .font(.caption2).foregroundColor(.secondary)
+                    }
+
+                    Button {
+                        startShare()
+                    } label: {
+                        Label(permission == .owner ? NSLocalizedString("共有設定・メンバー管理", comment: "") : NSLocalizedString("このプロジェクトを共有", comment: ""),
+                              systemImage: "person.crop.circle.badge.plus")
+                    }
+                    .accessibilityIdentifier("shareProjectButton")
+
+                    if permission == .notShared {
+                        Text(NSLocalizedString("押すと参加リンクを作成します。リンクを開いた相手は、このプロジェクトを一緒に使えるようになります。", comment: ""))
+                            .font(.caption2).foregroundColor(.secondary)
                     }
                 }
             }
@@ -114,10 +136,17 @@ struct ProjectShareSection: View {
     /// (so a colleague without the app installs it first) and the CloudKit join
     /// link, then present the share sheet. Only available once a share exists.
     private func sendInvite() {
-        guard let share = container.sharing.existingShare(for: project),
-              let url = share.url else {
+        guard let share = container.sharing.existingShare(for: project) else {
             error = PresentableError(AppError.shareCreationFailed(
-                NSLocalizedString("招待リンクをまだ作成できません。先に「共有を管理」から共有を開始してください。", comment: "")))
+                NSLocalizedString("まだ共有が開始されていません。「このプロジェクトを共有」から共有を開始してください。", comment: "")))
+            return
+        }
+        guard let url = share.url else {
+            // The share exists but its URL hasn't come back from the server yet
+            // (happens right after creating the share). Telling the user to
+            // "start sharing" here would gaslight them — they just did.
+            error = PresentableError(AppError.shareCreationFailed(
+                NSLocalizedString("招待リンクを準備中です。数秒待ってからもう一度お試しください。", comment: "")))
             return
         }
         let message = String(

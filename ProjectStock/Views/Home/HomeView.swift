@@ -207,7 +207,7 @@ struct HomeView: View {
             .padding(.vertical, 4)
         } header: {
             HStack {
-                Label(NSLocalizedString("サンプルを登録する", comment: ""), systemImage: "sparkles")
+                Label(NSLocalizedString("最初の品物を登録する", comment: ""), systemImage: "sparkles")
                 Spacer()
                 if showGuide {
                     Button(NSLocalizedString("閉じる", comment: "")) { hideSetupGuide = true }
@@ -301,7 +301,7 @@ struct HomeView: View {
 
                 HStack(spacing: 0) {
                     metricCell(
-                        value: "\(projects.count)",
+                        value: "\(realProjects.count)",
                         label: NSLocalizedString("プロジェクト", comment: "")
                     )
                     divider
@@ -315,10 +315,13 @@ struct HomeView: View {
                         label: NSLocalizedString("低在庫", comment: "")
                     )
                     divider
-                    metricCell(
-                        value: "\(totalOverdueCount)",
-                        label: NSLocalizedString("期限超過", comment: "")
-                    )
+                    NavigationLink(destination: LoansView()) {
+                        metricCell(
+                            value: "\(totalOverdueCount)",
+                            label: NSLocalizedString("期限超過", comment: "")
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.vertical, 18)
             }

@@ -146,6 +146,11 @@ struct OnboardingView: View {
     @ViewBuilder private var controls: some View {
         if isNameStep {
             VStack(spacing: 12) {
+                if operatorName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(NSLocalizedString("空欄のまま始めると、操作の履歴に「担当者」と表示されます（あとから設定で変更できます）。", comment: ""))
+                        .font(.caption2).foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
                 Button {
                     finish(seedSample: false)
                 } label: {

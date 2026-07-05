@@ -13,7 +13,7 @@ struct ProductFormView: View {
 
     @State private var name = ""
     @State private var sku = ""
-    @State private var unitName = "pcs"
+    @State private var unitName = NSLocalizedString("個", comment: "default unit")
     @State private var trackingMode: TrackingMode = .quantity
     @State private var minimumStock = ""
     @State private var initialQuantity = ""
@@ -55,6 +55,23 @@ struct ProductFormView: View {
                                 .accessibilityIdentifier("initialQuantityField")
                         }
                     }
+                    // 単位と最低在庫は折りたたみの外に常時表示する。詳細設定の
+                    // 中に隠れていると大半のユーザーが最低在庫0のまま保存し、
+                    // 「要補充」表示が一度も機能しないアプリになる。
+                    TextField(NSLocalizedString("単位（例: 個, 本）", comment: ""), text: $unitName)
+                    if trackingMode == .quantity {
+                        HStack {
+                            Text(NSLocalizedString("最低在庫", comment: ""))
+                            Spacer()
+                            TextField("0", text: $minimumStock)
+                                .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                                .frame(maxWidth: 100)
+                        }
+                    }
+                } footer: {
+                    if trackingMode == .quantity {
+                        Text(NSLocalizedString("最低在庫を設定すると、在庫がそれを下回ったときに「要補充」と表示されます。", comment: ""))
+                    }
                 }
 
                 Section {
@@ -86,14 +103,6 @@ struct ProductFormView: View {
                         if skuWarning {
                             Label(NSLocalizedString("同じ社内コードの製品が既にあります", comment: ""), systemImage: "exclamationmark.triangle")
                                 .font(.caption).foregroundColor(.orange)
-                        }
-                        TextField(NSLocalizedString("単位（例: 個, 本）", comment: ""), text: $unitName)
-                        HStack {
-                            Text(NSLocalizedString("最低在庫", comment: ""))
-                            Spacer()
-                            TextField("0", text: $minimumStock)
-                                .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                                .frame(maxWidth: 100)
                         }
                         if let photo {
                             Image(uiImage: photo).resizable().scaledToFit().frame(maxHeight: 160)
@@ -229,12 +238,12 @@ struct ProductFormView: View {
                 product = existing
             } else {
                 product = Product.make(in: ctx, name: values.name, project: p, sku: values.sku,
-                                       unitName: values.unit.isEmpty ? "pcs" : values.unit, trackingMode: values.mode)
+                                       unitName: values.unit.isEmpty ? NSLocalizedString("個", comment: "") : values.unit, trackingMode: values.mode)
                 container.router.assignChild(product, toSameStoreAs: p, in: ctx)
             }
             product.name = values.name
             product.sku = values.sku
-            product.unitName = values.unit.isEmpty ? "pcs" : values.unit
+            product.unitName = values.unit.isEmpty ? NSLocalizedString("個", comment: "") : values.unit
             product.minimumStock = values.minimum
             product.note = values.note
             product.folder = folderObj
@@ -250,7 +259,7 @@ struct ProductFormView: View {
             }
         }
         switch result {
-        case .success: dismiss()
+        case .success: Haptics.success(); dismiss()
         case .failure(let err): error = PresentableError(err)
         }
     }

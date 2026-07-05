@@ -6,6 +6,7 @@ import SwiftUI
 struct AssignmentView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var alias: CodeAlias
 
     @State private var assignedSummary: String?
@@ -23,7 +24,19 @@ struct AssignmentView: View {
             }
 
             if let summary = assignedSummary {
-                Section { Label(summary, systemImage: "checkmark.circle").foregroundColor(.green) }
+                Section {
+                    Label(summary, systemImage: "checkmark.circle").foregroundColor(.green)
+                    // Field setup means registering dozens of items in a row —
+                    // give a one-tap path back to the scanner instead of making
+                    // the user hunt for the 閉じる button every time.
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label(NSLocalizedString("続けて次のQRをスキャン", comment: ""), systemImage: "qrcode.viewfinder")
+                            .font(.body.weight(.semibold))
+                    }
+                    .accessibilityIdentifier("continueScanning")
+                }
             } else if !canEdit {
                 Section { Text(NSLocalizedString("このプロジェクトは読み取り専用のため割り当てできません。", comment: "")).foregroundColor(.secondary) }
             } else if let project {
@@ -31,7 +44,7 @@ struct AssignmentView: View {
                     NavigationLink {
                         NewProductAssignView(alias: alias, project: project) { summary in assignedSummary = summary }
                     } label: {
-                        Label(NSLocalizedString("このサンプルを登録", comment: ""), systemImage: "plus.app.fill")
+                        Label(NSLocalizedString("このQRに品物を登録", comment: ""), systemImage: "plus.app.fill")
                             .font(.body.weight(.semibold))
                             .foregroundColor(Brand.primary)
                     }
@@ -123,7 +136,7 @@ private struct NewProductAssignView: View {
     let onAssigned: (String) -> Void
 
     @State private var name = ""
-    @State private var unitName = "pcs"
+    @State private var unitName = NSLocalizedString("個", comment: "default unit")
     @State private var mode: TrackingMode = .quantity
     @State private var error: PresentableError?
 
@@ -155,7 +168,7 @@ private struct NewProductAssignView: View {
         let result = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: projectID) as? Project,
                   let a = try ctx.existingObject(with: aliasID) as? CodeAlias else { return }
-            let product = Product.make(in: ctx, name: trimmed, project: p, unitName: unit.isEmpty ? "pcs" : unit, trackingMode: chosenMode)
+            let product = Product.make(in: ctx, name: trimmed, project: p, unitName: unit.isEmpty ? NSLocalizedString("個", comment: "") : unit, trackingMode: chosenMode)
             container.router.assignChild(product, toSameStoreAs: p, in: ctx)
             try container.aliases.assign(alias: a, to: .product(product))
         }

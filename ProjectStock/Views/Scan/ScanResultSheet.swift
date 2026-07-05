@@ -29,7 +29,7 @@ struct ScanResultSheet: View {
         VStack(spacing: 16) {
             Image(systemName: "questionmark.circle").font(.system(size: 48)).foregroundColor(.secondary)
             Text(NSLocalizedString("このコードはこの端末で見つかりません", comment: "")).font(.headline)
-            Text(NSLocalizedString("タナミル形式のコードですが、まだ同期されていないか、別のアカウントのものです。", comment: ""))
+            Text(NSLocalizedString("タナミル形式のコードですが、まだ同期されていないか、別のアカウントのものです。iCloud同期の完了を少し待ってから、もう一度スキャンしてみてください。", comment: ""))
                 .font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
             Text(code).font(.system(.callout, design: .monospaced))
             Button(NSLocalizedString("コードをコピー", comment: "")) { UIPasteboard.general.string = code }
@@ -41,6 +41,8 @@ struct ScanResultSheet: View {
         VStack(spacing: 16) {
             Image(systemName: "xmark.circle").font(.system(size: 48)).foregroundColor(.secondary)
             Text(NSLocalizedString("対象外のQRです", comment: "")).font(.headline)
+            Text(NSLocalizedString("タナミルで発行したQRではありません。管理したい品物には「空のQRをまとめて発行」で作ったラベルを貼ってください。", comment: ""))
+                .font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
             Text(value).font(.system(.callout, design: .monospaced)).lineLimit(4)
             Button(NSLocalizedString("コピー", comment: "")) { UIPasteboard.general.string = value }
         }
@@ -57,9 +59,20 @@ private struct KnownTargetView: View {
     @State private var showingMove = false
     @State private var showingCheckout = false
     @State private var error: PresentableError?
+    /// Inline confirmation shown after 入庫/出庫/移動/返却 — haptics alone don't
+    /// tell a first-time user whether the action was actually recorded.
+    @State private var feedback: String?
+    @State private var feedbackIsError = false
 
     var body: some View {
         List {
+            if let feedback {
+                Section {
+                    Label(feedback, systemImage: feedbackIsError ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
+                        .font(.footnote)
+                        .foregroundColor(feedbackIsError ? .orange : .green)
+                }
+            }
             switch alias.targetType {
             case .product:
                 if let product = alias.product { productActions(product) }
@@ -192,7 +205,12 @@ private struct KnownTargetView: View {
 
     private func quantity(_ product: Product, _ sign: Double) {
         let value = (Double(amount) ?? 0)
-        guard value > 0 else { return }
+        guard value > 0 else {
+            Haptics.warning()
+            feedback = NSLocalizedString("数量に1以上の数を入力してください", comment: "")
+            feedbackIsError = true
+            return
+        }
         let productID = product.objectID
         let actor = settings.effectiveOperatorName
         let loc = product.currentLocation?.objectID
@@ -203,11 +221,20 @@ private struct KnownTargetView: View {
             else { container.inventory.consume(product: p, quantity: value, location: location, actor: actor, in: ctx) }
         }
         Haptics.success()
+        feedback = String(format: sign > 0
+            ? NSLocalizedString("＋%@ 入庫を記録しました", comment: "")
+            : NSLocalizedString("−%@ 出庫を記録しました", comment: ""), value.quantityString)
+        feedbackIsError = false
     }
 
     private func lotChange(_ lot: StockUnit, _ sign: Double) {
         let value = Double(amount) ?? 0
-        guard value > 0 else { return }
+        guard value > 0 else {
+            Haptics.warning()
+            feedback = NSLocalizedString("数量に1以上の数を入力してください", comment: "")
+            feedbackIsError = true
+            return
+        }
         let lotID = lot.objectID
         let actor = settings.effectiveOperatorName
         _ = container.performWrite { ctx in
@@ -216,6 +243,10 @@ private struct KnownTargetView: View {
             else { container.inventory.consumeFromLot(l, quantity: value, actor: actor, in: ctx) }
         }
         Haptics.success()
+        feedback = String(format: sign > 0
+            ? NSLocalizedString("＋%@ 入庫を記録しました", comment: "")
+            : NSLocalizedString("−%@ 出庫を記録しました", comment: ""), value.quantityString)
+        feedbackIsError = false
     }
 
     private func unitChange(_ unit: StockUnit, _ type: InventoryEventType) {
@@ -227,6 +258,10 @@ private struct KnownTargetView: View {
             else { container.inventory.returnUnit(u, to: u.location, actor: actor, in: ctx) }
         }
         Haptics.success()
+        feedback = type == .checkout
+            ? NSLocalizedString("貸出を記録しました", comment: "")
+            : NSLocalizedString("返却を記録しました", comment: "")
+        feedbackIsError = false
         container.refreshLoanNotifications()
     }
 
@@ -243,6 +278,9 @@ private struct KnownTargetView: View {
             p.defaultLocation = dst; p.touch()
             container.inventory.transferQuantity(product: p, quantity: p.currentQuantity, from: src, to: dst, actor: actor, in: ctx)
         }
+        Haptics.success()
+        feedback = String(format: NSLocalizedString("「%@」へ移動しました", comment: ""), destination.displayName)
+        feedbackIsError = false
     }
 }
 

@@ -92,11 +92,16 @@ struct StocktakeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button(NSLocalizedString("確定", comment: "")) { confirm() }
-                    .disabled(!stocktake.isActive || stocktake.discrepancyCount == 0)
+                // Enabled even with zero discrepancies: counting everything and
+                // finding it all correct is the GOOD outcome, and it deserves a
+                // positive exit (confirm() applies 0 adjustments and ends the
+                // session). Requiring a discrepancy left 中止 as the only way
+                // out of a perfect stocktake, which read as "discard my work".
+                Button(NSLocalizedString("完了", comment: "")) { confirm() }
+                    .disabled(!stocktake.isActive)
             }
             ToolbarItem(placement: .cancellationAction) {
-                Button(NSLocalizedString("中止", comment: "")) { stocktake.cancel(); dismiss() }
+                Button(NSLocalizedString("やめる", comment: "")) { stocktake.cancel(); dismiss() }
             }
         }
         .onAppear { if !stocktake.isActive { stocktake.begin(projectID: project.objectID) } }

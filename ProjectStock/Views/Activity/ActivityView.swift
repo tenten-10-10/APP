@@ -74,6 +74,10 @@ struct ActivityView: View {
             }
 
             EventListView(events: Array(filtered.prefix(300)), onCorrect: correct)
+            if filtered.count > 300 {
+                Text(NSLocalizedString("最新300件を表示しています。プロジェクトや種類で絞り込むと、過去の記録も確認できます。", comment: ""))
+                    .font(.caption2).foregroundColor(.secondary)
+            }
         }
         .listStyle(.insetGrouped)
         .navigationTitle(NSLocalizedString("活動", comment: ""))

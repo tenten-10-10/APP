@@ -50,6 +50,11 @@ struct SettingsView: View {
                     Button(NSLocalizedString("再確認", comment: "")) { syncMonitor.clearError() }.font(.caption)
                 }
                 Text(syncMonitor.accountState.localizedMessage).font(.caption).foregroundColor(.secondary)
+                // Surface WHAT is wrong right here — the red badge alone gives
+                // the user nothing to act on.
+                if case .error(let reason) = syncMonitor.syncState {
+                    Text(reason).font(.caption).foregroundColor(.orange)
+                }
                 NavigationLink(NSLocalizedString("診断ログ", comment: "")) { DiagnosticsView() }
             }
 
@@ -63,6 +68,9 @@ struct SettingsView: View {
                 Picker(NSLocalizedString("既定の誤り訂正", comment: ""), selection: $settings.defaultErrorCorrectionRaw) {
                     ForEach(QRErrorCorrectionLevel.allCases) { Text($0.localizedTitle).tag($0.rawValue) }
                 }
+            } footer: {
+                Text(NSLocalizedString("通常は初期値のままで問題ありません。QRをとても小さく印刷する場合のみ調整してください。", comment: ""))
+                    .font(.caption2)
             }
 
             Section(NSLocalizedString("操作", comment: "")) {
