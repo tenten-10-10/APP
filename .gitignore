@@ -35,6 +35,10 @@ fastlane/screenshots/**/*.png
 !fastlane/screenshots/ja/*.png
 fastlane/test_output
 
+# Vine review tool — ログイン情報・生成物を含むためgit管理外
+vine-review/data/
+vine-review/__pycache__/
+
 # Misc
 *.log
 xcuserdata/
