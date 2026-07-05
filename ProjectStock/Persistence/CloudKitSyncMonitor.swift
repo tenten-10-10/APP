@@ -83,6 +83,15 @@ final class CloudKitSyncMonitor: ObservableObject {
     private var inFlightSetup = false
     private var inFlightImport = false
     private var inFlightExport = false
+    /// How many sync events in a row have failed. CloudKit routinely fails a
+    /// single export/import transiently (rate limit, busy zone, brief network
+    /// blip) and then retries successfully — flashing a red 同期エラー badge for
+    /// each of those scares users for nothing. We only surface an error state
+    /// once failures PERSIST (see `errorDisplayThreshold`) or the error is
+    /// definitive (sign-in / quota / permission), while every failure is still
+    /// recorded in the diagnostics log.
+    private var consecutiveFailures = 0
+    private let errorDisplayThreshold = 3
 
     init(persistence: PersistenceController) {
         self.persistence = persistence
@@ -132,10 +141,18 @@ final class CloudKitSyncMonitor: ObservableObject {
                 .compactMap { $0 }
                 .joined(separator: "\n")
             log(SyncLogEntry(type: event.type, succeeded: false, message: logMessage))
-            syncState = .error(mapped)
+            consecutiveFailures += 1
+            if isDefinitiveFailure(error) || consecutiveFailures >= errorDisplayThreshold {
+                syncState = .error(mapped)
+            } else if !syncState.isError {
+                // Transient one-off failure: CloudKit will retry on its own.
+                // Keep the badge calm instead of flashing 同期エラー.
+                syncState = .syncing
+            }
             mapAccountError(error)
         } else if !isStart {
             log(SyncLogEntry(type: event.type, succeeded: true, message: NSLocalizedString("完了", comment: "")))
+            consecutiveFailures = 0
             // A completed import/export means CloudKit is talking to the server
             // again — release a sticky error HERE, because recomputeState()
             // deliberately holds `.error` and would return without clearing it.
@@ -198,8 +215,22 @@ final class CloudKitSyncMonitor: ObservableObject {
 
     /// Clear a sticky error so the UI can re-evaluate after a retry.
     func clearError() {
+        consecutiveFailures = 0
         if syncState.isError { syncState = .syncing; recomputeState() }
         refreshAccountStatus()
+    }
+
+    /// Errors that will NOT fix themselves via CloudKit's automatic retry —
+    /// show these immediately instead of waiting for the failure streak.
+    private func isDefinitiveFailure(_ error: Error) -> Bool {
+        guard let ckError = error as? CKError else { return false }
+        switch ckError.code {
+        case .notAuthenticated, .quotaExceeded, .permissionFailure,
+             .managedAccountRestricted, .missingEntitlement, .badContainer:
+            return true
+        default:
+            return false
+        }
     }
 
     private func mapAccountError(_ error: Error) {
