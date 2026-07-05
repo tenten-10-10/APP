@@ -46,6 +46,8 @@ DEFINE SCHEMA
         CD_product STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_project STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_unit STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_moveReceipt BYTES,
+        CD_moveReceipt_ckAsset ASSET,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"
@@ -68,6 +70,8 @@ DEFINE SCHEMA
         CD_updatedAt TIMESTAMP QUERYABLE SORTABLE,
         CD_parent STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_project STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_moveReceipt BYTES,
+        CD_moveReceipt_ckAsset ASSET,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"
@@ -104,6 +108,8 @@ DEFINE SCHEMA
         CD_project STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_sourceLocation STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_unit STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_moveReceipt BYTES,
+        CD_moveReceipt_ckAsset ASSET,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"
@@ -130,6 +136,8 @@ DEFINE SCHEMA
         CD_updatedAt TIMESTAMP QUERYABLE SORTABLE,
         CD_parent STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_project STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_moveReceipt BYTES,
+        CD_moveReceipt_ckAsset ASSET,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"
@@ -165,6 +173,8 @@ DEFINE SCHEMA
         CD_defaultLocation STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_folder STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_project STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_moveReceipt BYTES,
+        CD_moveReceipt_ckAsset ASSET,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"
@@ -196,6 +206,8 @@ DEFINE SCHEMA
         CD_ownerDisplayName_ckAsset ASSET,
         CD_sortIndex INT64 QUERYABLE SORTABLE,
         CD_updatedAt TIMESTAMP QUERYABLE SORTABLE,
+        CD_moveReceipt BYTES,
+        CD_moveReceipt_ckAsset ASSET,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"
@@ -228,6 +240,8 @@ DEFINE SCHEMA
         CD_location STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_product STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_project STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_moveReceipt BYTES,
+        CD_moveReceipt_ckAsset ASSET,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"

@@ -106,6 +106,18 @@ for entity in sorted(root.findall("entity"), key=lambda e: e.get("name")):
         rn = rel.get("name")
         lines.append(f"        CD_{rn} STRING QUERYABLE SEARCHABLE SORTABLE,")
 
+    # CD_moveReceipt — REQUIRED on every entity type for CloudKit sharing.
+    # When share(_:to:) moves an object graph into the share zone, Core Data
+    # writes an opaque NSKeyedArchiver blob (NSCKRecordZoneMoveReceipt) into
+    # this field (overflowing to the ASSET companion). Without it, Production
+    # rejects the move with "Cannot create or modify field 'CD_moveReceipt'"
+    # and sharing stalls after the CKShare itself is created. Type BYTES is
+    # confirmed by real exported schemas (perfect-nap, simpleledger, mySpot),
+    # by Apple's serializer key enumeration, and by Apple's own statement that
+    # the contents are a private archived blob (WWDC22 Core Data lounge).
+    lines.append("        CD_moveReceipt BYTES,")
+    lines.append("        CD_moveReceipt_ckAsset ASSET,")
+
     out.append(f"    RECORD TYPE CD_{name} (")
     out += lines
     for i, g in enumerate(GRANTS):

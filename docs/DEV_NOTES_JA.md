@@ -206,6 +206,25 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
   `NSDetailedErrorsKey` / `NSUnderlyingError` / userInfoの全String値。
   自己参照ループがあるので訪問済み管理＋深さ上限は必須。
 
+### 9.2.5 `cloudkit.share` の次に来る第2の罠：`CD_moveReceipt`
+- 共有は「CKShare作成」→「対象グラフを共有ゾーンへ**移動**」の2段階。移動時に
+  Core Dataは全レコードへ内部フィールド **`CD_moveReceipt BYTES`**
+  （＋`CD_moveReceipt_ckAsset ASSET`）を書く。本番に無いと
+  `Cannot create or modify field 'CD_moveReceipt' in record 'CD_…'` で
+  移動が全滅し、**リンクは発行できるのに中身が空／参加者追加が失敗**という
+  紛らわしい状態になる。
+- 型の確証源：実プロジェクトのスキーマ書き出し複数
+  （perfect-nap / simpleledger / mySpot）＋Apple技術者の回答
+  （WWDC22 lounge:「中身は私的なアーカイブ」）＋シリアライザ実装解析。
+  **本番のフィールド型は作成後に変更・削除不可**なので、推測で作るのは厳禁。
+- **内部フィールドの完全リスト**（シリアライザのキー列挙で確定）：
+  `CD_entityName` ／ 属性ごとの `CD_<attr>`（可変長は `_ckAsset` 併設）／
+  to-one関係の `CD_<rel>` STRING ／ `CD_moveReceipt`(+`_ckAsset`) ／
+  多対多がある場合のみ CDMR型。**これ以外は無い**ので、これで打ち止め。
+- プローブの盲点：新規ゾーンに新規レコード＋CKShareを作るテストは
+  **移動を発生させない**ため moveReceipt 欠落を検出できない。移動まで
+  検証するには「既存ゾーンのレコードを共有する」実共有が必要。
+
 ### 9.3 .ckdb（CKMLインポート）の細則
 - Import Schemaは**Developmentスキーマの置き換え**。差分ではなく
   **常に全型入りのフルファイル**を取り込む。
