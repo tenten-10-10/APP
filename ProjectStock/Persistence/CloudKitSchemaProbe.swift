@@ -58,23 +58,35 @@ enum CloudKitSchemaProbe {
 
             let op = CKModifyRecordsOperation(recordsToSave: [record, share], recordIDsToDelete: nil)
             op.savePolicy = .allKeys
-            op.modifyRecordsResultBlock = { result in
-                switch result {
-                case .success:
-                    report.append("② CD_Project 書き込み + 共有作成: OK ✅")
-                    report.append("→ スキーマ・共有ともに正常。問題は既存の壊れた共有か、特定レコードの可能性。")
-                case .failure(let error):
-                    report.append("② CD_Project 書き込み + 共有作成: 失敗 ❌")
-                    report.append(dump(error))
-                }
-                finish()
-            }
+
             // Per-record failures carry the most specific ServerErrorDescription.
+            // They MUST drive the verdict: with the Result-based API, the
+            // operation-level block below reports only that the request/response
+            // round-trip completed — it returns .success even when the server
+            // rejected every record (each rejection arrives here instead).
+            var perRecordFailures: [String] = []
             op.perRecordSaveBlock = { recordID, result in
                 if case .failure(let error) = result {
-                    report.append("・レコード \(recordID.recordName.prefix(24))… の理由:")
-                    report.append(dump(error))
+                    perRecordFailures.append("・レコード \(recordID.recordName.prefix(24))… の理由:")
+                    perRecordFailures.append(dump(error))
                 }
+            }
+            op.modifyRecordsResultBlock = { result in
+                if case .failure(let error) = result {
+                    report.append("② CD_Project 書き込み + 共有作成: 失敗 ❌")
+                    report.append(dump(error))
+                    report.append(contentsOf: perRecordFailures)
+                } else if perRecordFailures.isEmpty {
+                    report.append("② CD_Project 書き込み + 共有作成: OK ✅")
+                    report.append("→ スキーマ・共有ともに正常。共有が失敗する場合は、対象プロジェクトの壊れた既存共有が原因の可能性。")
+                } else {
+                    report.append("② CD_Project 書き込み + 共有作成: 失敗 ❌（サーバーがレコードを拒否）")
+                    report.append(contentsOf: perRecordFailures)
+                    if perRecordFailures.joined().contains("cloudkit.share") {
+                        report.append("→ 原因確定: 本番スキーマに cloudkit.share 型がありません。修正版スキーマ(tanamiru-schema.ckdb)を CloudKit Dashboard で Development にインポートし、Production へデプロイすると解消します（アプリの更新は不要）。")
+                    }
+                }
+                finish()
             }
             db.add(op)
         }
