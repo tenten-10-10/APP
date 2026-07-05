@@ -58,7 +58,7 @@ struct SettingsView: View {
                 NavigationLink(NSLocalizedString("診断ログ", comment: "")) { DiagnosticsView() }
             }
 
-            Section(NSLocalizedString("QRラベルの既定値", comment: "")) {
+            Section {
                 Picker(NSLocalizedString("既定サイズ", comment: ""), selection: $settings.defaultSizePresetRaw) {
                     ForEach(QRSizePreset.allCases) { Text($0.localizedTitle).tag($0.rawValue) }
                 }
@@ -68,6 +68,8 @@ struct SettingsView: View {
                 Picker(NSLocalizedString("既定の誤り訂正", comment: ""), selection: $settings.defaultErrorCorrectionRaw) {
                     ForEach(QRErrorCorrectionLevel.allCases) { Text($0.localizedTitle).tag($0.rawValue) }
                 }
+            } header: {
+                Text(NSLocalizedString("QRラベルの既定値", comment: ""))
             } footer: {
                 Text(NSLocalizedString("通常は初期値のままで問題ありません。QRをとても小さく印刷する場合のみ調整してください。", comment: ""))
                     .font(.caption2)

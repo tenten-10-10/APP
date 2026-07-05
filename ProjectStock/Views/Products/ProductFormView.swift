@@ -40,7 +40,7 @@ struct ProductFormView: View {
                         .accessibilityIdentifier("productNameField")
                 }
 
-                Section(NSLocalizedString("管理方法", comment: "")) {
+                Section {
                     Picker(NSLocalizedString("追跡モード", comment: ""), selection: $trackingMode) {
                         ForEach(TrackingMode.allCases) { Text($0.localizedTitle).tag($0) }
                     }
@@ -68,6 +68,8 @@ struct ProductFormView: View {
                                 .frame(maxWidth: 100)
                         }
                     }
+                } header: {
+                    Text(NSLocalizedString("管理方法", comment: ""))
                 } footer: {
                     if trackingMode == .quantity {
                         Text(NSLocalizedString("最低在庫を設定すると、在庫がそれを下回ったときに「要補充」と表示されます。", comment: ""))
