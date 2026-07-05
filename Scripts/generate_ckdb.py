@@ -73,8 +73,12 @@ out.append("")
 # failed since with CKInternalErrorDomain 2006:
 #   "Cannot create new type cloudkit.share in production schema"
 # (= the confirmed root cause of 共有リンクを作成できませんでした).
-# System record types ARE importable — the same file already imports `Users`.
-out.append("    RECORD TYPE cloudkit.share (")
+# The name MUST be double-quoted: the Console's Import Schema parser rejects the
+# unquoted dot ('Encountered "." ... Was expecting: "("'). Quoted, the import
+# validates, Development gains the full system share type (the server expands it
+# to its real 9 fields incl. cloudkit.title), and Deploy carries it to
+# Production — verified working 2026-07.
+out.append('    RECORD TYPE "cloudkit.share" (')
 for f in SYSTEM_FIELDS:
     out.append(f"        {f},")
 out.append('        GRANT WRITE TO "_creator",')

@@ -171,3 +171,76 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
   取り下げる運用もアリ。
 - **リリースは番号戦略を先に決める**：「未公開のうちは番号を上げて
   統合」「公開済みなら次番号で追加」。
+
+---
+
+## 9. CloudKit同期・共有の実戦知見（1.1.3〜1.1.20で血を流して確定）★★
+
+### 9.1 共有が本番だけ全滅する最大の罠：`cloudkit.share` 型
+- **Productionは絶対に型を自動作成しない**。`CD_*` だけでなく、CKShareの
+  システム型 **`cloudkit.share` もDevelopment→Productionのデプロイで運ぶ**
+  必要がある。無いと共有リンク作成が
+  `CKErrorDomain #12 / CKInternalErrorDomain 2006
+  "Cannot create new type cloudkit.share in production schema"` で全滅。
+- ゾーン保存はアトミックなので、同じバッチの他レコードは
+  `#22 "Atomic failure"(2024)` で巻き添え失敗 →
+  NSPersistentCloudKitContainerのイベントには**素のCKError#2
+  (partialFailure)しか出ず、真の理由はイベントerrorから取れない**
+  （コンソールにしか出ない）。
+- Developmentに `cloudkit.share` を作る方法は2つ：
+  ①Debug実行(=Development環境)で共有を1回実際に作る、
+  ②.ckdbに **`RECORD TYPE "cloudkit.share" (…)` を引用符付きで**含めて
+  Import Schema（**無引用だとドットで構文エラー**
+  `Encountered "." … Was expecting "("`）。②は検証済みで動く。
+  インポート後、サーバー側が本物のシステム型（cloudkit.title等9フィールド）
+  に展開してくれる。
+
+### 9.2 真因特定はアプリ内プローブが最強（TestFlightにコンソールは無い）
+- 使い捨てゾーンに `CD_Project` + `CKShare` を**直接
+  `CKModifyRecordsOperation` で保存**するボタンを診断画面に置く。
+  直接APIのエラーには **`ServerErrorDescription`**（真の理由）が入る。
+- **Result版APIの罠**：`modifyRecordsResultBlock` はレコードが全部
+  拒否されても **`.success`** を返す（操作としては完了扱い）。判定は
+  必ず `perRecordSaveBlock` の失敗を集約して行う。
+- 診断ログにはエラーツリーを**全部**吐く：`partialErrorsByItemID` /
+  `NSDetailedErrorsKey` / `NSUnderlyingError` / userInfoの全String値。
+  自己参照ループがあるので訪問済み管理＋深さ上限は必須。
+
+### 9.3 .ckdb（CKMLインポート）の細則
+- Import Schemaは**Developmentスキーマの置き換え**。差分ではなく
+  **常に全型入りのフルファイル**を取り込む。
+- **BYTESフィールドに QUERYABLE/SORTABLE を付けない**（Core Data純正の
+  ミラーリングは付けない。デプロイ時に索引削除の差分が出たら消してよい）。
+- Core Data→CD_マッピング：String/UUID→STRING+`_ckAsset ASSET`、
+  Bool/Int→INT64、Date→TIMESTAMP、Binary→BYTES+`_ckAsset`、
+  to-one→`CD_<rel>` STRING（REFERENCEではない）、to-many→フィールド無し、
+  全型に `___`系6システムフィールド＋`CD_entityName`。
+  生成スクリプト: `Scripts/generate_ckdb.py` → `docs/cloudkit/tanamiru-schema.ckdb`。
+
+### 9.4 UICloudSharingController の正しい使い方
+- **未共有レコードには `init(preparationHandler:)`**。ハンドラ内で
+  `container.share([obj], to: nil)` してから completion。
+  生成直後のCKShareを `init(share:container:)` に渡すと
+  failedToSaveShareWithError（Apple明記の誤用）。既存共有の管理のみ
+  `init(share:container:)`。
+- 保存後は **`persistUpdatedShare(_:in: privateStore)`** 必須
+  （Core Dataは自動で書き戻さない）。`Info.plist` に
+  **`CKSharingSupported = true`**。
+- **SwiftUIの `.sheet` でホストしない**。共有セクションが
+  syncMonitor等の頻繁にpublishするオブジェクトを購読していると、
+  再描画のたびに `.sheet` 内のrepresentableが破棄→「一瞬開いて閉じる」。
+  **キーウィンドウ最前面VCから直接 `present`**（delegateは
+  associated objectで保持）すれば再描画の影響を受けない。
+
+### 9.5 その他のCloudKit地雷（このアプリで実際に踏んだもの）
+- **`@FetchRequest(sortDescriptors:)` はCloudKit有効時に entity が
+  nil になり得る**（複数モデルバージョン＋ミラーリングでクラス→entity
+  対応が壊れる）→ 全部 `@FetchRequest(fetchRequest:)`＋
+  `Type.fetchRequest()`（エンティティ名ベース）にする。
+- **`storeDescription.configuration = "Default"` は誤り**。モデルに
+  その名の構成が無ければ 134060 で全ストアロード失敗。**nil**にする
+  （暗黙のデフォルト構成）。
+- **同期エラーの表示は「次の成功イベントで自動解除」**を必ず実装する。
+  「エラー保持のearly return」だけだと解除経路が存在せず、起動ごとに
+  手動リセットが必要な最悪UXになる（保留アップロードが1回失敗→以降
+  成功でも表示が残る）。
