@@ -112,6 +112,12 @@ struct AssignLabelToUnitSheet: View {
                   let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
             try container.aliases.assign(alias: a, to: .unit(u))
             container.aliases.registerScan(alias: a)
+            // 1個体=1QR: 付け直し（シール紛失時の再設定）では古いラベルを
+            // 無効化する。紛失した印刷済みQRが後日出てきても退役済みなので、
+            // 誤って同じ個体の「もう1枚のQR」として生き続けることがない。
+            for old in u.activeLabels where old.objectID != a.objectID {
+                container.aliases.retire(alias: old)
+            }
         }
         busy = false
         switch result {

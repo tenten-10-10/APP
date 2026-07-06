@@ -3,17 +3,20 @@ import CloudKit
 import Combine
 import os.log
 
-/// Owns the `NSPersistentCloudKitContainer` and its two SQLite stores:
+/// Owns the `NSPersistentCloudKitContainer` and its three SQLite stores:
 ///
 /// * **Private store** — mirrors the user's own CloudKit private database
 ///   (`.private` scope). Projects the user owns live here.
 /// * **Shared store** — mirrors records shared *to* the user via CKShare
 ///   (`.shared` scope). Projects others shared with this user live here.
+/// * **Local store** — never mirrored to CloudKit. Demo/お試し data lives
+///   here so it doesn't consume the user's iCloud quota, can't collide with
+///   real synced data, and never re-appears on other devices after deletion.
 ///
-/// Both stores use the same managed object model / default configuration, so
-/// the same entities sync in either direction. New child objects must be
-/// assigned (`context.assign(_:to:)`) to the SAME store the owning Project
-/// lives in — that routing is done by `StoreRouter`.
+/// All stores use the same managed object model / default configuration, so
+/// the same entities work in any of them. New child objects must be assigned
+/// (`context.assign(_:to:)`) to the SAME store the owning Project lives in —
+/// that routing is done by `StoreRouter`.
 final class PersistenceController {
 
     static let shared = PersistenceController()
@@ -23,6 +26,7 @@ final class PersistenceController {
     /// Resolved persistent stores, populated after `loadPersistentStores`.
     private(set) var privateStore: NSPersistentStore?
     private(set) var sharedStore: NSPersistentStore?
+    private(set) var localStore: NSPersistentStore?
 
     /// Whether CloudKit mirroring is active. Disabled for tests / previews and
     /// when running unsigned where the iCloud entitlement is unavailable.
@@ -92,7 +96,10 @@ final class PersistenceController {
         let sharedDescription = privateDescription.copy() as! NSPersistentStoreDescription
         sharedDescription.url = URL(fileURLWithPath: "/dev/null/shared")
 
-        container.persistentStoreDescriptions = [privateDescription, sharedDescription]
+        let localDescription = privateDescription.copy() as! NSPersistentStoreDescription
+        localDescription.url = URL(fileURLWithPath: "/dev/null/local")
+
+        container.persistentStoreDescriptions = [privateDescription, sharedDescription, localDescription]
     }
 
     private func configureOnDisk(_ privateDescription: NSPersistentStoreDescription) {
@@ -110,13 +117,17 @@ final class PersistenceController {
         let sharedDescription = privateDescription.copy() as! NSPersistentStoreDescription
         sharedDescription.url = storeFolder.appendingPathComponent("shared.sqlite")
 
+        // Local-only store for demo/お試し data — never attached to CloudKit.
+        let localDescription = privateDescription.copy() as! NSPersistentStoreDescription
+        localDescription.url = storeFolder.appendingPathComponent("local.sqlite")
+
         // Persistent history + remote-change notifications are required for
-        // CloudKit mirroring and to keep the two stores merged. Automatic
+        // CloudKit mirroring and to keep the stores merged. Automatic
         // lightweight migration is required so existing stores (model v1, with
         // the old external-binary `photoData`) migrate to v2 (inline
         // `photoThumbnail`) on launch — the v1 model is kept in the .momd as the
         // migration source, so the store always opens instead of failing.
-        for description in [privateDescription, sharedDescription] {
+        for description in [privateDescription, sharedDescription, localDescription] {
             description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
             description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
             description.shouldMigrateStoreAutomatically = true
@@ -137,8 +148,9 @@ final class PersistenceController {
             privateDescription.cloudKitContainerOptions = nil
             sharedDescription.cloudKitContainerOptions = nil
         }
+        localDescription.cloudKitContainerOptions = nil
 
-        container.persistentStoreDescriptions = [privateDescription, sharedDescription]
+        container.persistentStoreDescriptions = [privateDescription, sharedDescription, localDescription]
     }
 
     private func loadStores() {
@@ -231,9 +243,13 @@ final class PersistenceController {
         assignStore(store, for: description)
     }
 
-    /// Record a store as private or shared, by CloudKit scope or store filename.
+    /// Record a store as private, shared, or local — by CloudKit scope or
+    /// store filename (the filename fallback also covers the CloudKit-failed →
+    /// re-added-as-plain-store path, where options were already stripped).
     private func assignStore(_ store: NSPersistentStore, for description: NSPersistentStoreDescription) {
-        if description.cloudKitContainerOptions?.databaseScope == .shared
+        if description.url?.lastPathComponent.contains("local") ?? false {
+            localStore = store
+        } else if description.cloudKitContainerOptions?.databaseScope == .shared
             || (description.url?.lastPathComponent.contains("shared") ?? false) {
             sharedStore = store
         } else {
@@ -280,6 +296,12 @@ final class PersistenceController {
     func isInSharedStore(_ object: NSManagedObject) -> Bool {
         guard let shared = sharedStore else { return false }
         return object.objectID.persistentStore === shared
+    }
+
+    /// Whether an object lives in the local (never-synced) store.
+    func isInLocalStore(_ object: NSManagedObject) -> Bool {
+        guard let local = localStore else { return false }
+        return object.objectID.persistentStore === local
     }
 
 #if DEBUG

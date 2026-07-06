@@ -14,12 +14,15 @@ import StoreKit
 final class EntitlementService: ObservableObject {
 
     /// Master switch for the タナミル チーム subscription UI (paywall gate on
-    /// sharing + the Settings row). OFF for 1.2.1: the subscription products
-    /// don't exist in App Store Connect yet, so an enabled paywall would show
-    /// an empty price list and block sharing for every user. Flip to true for
-    /// 1.3.0 after the products are created in ASC and attached to the version
+    /// sharing + the Settings row). The hard-coded default is OFF because the
+    /// subscription products don't exist in App Store Connect yet — an enabled
+    /// paywall would show an empty price list and block sharing for everyone.
+    /// Controlled REMOTELY via app-config.json (`teamPlanEnabled`), so once
+    /// the ASC products are live it can be turned on without an app release
     /// (docs/MONETIZATION_PLAN_JA.md).
-    static let teamPlanEnabled = false
+    static var teamPlanEnabled: Bool {
+        RemoteConfig.shared.bool("teamPlanEnabled", default: false)
+    }
 
     static let monthlyID = "com.tenten.tanamiru.team.monthly"
     static let yearlyID  = "com.tenten.tanamiru.team.yearly"

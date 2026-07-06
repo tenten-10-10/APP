@@ -55,6 +55,10 @@ struct HomeView: View {
         return r
     }(), animation: .default) private var labels: FetchedResults<CodeAlias>
 
+    /// Remote notices / kill-switches (app-config.json). Injected from the App
+    /// root; observed so a fetched お知らせ appears without relaunching.
+    @EnvironmentObject private var remoteConfig: RemoteConfig
+
     @State private var showSearch = false
     // Pre-print (blank QR) flow driven from the Home hero.
     @State private var prePrintProject: Project?
@@ -120,6 +124,7 @@ struct HomeView: View {
 
     var body: some View {
         List {
+            if let notice = remoteConfig.notice { noticeSection(notice) }
             startHubSection
             if webBorrow.pendingCount > 0 { webBorrowSection }
             summaryCard
@@ -174,6 +179,27 @@ struct HomeView: View {
     /// The primary call-to-action block at the top of Home. It makes "print
     /// blank QR labels" the headline action (previously buried) and, until the
     /// first sample is registered, shows a 3-step getting-started checklist.
+    /// 運営からのお知らせ（app-config.json の notice）。障害・メンテ情報を
+    /// アプリ更新なしで全ユーザーに届けるための枠。
+    private func noticeSection(_ notice: RemoteConfig.Notice) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                Label(notice.title ?? NSLocalizedString("お知らせ", comment: ""),
+                      systemImage: "megaphone.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.orange)
+                Text(notice.message)
+                    .font(.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let url = notice.url {
+                    Link(NSLocalizedString("詳しく見る", comment: ""), destination: url)
+                        .font(.footnote.weight(.semibold))
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
     private var startHubSection: some View {
         Section {
             if showGuide {

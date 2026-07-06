@@ -4,6 +4,7 @@ import SwiftUI
 struct ProjectStockApp: App {
 
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var container: ServiceContainer
     @StateObject private var settings: AppSettings
     @StateObject private var entitlements: EntitlementService
@@ -40,10 +41,14 @@ struct ProjectStockApp: App {
                 .environmentObject(container.webBorrow)
                 .environmentObject(settings)
                 .environmentObject(entitlements)
+                .environmentObject(RemoteConfig.shared)
                 .environment(\.managedObjectContext, container.viewContext)
                 .task {
                     // Seed a populated demo project for App Store screenshot runs.
                     if AppConfig.isSnapshot { container.seedSnapshotDataIfNeeded() }
+                    // Demo data lives in the local (never-synced) store as of
+                    // 1.2.11 — move any cloud-resident demo there, once.
+                    container.migrateSampleDataToLocalStoreIfNeeded()
                     // Rebuild quantity caches from the ledger and tidy temp
                     // export files on launch (spec §11, §16).
                     container.recomputeAllProjects()
@@ -51,8 +56,20 @@ struct ProjectStockApp: App {
                     container.syncMonitor.refreshAccountStatus()
                     container.refreshLoanNotifications()
                     container.refreshExpiryNotifications()
-                    // Pull any web borrow requests (and auto-apply if enabled).
-                    if !AppConfig.isRunningTests { await container.webBorrow.refresh() }
+                    // Daily on-device snapshot — the safety net against
+                    // shared-project sync accidents (see BackupService).
+                    container.runAutoBackupIfNeeded()
+                    if !AppConfig.isRunningTests {
+                        // Remote flags / notices — no app update needed.
+                        await RemoteConfig.shared.refresh(force: true)
+                        // Pull any web borrow requests (and auto-apply if enabled).
+                        await container.webBorrow.refresh()
+                    }
+                }
+                .onChange(of: scenePhase) { phase in
+                    if phase == .active && !AppConfig.isRunningTests {
+                        Task { await RemoteConfig.shared.refresh() }
+                    }
                 }
                 .task {
                     // Survived a few seconds without crashing → this launch is

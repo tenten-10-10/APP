@@ -79,7 +79,16 @@ struct ProjectShareSection: View {
                             .font(.caption2).foregroundColor(.secondary)
                     }
 
-                    if EntitlementService.teamPlanEnabled && permission == .notShared && !entitlements.hasTeamFeatures {
+                    if permission == .notShared && !RemoteConfig.shared.bool("sharingEnabled", default: true) {
+                        // Remote kill-switch: stop NEW shares during an incident
+                        // (existing shares keep working — owners keep management).
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label(NSLocalizedString("共有の新規開始は一時停止中です", comment: ""), systemImage: "wrench.and.screwdriver")
+                                .font(.subheadline)
+                            Text(NSLocalizedString("メンテナンスのため、新しい共有の開始を一時的に停止しています。しばらくしてからもう一度お試しください。", comment: ""))
+                                .font(.caption2).foregroundColor(.secondary)
+                        }
+                    } else if EntitlementService.teamPlanEnabled && permission == .notShared && !entitlements.hasTeamFeatures {
                         // Starting a NEW share requires タナミル チーム. Existing
                         // shares (created before the paywall, or unlocked via an
                         // offer code) are untouched, and participants join free.

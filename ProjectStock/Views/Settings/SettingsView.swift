@@ -145,11 +145,18 @@ struct SettingsView: View {
                 Button { confirmingExport = true } label: {
                     Label(NSLocalizedString("データを書き出す (JSON)", comment: ""), systemImage: "square.and.arrow.up")
                 }
+                NavigationLink {
+                    BackupListView()
+                } label: {
+                    Label(NSLocalizedString("バックアップ", comment: ""), systemImage: "externaldrive.badge.timemachine")
+                }
             } header: {
                 Text(NSLocalizedString("データ", comment: ""))
             } footer: {
                 if !demoProjects.isEmpty {
-                    Text(NSLocalizedString("お試しデータは使い方を確認するための架空のデータです。削除しても、自分で作成したプロジェクトには影響しません。", comment: ""))
+                    Text(NSLocalizedString("お試しデータは使い方を確認するための架空のデータです。削除しても、自分で作成したプロジェクトには影響しません。共有・同期のトラブルに備えて、毎日自動でこの端末内にバックアップも保存されます。", comment: ""))
+                } else {
+                    Text(NSLocalizedString("共有・同期のトラブルに備えて、毎日自動でこの端末内にバックアップが保存されます。復元は「バックアップ」から。", comment: ""))
                 }
             }
 

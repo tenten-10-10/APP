@@ -35,6 +35,10 @@ struct ProjectDetailView: View {
 
     private var canEdit: Bool { permission.canEdit }
 
+    /// Remote kill-switch (app-config.json) so deletion can be paused without
+    /// an app release if a sync-related loss bug is ever found in the field.
+    private var deleteEnabled: Bool { RemoteConfig.shared.bool("deleteEnabled", default: true) }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -231,14 +235,14 @@ struct ProjectDetailView: View {
                     ProductRow(product: product)
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    if canEdit {
+                    if canEdit && deleteEnabled {
                         Button(role: .destructive) { requestDeleteProduct(product) } label: {
                             Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
                         }
                     }
                 }
                 .contextMenu {
-                    if canEdit {
+                    if canEdit && deleteEnabled {
                         Button(role: .destructive) { requestDeleteProduct(product) } label: {
                             Label(NSLocalizedString("この製品を削除", comment: ""), systemImage: "trash")
                         }

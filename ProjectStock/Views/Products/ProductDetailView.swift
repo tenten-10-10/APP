@@ -15,13 +15,16 @@ struct ProductDetailView: View {
     @State private var checkoutUnit: StockUnit?
     @State private var qrUnit: StockUnit?
     @State private var assignUnit: StockUnit?
-    @State private var giveAwayUnit: StockUnit?
     @State private var deletingUnit: StockUnit?
     @State private var confirmingProductDelete = false
     @State private var error: PresentableError?
     @State private var canEdit = true
 
     private var amount: Double { max(0, Double(stepAmount) ?? 0) }
+
+    /// Remote kill-switch (app-config.json) so deletion can be paused without
+    /// an app release if a sync-related loss bug is ever found in the field.
+    private var deleteEnabled: Bool { RemoteConfig.shared.bool("deleteEnabled", default: true) }
 
     var body: some View {
         List {
@@ -45,8 +48,10 @@ struct ProductDetailView: View {
                         Button { duplicateProduct() } label: {
                             Label(NSLocalizedString("この製品を複製", comment: ""), systemImage: "plus.square.on.square")
                         }
-                        Button(role: .destructive) { requestDeleteProduct() } label: {
-                            Label(NSLocalizedString("この製品を削除", comment: ""), systemImage: "trash")
+                        if deleteEnabled {
+                            Button(role: .destructive) { requestDeleteProduct() } label: {
+                                Label(NSLocalizedString("この製品を削除", comment: ""), systemImage: "trash")
+                            }
                         }
                     } label: { Image(systemName: "ellipsis.circle") }
                         .accessibilityIdentifier("productMenuButton")
@@ -70,17 +75,6 @@ struct ProductDetailView: View {
         .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
         .sheet(item: $qrUnit) { unit in unitQRStudio(unit) }
         .sheet(item: $assignUnit) { unit in AssignLabelToUnitSheet(unit: unit) }
-        .alert(NSLocalizedString("譲渡しますか？", comment: ""),
-               isPresented: Binding(get: { giveAwayUnit != nil },
-                                    set: { if !$0 { giveAwayUnit = nil } }),
-               presenting: giveAwayUnit) { unit in
-            Button(NSLocalizedString("譲渡する", comment: ""), role: .destructive) {
-                giveAway(unit); giveAwayUnit = nil
-            }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { giveAwayUnit = nil }
-        } message: { _ in
-            Text(NSLocalizedString("返却なしで手放す操作です。この個体は在庫から外れます（貸出とは違い、返却の管理はしません）。", comment: ""))
-        }
         .alert(NSLocalizedString("個体を削除しますか？", comment: ""),
                isPresented: Binding(get: { deletingUnit != nil },
                                     set: { if !$0 { deletingUnit = nil } }),
@@ -90,7 +84,7 @@ struct ProductDetailView: View {
             }
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingUnit = nil }
         } message: { unit in
-            Text(String(format: NSLocalizedString("「%@」をリストから完全に削除します。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。\n手放した記録を残したい場合は、削除ではなく「譲渡」を使ってください。", comment: ""), unit.displaySerial))
+            Text(String(format: NSLocalizedString("「%@」をリストから完全に削除します。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), unit.displaySerial))
         }
         .alert(NSLocalizedString("製品を削除しますか？", comment: ""), isPresented: $confirmingProductDelete) {
             Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteProduct() }
@@ -294,13 +288,11 @@ struct ProductDetailView: View {
                     if unit.status == .available {
                         Button(NSLocalizedString("貸出", comment: "")) { checkoutUnit = unit }
                             .buttonStyle(.bordered).controlSize(.small)
-                        Button(NSLocalizedString("譲渡", comment: "")) { giveAwayUnit = unit }
-                            .buttonStyle(.bordered).controlSize(.small).tint(.secondary)
                     } else if unit.status == .checkedOut {
                         Button(NSLocalizedString("返却", comment: "")) { unitAction(unit, .returned) }
                             .buttonStyle(.bordered).controlSize(.small)
                     }
-                    if unit.status != .checkedOut {
+                    if unit.status != .checkedOut && deleteEnabled {
                         Button(NSLocalizedString("削除", comment: "")) { requestDeleteUnit(unit) }
                             .buttonStyle(.bordered).controlSize(.small).tint(.red)
                             .accessibilityIdentifier("deleteUnitButton")
@@ -310,7 +302,7 @@ struct ProductDetailView: View {
         }
         .padding(.vertical, 2)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            if canEdit {
+            if canEdit && deleteEnabled {
                 Button(role: .destructive) { requestDeleteUnit(unit) } label: {
                     Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
                 }
@@ -322,16 +314,23 @@ struct ProductDetailView: View {
                     Button { checkoutUnit = unit } label: {
                         Label(NSLocalizedString("貸出", comment: ""), systemImage: "person.badge.clock")
                     }
-                    Button { giveAwayUnit = unit } label: {
-                        Label(NSLocalizedString("譲渡", comment: ""), systemImage: "gift")
-                    }
                 } else if unit.status == .checkedOut {
                     Button { unitAction(unit, .returned) } label: {
                         Label(NSLocalizedString("返却", comment: ""), systemImage: "arrow.uturn.left")
                     }
                 }
-                Button(role: .destructive) { requestDeleteUnit(unit) } label: {
-                    Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                if unit.activeLabels.first != nil {
+                    // イレギュラー用なので長押しメニューの奥に: 貸出から戻って
+                    // きたらQRシールが剥がれて無くなっていた、を救う再設定。
+                    // 新しい空QRを割り当てると古いコードは自動で無効化される。
+                    Button { assignUnit = unit } label: {
+                        Label(NSLocalizedString("QRを付け直す（紛失時）", comment: ""), systemImage: "qrcode.viewfinder")
+                    }
+                }
+                if deleteEnabled {
+                    Button(role: .destructive) { requestDeleteUnit(unit) } label: {
+                        Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                    }
                 }
             }
         }
@@ -505,18 +504,6 @@ struct ProductDetailView: View {
             container.inventory.deleteUnit(u, actor: actor, in: ctx)
         }
         if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
-    }
-
-    /// Give this unit away for good (handed to a client / consumed) — it leaves
-    /// on-hand stock and is not tracked for return, unlike a loan.
-    private func giveAway(_ unit: StockUnit) {
-        let unitID = unit.objectID
-        let actor = settings.effectiveOperatorName
-        _ = container.performWrite { ctx in
-            guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
-            container.inventory.retireUnit(u, actor: actor, note: NSLocalizedString("譲渡（返却なし）", comment: ""), in: ctx)
-        }
-        Haptics.success()
     }
 
     /// The QR studio for a single unit's bound label (1 unit = 1 QR).
