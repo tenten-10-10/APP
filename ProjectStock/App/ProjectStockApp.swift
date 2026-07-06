@@ -6,6 +6,7 @@ struct ProjectStockApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var container: ServiceContainer
     @StateObject private var settings: AppSettings
+    @StateObject private var entitlements: EntitlementService
 
     init() {
         // Keep recording the reason of any uncaught launch exception (for the
@@ -27,6 +28,7 @@ struct ProjectStockApp: App {
         let appSettings = AppSettings.shared
         _container = StateObject(wrappedValue: ServiceContainer(persistence: persistence, settings: appSettings))
         _settings = StateObject(wrappedValue: appSettings)
+        _entitlements = StateObject(wrappedValue: EntitlementService())
     }
 
     var body: some Scene {
@@ -37,6 +39,7 @@ struct ProjectStockApp: App {
                 .environmentObject(container.stocktake)
                 .environmentObject(container.webBorrow)
                 .environmentObject(settings)
+                .environmentObject(entitlements)
                 .environment(\.managedObjectContext, container.viewContext)
                 .task {
                     // Seed a populated demo project for App Store screenshot runs.

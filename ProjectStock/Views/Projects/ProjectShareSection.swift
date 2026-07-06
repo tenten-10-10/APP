@@ -8,11 +8,13 @@ import CoreData
 struct ProjectShareSection: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var syncMonitor: CloudKitSyncMonitor
+    @EnvironmentObject private var entitlements: EntitlementService
     @ObservedObject var project: Project
     @Binding var permission: SharePermission
 
     @State private var error: PresentableError?
     @State private var inviteSheet: InviteText?
+    @State private var showingPaywall = false
 
     var body: some View {
         Section {
@@ -77,17 +79,32 @@ struct ProjectShareSection: View {
                             .font(.caption2).foregroundColor(.secondary)
                     }
 
-                    Button {
-                        startShare()
-                    } label: {
-                        Label(permission == .owner ? NSLocalizedString("共有設定・メンバー管理", comment: "") : NSLocalizedString("このプロジェクトを共有", comment: ""),
-                              systemImage: "person.crop.circle.badge.plus")
-                    }
-                    .accessibilityIdentifier("shareProjectButton")
-
-                    if permission == .notShared {
-                        Text(NSLocalizedString("押すと参加リンクを作成します。リンクを開いた相手は、このプロジェクトを一緒に使えるようになります。", comment: ""))
+                    if permission == .notShared && !entitlements.hasTeamFeatures {
+                        // Starting a NEW share requires タナミル チーム. Existing
+                        // shares (created before the paywall, or unlocked via an
+                        // offer code) are untouched, and participants join free.
+                        Button {
+                            showingPaywall = true
+                        } label: {
+                            Label(NSLocalizedString("このプロジェクトを共有（チーム機能）", comment: ""),
+                                  systemImage: "person.crop.circle.badge.plus")
+                        }
+                        .accessibilityIdentifier("shareProjectButton")
+                        Text(NSLocalizedString("共有には「タナミル チーム」への登録が必要です（2週間無料）。招待コードをお持ちの方も、ここから引き換えできます。参加する側は無料です。", comment: ""))
                             .font(.caption2).foregroundColor(.secondary)
+                    } else {
+                        Button {
+                            startShare()
+                        } label: {
+                            Label(permission == .owner ? NSLocalizedString("共有設定・メンバー管理", comment: "") : NSLocalizedString("このプロジェクトを共有", comment: ""),
+                                  systemImage: "person.crop.circle.badge.plus")
+                        }
+                        .accessibilityIdentifier("shareProjectButton")
+
+                        if permission == .notShared {
+                            Text(NSLocalizedString("押すと参加リンクを作成します。リンクを開いた相手は、このプロジェクトを一緒に使えるようになります。", comment: ""))
+                                .font(.caption2).foregroundColor(.secondary)
+                        }
                     }
                 }
             }
@@ -98,6 +115,7 @@ struct ProjectShareSection: View {
                 .font(.caption2)
         }
         .errorAlert($error)
+        .sheet(isPresented: $showingPaywall) { PaywallView() }
         .onAppear { syncMonitor.refreshAccountStatus() }
     }
 

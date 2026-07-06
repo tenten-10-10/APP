@@ -286,6 +286,7 @@
 			path = "ProjectStockTests";
 			sourceTree = "<group>";
 		};
+		4701A8C56FE2EFC9C50CCBED /* EntitlementService.swift in Build */ = {isa = PBXBuildFile; fileRef = C0B57D1B0A79B88F8356500D /* EntitlementService.swift */; };
 		47F56FE726D3053C6CA4279C /* TEST_PLAN.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "TEST_PLAN.md"; sourceTree = "<group>"; };
 		4849E2397EF5EE565E25ACF5 /* Utilities */ = {
 			isa = PBXGroup;
@@ -396,6 +397,7 @@
 		64B6AFA92DB57B78E0BB7852 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationService.swift"; sourceTree = "<group>"; };
 		673610E2B25B7D5EE31A8218 /* QRLabelStudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRLabelStudioView.swift"; sourceTree = "<group>"; };
 		68979EB8BA71A1868D9994F7 /* LabelSheetRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = 7A9B28203BDB4907E4E64B88 /* LabelSheetRenderer.swift */; };
+		68D3B0AC8B9035F0D37CBED8 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PaywallView.swift"; sourceTree = "<group>"; };
 		6900D240C39881C135902A9C /* Home */ = {
 			isa = PBXGroup;
 			children = (
@@ -411,6 +413,15 @@
 		6FE50AE458089BB9CA15834C /* PrePrintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrePrintView.swift"; sourceTree = "<group>"; };
 		7045F19802E60D5AC5063E48 /* BarcodeScannerController.swift in Build */ = {isa = PBXBuildFile; fileRef = C086FBA486D8D49EE642B89D /* BarcodeScannerController.swift */; };
 		7200428237903139A043F58B /* BorrowBackend.swift in Build */ = {isa = PBXBuildFile; fileRef = 91D65C2AE3BBC8AB389BEA46 /* BorrowBackend.swift */; };
+		722D9FDE2A79AACDCF4C9F09 /* Monetization */ = {
+			isa = PBXGroup;
+			children = (
+				C0B57D1B0A79B88F8356500D /* EntitlementService.swift */,
+				68D3B0AC8B9035F0D37CBED8 /* PaywallView.swift */,
+			);
+			path = "Monetization";
+			sourceTree = "<group>";
+		};
 		737885C2CF1DD1C6C0F3C880 /* QREPSRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = D3344E5809B34A6995540E49 /* QREPSRenderer.swift */; };
 		74AD5A86ABB4B81E53ECA651 /* StockUnit+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 589EDCB99A93C603592817C1 /* StockUnit+CoreDataClass.swift */; };
 		7596F5C1DFA295EB8041CD3E /* Projects */ = {
@@ -484,7 +495,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -703,6 +714,7 @@
 		C07108E85FF28B8BCC078949 /* CloudKitErrorMapper.swift in Build */ = {isa = PBXBuildFile; fileRef = BBDACD618A9857F367C783F6 /* CloudKitErrorMapper.swift */; };
 		C086FBA486D8D49EE642B89D /* BarcodeScannerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BarcodeScannerController.swift"; sourceTree = "<group>"; };
 		C0B567F6AEE36C121864FCA1 /* HierarchyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HierarchyService.swift"; sourceTree = "<group>"; };
+		C0B57D1B0A79B88F8356500D /* EntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EntitlementService.swift"; sourceTree = "<group>"; };
 		C17796EEE71FBD023FA4645B /* CLOUDKIT_SETUP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "CLOUDKIT_SETUP.md"; sourceTree = "<group>"; };
 		C370886168D0AF67289661F5 /* PersistenceAndRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceAndRoutingTests.swift"; sourceTree = "<group>"; };
 		C61D360E969652A4ECD012CB /* Project object */ = {
@@ -766,7 +778,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -810,6 +822,7 @@
 		D6DF8741F7D4BC5B2A5DBC19 /* ServiceContainer.swift in Build */ = {isa = PBXBuildFile; fileRef = F7F844BE5A7004DEA811A03B /* ServiceContainer.swift */; };
 		D72B76FAE1538605277E54E6 /* StoreRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StoreRouter.swift"; sourceTree = "<group>"; };
 		D7885388650754E165EAA81A /* SnapshotHelper.swift in Build */ = {isa = PBXBuildFile; fileRef = 02A5CDBA8DCCFB5C5BEE5A9C /* SnapshotHelper.swift */; };
+		D7C76305546135F6FBD0B445 /* PaywallView.swift in Build */ = {isa = PBXBuildFile; fileRef = 68D3B0AC8B9035F0D37CBED8 /* PaywallView.swift */; };
 		D87478A81EECC12D21C73A12 /* QRScanabilityEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QRScanabilityEvaluator.swift"; sourceTree = "<group>"; };
 		DAFF04E4FEDFC2185BA792E1 /* WebBorrowInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebBorrowInbox.swift"; sourceTree = "<group>"; };
 		DCC848E2CFBDB65D354F64C0 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -833,6 +846,8 @@
 				2AFF65F7EAD7D1CAC3AC8666 /* in Sources */,
 				9F0754DFE8278023F93DA3AF /* in Sources */,
 				74AD5A86ABB4B81E53ECA651 /* in Sources */,
+				4701A8C56FE2EFC9C50CCBED /* in Sources */,
+				D7C76305546135F6FBD0B445 /* in Sources */,
 				C07108E85FF28B8BCC078949 /* in Sources */,
 				93267B801E7DD87B283DE86A /* in Sources */,
 				E27920C9B5B94F6DCE269F76 /* in Sources */,
@@ -917,7 +932,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -951,7 +966,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -979,7 +994,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -997,6 +1012,7 @@
 			children = (
 				045508FEA8C0C3EDF01BF73C /* App */,
 				BDD8143442896E35CFFD3F61 /* Model */,
+				722D9FDE2A79AACDCF4C9F09 /* Monetization */,
 				B176D7D0DBEA8623D606057F /* Persistence */,
 				580AE74C05712666C66BC0DC /* QR */,
 				8016773C9B22E7F23760430A /* Resources */,
@@ -1039,7 +1055,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

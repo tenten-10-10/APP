@@ -5,6 +5,8 @@ struct SettingsView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var syncMonitor: CloudKitSyncMonitor
+    @EnvironmentObject private var entitlements: EntitlementService
+    @State private var showingPaywall = false
     @EnvironmentObject private var webBorrow: WebBorrowInbox
 
     @State private var deviceName = DeviceIdentity.shared.displayName
@@ -56,6 +58,25 @@ struct SettingsView: View {
                     Text(reason).font(.caption).foregroundColor(.orange)
                 }
                 NavigationLink(NSLocalizedString("診断ログ", comment: "")) { DiagnosticsView() }
+            }
+
+            Section {
+                Button {
+                    showingPaywall = true
+                } label: {
+                    HStack {
+                        Label(NSLocalizedString("タナミル チーム", comment: ""), systemImage: "person.2.fill")
+                        Spacer()
+                        Text(entitlements.hasTeamFeatures
+                                ? NSLocalizedString("登録済み", comment: "")
+                                : NSLocalizedString("未登録", comment: ""))
+                            .foregroundColor(entitlements.hasTeamFeatures ? .green : .secondary)
+                            .font(.footnote)
+                    }
+                }
+            } footer: {
+                Text(NSLocalizedString("プロジェクトの共有（チームでの共同管理）が使えるプランです。購入の復元や招待コードの引き換えもここから行えます。", comment: ""))
+                    .font(.caption2)
             }
 
             Section {
@@ -142,6 +163,7 @@ struct SettingsView: View {
             }
         }
         .navigationTitle(NSLocalizedString("設定", comment: ""))
+        .sheet(isPresented: $showingPaywall) { PaywallView() }
         .alert(NSLocalizedString("お試しデータを削除しますか？", comment: ""), isPresented: $confirmingDemoDelete) {
             Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteDemoData() }
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
