@@ -423,9 +423,15 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
     <div class="step">
       <div class="txt rv">
         <span class="badge">5</span>
-        <h3>ふだんは、かざして入庫・出庫</h3>
-        <p>登録が済んだQRにかざすと、その品物の操作画面が即座に開きます。数量を入れて <b>入庫／出庫</b>、置き場所が変わったら <b>場所を移動</b>。操作のたびに結果が表示され、履歴（活動タブ）に「いつ・誰が・何を」が自動で残ります。</p>
-        <div class="point">💡 うまく数えられているか不安になったら <b>棚卸し</b>（スキャンタブ右上）。連続スキャンで実数を数えて、差分をワンタップで確定できます。</div>
+        <h3>ふだんは、かざして「持ち出し・返却」</h3>
+        <p>登録が済んだQRにかざすと、そのサンプルの「今」——名前・置き場所・状態——が即座に開きます。あとは日々こう回すだけです。</p>
+        <ol class="mini">
+          <li><b>確認</b>：かざす → どこにある・誰が持っているかが一目で分かる</li>
+          <li><b>持ち出し</b>：客先や展示会へ持って行くときは <span class="ui">貸出</span>（誰が・いつまで。期限を過ぎたら通知）</li>
+          <li><b>戻ったら</b>：かざして <span class="ui">返却</span>。置き場所が変わったら <span class="ui">場所を移動</span></li>
+        </ol>
+        <p style="margin-top:12px">操作はすべて履歴（活動タブ）に「いつ・誰が・何を」で自動記録。<b>「あのサンプル、いまどこ？」</b>がなくなります。</p>
+        <div class="point">💡 配布して減っていくサンプル（試供品・ノベルティなど）は <b>入庫／出庫</b> で数を管理。名前から探したいときはホームの<b>検索</b>が最速です。</div>
       </div>
       <div class="vis rv d1">
         <div class="phone">
@@ -435,19 +441,17 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
             <div class="sb"><span>9:41</span><span><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
             <div class="nav" style="font-size:15px">スキャン結果 <span class="r" style="font-size:13px">閉じる</span></div>
             <div class="content">
-              <div class="row ok">✓ ＋3 入庫を記録しました</div>
-              <div class="row"><b>試作基板 Rev.B</b><span class="chip">数量管理</span><br><small>12 個 ・ 📍 棚A-2</small></div>
-              <div class="row">数量 <span class="r" style="color:var(--ink)"><b>3</b></span></div>
-              <div style="display:flex;gap:8px;flex:none">
-                <div class="btnp" style="flex:1">＋ 入庫
-                  <span class="tap" style="top:50%;left:50%;margin:-15px 0 0 -15px"></span>
-                </div>
-                <div class="btns" style="flex:1">− 出庫</div>
+              <div class="row ok">✓ 貸出を記録しました</div>
+              <div class="row"><b>展示用サンプル 003</b><span class="chip">個体管理</span><br><small>📍 棚A-2 ・ 状態: 貸出中</small></div>
+              <div class="row">貸出先 <span class="r" style="color:var(--ink)"><b>山田（〜7/20）</b></span></div>
+              <div class="btnp">↩ 返却
+                <span class="tap" style="top:50%;right:16px;margin-top:-15px"></span>
               </div>
               <div class="btns">⇄ 場所を移動</div>
               <div class="row hd">最近の履歴</div>
-              <div class="row"><small>今日 9:41 ・ 麦倉 ・ ＋3 入庫</small></div>
-              <div class="row"><small>昨日 16:20 ・ 麦倉 ・ −1 出庫</small></div>
+              <div class="row"><small>今日 9:41 ・ 麦倉 ・ 山田へ貸出（7/20まで）</small></div>
+              <div class="row"><small>6/28 14:05 ・ 麦倉 ・ 返却</small></div>
+              <div class="row"><small>6/21 10:12 ・ 麦倉 ・ 展示会場へ移動</small></div>
               <div class="grow"></div>
             </div>
             <div class="homebar"></div>
@@ -477,11 +481,11 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
   <div class="wrap">
     <span class="kicker rv">AND MORE</span>
     <h2 class="rv">サンプル管理の先に。</h2>
-    <p class="sub rv">同じ「貼って、かざす」の操作で、ここまで広がります。どれも追加設定は数タップ。</p>
+    <p class="sub rv">サンプル管理とまったく同じ「貼って、かざす」の操作のまま、在庫・ロット・棚卸しまで広がります。どれも追加設定は数タップ。</p>
     <div class="more">
       <div class="card rv"><div class="ico">📦</div><h3>在庫管理・要補充アラート</h3><p>製品に「最低在庫」を設定しておくと、下回った瞬間に「要補充」表示。発注のタイミングを逃しません。</p></div>
       <div class="card rv d1"><div class="ico">🏷️</div><h3>ロット・使用期限の管理</h3><p>同じ製品でも入荷ロットごとにQRを分けて、使用期限を登録。期限切れ・期限間近をホームで一覧できます。</p></div>
-      <div class="card rv d2"><div class="ico">🤝</div><h3>貸出・返却の記録</h3><p>工具や機材を「誰に・いつまで」で貸出。期限を過ぎたら通知でお知らせ、返却もかざしてワンタップ。</p></div>
+      <div class="card rv d2"><div class="ico">✅</div><h3>棚卸し</h3><p>連続スキャンで実数をどんどん数えて、期待との差分をワンタップで確定。差分ゼロなら「完了」を押すだけです。</p></div>
       <div class="card rv d3"><div class="ico">📊</div><h3>履歴・書き出し</h3><p>すべての入出庫が追記型の台帳に記録され、CSVで書き出せます。監査にも棚卸しにも。</p></div>
     </div>
   </div>
