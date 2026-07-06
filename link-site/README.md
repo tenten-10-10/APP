@@ -30,13 +30,5 @@ curl -i https://t.l0l0.app/.well-known/apple-app-site-association
 Apple の CDN がAASAを取得するまで数時間かかる場合がある。
 
 
-## /guide/ — 使い方ガイド（2026-07 追加）
-- `guide/index.html` … 使い方ガイド本体（`https://t.l0l0.app/guide/`）。`docs/guide/` と同内容（サポート/プライバシーへのリンクのみ絶対URL化）。
-- `guide/team.html` … タナミル チーム案内の器（近日公開・noindex）。
-- `/:code` の rewrite はファイル実体が優先されるため、`/guide/` 配下と干渉しない。
-
-### 更新の運用（推奨: Git連携）
-Vercel ダッシュボード → tanamiru-link → Settings → Git で
-GitHub `tenten-10-10/APP` に接続し、Root Directory を `link-site`、
-Production Branch を作業ブランチ（例: `claude/confident-rubin-0np4rh`）にすると、
-push だけで自動デプロイされる。未接続の間は従来どおり `vercel deploy --prod`。
+## 使い方ガイドについて
+ガイドは `tanamiru.l0l0.app`（ソース: `tanamiru-site/`）へ移設した。`t.l0l0.app` はQRリンク専用。
