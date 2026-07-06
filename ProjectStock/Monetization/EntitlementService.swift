@@ -20,7 +20,7 @@ final class EntitlementService: ObservableObject {
     /// True while a verified, unrevoked subscription transaction exists.
     /// StoreKit 2 caches entitlements locally, so this stays correct offline.
     @Published private(set) var hasTeamFeatures = false
-    @Published private(set) var products: [Product] = []
+    @Published private(set) var products: [StoreKit.Product] = []
     @Published private(set) var purchasing = false
 
     private var updatesTask: Task<Void, Never>?
@@ -57,14 +57,14 @@ final class EntitlementService: ObservableObject {
     }
 
     func loadProducts() async {
-        var loaded = (try? await Product.products(for: Self.productIDs)) ?? []
+        var loaded = (try? await StoreKit.Product.products(for: Self.productIDs)) ?? []
         loaded.sort { $0.price < $1.price } // monthly first
         products = loaded
     }
 
     /// Purchase, finish, and re-derive the entitlement. Cancellation is not an
     /// error; `.pending` (ask-to-buy) resolves later via `Transaction.updates`.
-    func purchase(_ product: Product) async throws {
+    func purchase(_ product: StoreKit.Product) async throws {
         purchasing = true
         defer { purchasing = false }
         let result = try await product.purchase()

@@ -52,7 +52,7 @@ struct PaywallView: View {
                                         .font(.body.weight(.semibold))
                                     if let intro = product.subscription?.introductoryOffer,
                                        intro.paymentMode == .freeTrial {
-                                        Text(String(format: NSLocalizedString("%@ 無料でお試し", comment: ""), intro.period.localizedDescription))
+                                        Text(String(format: NSLocalizedString("%@ 無料でお試し", comment: ""), Self.periodText(intro.period)))
                                             .font(.caption).foregroundColor(.green)
                                     }
                                 }
@@ -98,6 +98,18 @@ struct PaywallView: View {
             .errorAlert($error)
             .onAppear { Task { await entitlements.loadProducts() } }
             .background(redemptionPresenter)
+        }
+    }
+
+    /// "2週間" 等の期間表示。StoreKit 2 の SubscriptionPeriod に
+    /// localizedDescription は無いため自前で整形する。
+    private static func periodText(_ period: StoreKit.Product.SubscriptionPeriod) -> String {
+        switch period.unit {
+        case .day:   return String(format: NSLocalizedString("%d日間", comment: ""), period.value)
+        case .week:  return String(format: NSLocalizedString("%d週間", comment: ""), period.value)
+        case .month: return String(format: NSLocalizedString("%dヶ月", comment: ""), period.value)
+        case .year:  return String(format: NSLocalizedString("%d年", comment: ""), period.value)
+        @unknown default: return "\(period.value)"
         }
     }
 
