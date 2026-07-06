@@ -86,7 +86,13 @@ h1{font-size:clamp(32px,5.2vw,50px);line-height:1.32;margin:0 0 16px;font-weight
 .hero-drift .dq:nth-child(6){left:86%;top:46%;width:58px;opacity:.07;animation-duration:31s;animation-delay:-22s}
 .hero-drift .dq:nth-child(7){left:46%;top:90%;width:74px;opacity:.08;animation-duration:27s;animation-delay:-15s}
 .hero-drift .dq:nth-child(even) .qrsvg{animation-duration:13s;animation-direction:alternate-reverse}
-@media (max-width:680px){.hero-drift .dq:nth-child(n+5){display:none}}
+@media (max-width:680px){.hero-drift .dq.d0:nth-child(n+5){display:none}}
+
+/* イースターエッグ: QRラベルをタップすると背景のQRが増える */
+.hero-label{cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.hero-label [data-qr]{display:block}
+.hero-label [data-qr].pop{animation:qrPop .45s cubic-bezier(.3,1.6,.4,1)}
+@keyframes qrPop{0%{transform:scale(1)}35%{transform:scale(1.16) rotate(-2deg)}100%{transform:scale(1)}}
 
 /* ---- hero animation: 貼る → スキャン → リストに現れる (8sループ) ---- */
 .stage{position:relative;width:min(300px,74vw);margin:0 auto;perspective:1400px}
@@ -248,13 +254,13 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
 
 <header class="hero">
   <div class="hero-drift" aria-hidden="true">
-    <span class="dq" data-qr="21" data-seed="11"></span>
-    <span class="dq" data-qr="21" data-seed="23"></span>
-    <span class="dq" data-qr="21" data-seed="31"></span>
-    <span class="dq" data-qr="21" data-seed="41"></span>
-    <span class="dq" data-qr="21" data-seed="53"></span>
-    <span class="dq" data-qr="21" data-seed="61"></span>
-    <span class="dq" data-qr="21" data-seed="71"></span>
+    <span class="dq d0" data-qr="21" data-seed="11"></span>
+    <span class="dq d0" data-qr="21" data-seed="23"></span>
+    <span class="dq d0" data-qr="21" data-seed="31"></span>
+    <span class="dq d0" data-qr="21" data-seed="41"></span>
+    <span class="dq d0" data-qr="21" data-seed="53"></span>
+    <span class="dq d0" data-qr="21" data-seed="61"></span>
+    <span class="dq d0" data-qr="21" data-seed="71"></span>
   </div>
   <div class="wrap hero-in">
     <div>
@@ -477,6 +483,41 @@ const IC={
   grid:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="3.4" y="3.4" width="13.2" height="13.2" rx="1.4"/><path d="M3.4 7.8h13.2M3.4 12.2h13.2M7.8 3.4v13.2M12.2 3.4v13.2"/></svg>'
 };
 document.querySelectorAll('[data-ic]').forEach(el=>{el.innerHTML=IC[el.dataset.ic]||'';});
+/* イースターエッグ: ヒーローのQRラベルをタップ/クリックするたび、
+   背景を漂うQRが1枚ずつ増える（10回ごとにボーナスで+3枚）。
+   初期7枚は保持し、増えた分は60枚を超えたら古い順にリサイクル。 */
+(function(){
+  const label=document.querySelector('.hero-label');
+  const field=document.querySelector('.hero-drift');
+  if(!label||!field) return;
+  const KEEP=7, MAX=60;
+  let taps=0;
+  function spawn(){
+    if(field.children.length>=MAX && field.children.length>KEEP){
+      field.removeChild(field.children[KEEP]);
+    }
+    const s=document.createElement('span');
+    s.className='dq spawn';
+    const size=Math.round(34+Math.random()*76);
+    const dur=20+Math.random()*16;
+    s.style.left=(Math.random()*92)+'%';
+    s.style.top=(8+Math.random()*84)+'%';
+    s.style.width=size+'px';
+    s.style.opacity=(0.05+Math.random()*0.08).toFixed(3);
+    s.style.animationDuration=dur.toFixed(1)+'s';
+    // 途中から再生して、タップ直後に画面下部からすっと現れるように
+    s.style.animationDelay=(-dur*(0.28+Math.random()*0.14)).toFixed(2)+'s';
+    s.innerHTML=qrSVG(21, 1+Math.floor(Math.random()*90000));
+    field.appendChild(s);
+  }
+  label.addEventListener('click',()=>{
+    taps++;
+    spawn();
+    if(taps%10===0){spawn();spawn();spawn();}
+    const q=label.querySelector('[data-qr]');
+    if(q){q.classList.remove('pop');void q.offsetWidth;q.classList.add('pop');}
+  });
+})();
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.14});
 document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 </script>
