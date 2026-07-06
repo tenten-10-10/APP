@@ -33,6 +33,7 @@ section.alt{background:#f3f4ec}
   html{scroll-behavior:auto}
   .rv{opacity:1;transform:none;transition:none}
   .hero-label,.hero-scan,.newrow{animation:none!important}
+  .hero-drift .dq,.hero-drift .qrsvg{animation:none!important;transform:none!important}
   .newrow{opacity:1!important;transform:none!important}
   .phone{transform:none!important}
 }
@@ -69,6 +70,23 @@ h1{font-size:clamp(32px,5.2vw,50px);line-height:1.32;margin:0 0 16px;font-weight
 .cta.ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.7);box-shadow:none;margin-left:10px}
 .freebadge{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);
   border-radius:999px;padding:4px 16px;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:18px}
+
+/* ---- hero背景: 薄いQRがゆっくり舞い上がる ---- */
+.hero-drift{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.hero-drift .dq{position:absolute;display:block;animation:qrDrift linear infinite}
+.hero-drift .dq .qrsvg{animation:qrSway 10s ease-in-out infinite alternate}
+.hero-drift .qrsvg rect{fill:#fff}
+@keyframes qrDrift{from{transform:translateY(72vh) rotate(-10deg)}to{transform:translateY(-84vh) rotate(14deg)}}
+@keyframes qrSway{from{transform:translateX(-10px)}to{transform:translateX(10px)}}
+.hero-drift .dq:nth-child(1){left:5%;top:12%;width:84px;opacity:.10;animation-duration:26s;animation-delay:-4s}
+.hero-drift .dq:nth-child(2){left:20%;top:58%;width:52px;opacity:.07;animation-duration:34s;animation-delay:-18s}
+.hero-drift .dq:nth-child(3){left:37%;top:26%;width:66px;opacity:.08;animation-duration:29s;animation-delay:-11s}
+.hero-drift .dq:nth-child(4){left:56%;top:72%;width:44px;opacity:.06;animation-duration:38s;animation-delay:-27s}
+.hero-drift .dq:nth-child(5){left:70%;top:8%;width:96px;opacity:.09;animation-duration:24s;animation-delay:-9s}
+.hero-drift .dq:nth-child(6){left:86%;top:46%;width:58px;opacity:.07;animation-duration:31s;animation-delay:-22s}
+.hero-drift .dq:nth-child(7){left:46%;top:90%;width:74px;opacity:.08;animation-duration:27s;animation-delay:-15s}
+.hero-drift .dq:nth-child(even) .qrsvg{animation-duration:13s;animation-direction:alternate-reverse}
+@media (max-width:680px){.hero-drift .dq:nth-child(n+5){display:none}}
 
 /* ---- hero animation: 貼る → スキャン → リストに現れる (8sループ) ---- */
 .stage{position:relative;width:min(300px,74vw);margin:0 auto;perspective:1400px}
@@ -223,6 +241,15 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
 </div>
 
 <header class="hero">
+  <div class="hero-drift" aria-hidden="true">
+    <span class="dq" data-qr="21" data-seed="11"></span>
+    <span class="dq" data-qr="21" data-seed="23"></span>
+    <span class="dq" data-qr="21" data-seed="31"></span>
+    <span class="dq" data-qr="21" data-seed="41"></span>
+    <span class="dq" data-qr="21" data-seed="53"></span>
+    <span class="dq" data-qr="21" data-seed="61"></span>
+    <span class="dq" data-qr="21" data-seed="71"></span>
+  </div>
   <div class="wrap hero-in">
     <div>
       <span class="freebadge">iPhone在庫管理アプリ・基本無料</span>
