@@ -159,6 +159,59 @@ struct InventoryService {
         return event
     }
 
+    /// Permanently remove a unit that was added by mistake. Unlike `retireUnit`
+    /// (which keeps the row as a 譲渡/引退 record), the unit disappears from
+    /// the list. Its QR labels are released back to blank so they can be
+    /// re-assigned, and a product-level event records that the deletion
+    /// happened (the ledger itself is never erased). Checked-out units must be
+    /// returned first — deleting one would orphan its active loan.
+    func deleteUnit(_ unit: StockUnit, actor: String,
+                    occurredAt: Date = Date(), in context: NSManagedObjectContext) {
+        let product = unit.product
+        let serial = unit.displaySerial
+        let from = unit.location
+        for label in unit.labelArray {
+            label.unit = nil
+            label.targetType = .unassigned
+        }
+        _ = makeEvent(type: .retire, product: product, unit: nil,
+                      delta: 0, source: from, destination: nil,
+                      actor: actor,
+                      note: String(format: NSLocalizedString("個体「%@」を削除", comment: ""), serial),
+                      occurredAt: occurredAt,
+                      isCorrection: false, corrects: nil, in: context)
+        context.delete(unit)
+        if let product { recompute(product: product) }
+    }
+
+    /// Permanently delete a product and (via the Cascade rule) all of its
+    /// units/lots. Every QR label bound to the product or one of its units is
+    /// released back to blank for reuse, and a project-level ledger event
+    /// records the deletion (the event is created BEFORE the delete so it
+    /// still resolves the project; its product link then nullifies).
+    /// Callers must block this when any unit is checked out.
+    func deleteProduct(_ product: Product, actor: String,
+                       occurredAt: Date = Date(), in context: NSManagedObjectContext) {
+        let name = product.displayName
+        for label in product.labelArray {
+            label.product = nil
+            label.targetType = .unassigned
+        }
+        for unit in product.unitArray {
+            for label in unit.labelArray {
+                label.unit = nil
+                label.targetType = .unassigned
+            }
+        }
+        _ = makeEvent(type: .retire, product: product, unit: nil,
+                      delta: 0, source: product.currentLocation, destination: nil,
+                      actor: actor,
+                      note: String(format: NSLocalizedString("製品「%@」を削除", comment: ""), name),
+                      occurredAt: occurredAt,
+                      isCorrection: false, corrects: nil, in: context)
+        context.delete(product)
+    }
+
     // MARK: - Lot-mode operations
 
     /// Create a new lot for a product with an initial quantity and optional

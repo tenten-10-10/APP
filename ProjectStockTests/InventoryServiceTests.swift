@@ -186,4 +186,54 @@ final class InventoryServiceTests: XCTestCase {
         XCTAssertEqual(unit.status, .available)
         XCTAssertEqual(product.currentQuantity, 1, accuracy: 0.0001)
     }
+
+    func testDeleteUnitReleasesLabelAndKeepsLedgerRecord() throws {
+        let container = TestSupport.makeContainer()
+        let ctx = container.viewContext
+        let project = TestSupport.makeProject(container)
+        let product = Product.make(in: ctx, name: "デモ機", project: project, trackingMode: .individual)
+        container.router.assignChild(product, toSameStoreAs: project, in: ctx)
+        let unit = StockUnit.make(in: ctx, serialNumber: "#1", product: product, project: project)
+        container.router.assignChild(unit, toSameStoreAs: project, in: ctx)
+        container.inventory.registerUnit(unit, location: nil, actor: "t", in: ctx)
+        let alias = try container.aliases.createAlias(for: .unit(unit), in: project, context: ctx)
+        try ctx.save()
+        XCTAssertEqual(product.currentQuantity, 1, accuracy: 0.0001)
+
+        container.inventory.deleteUnit(unit, actor: "t", in: ctx)
+        try ctx.save()
+
+        XCTAssertTrue(product.unitArray.isEmpty, "個体はリストから消える")
+        XCTAssertEqual(product.currentQuantity, 0, accuracy: 0.0001)
+        XCTAssertNil(alias.unit, "QRラベルの割り当ては解除される")
+        XCTAssertEqual(alias.targetType, .unassigned, "空のQRとして再利用できる")
+        XCTAssertTrue(alias.isActive, "ラベル自体は無効化しない")
+        XCTAssertTrue(product.eventArray.contains { $0.eventType == .retire && ($0.note ?? "").contains("削除") },
+                      "削除の記録が履歴に残る")
+    }
+
+    func testDeleteProductCascadesUnitsAndReleasesLabels() throws {
+        let container = TestSupport.makeContainer()
+        let ctx = container.viewContext
+        let project = TestSupport.makeProject(container)
+        let product = Product.make(in: ctx, name: "撤去する製品", project: project, trackingMode: .individual)
+        container.router.assignChild(product, toSameStoreAs: project, in: ctx)
+        let unit = StockUnit.make(in: ctx, serialNumber: "#1", product: product, project: project)
+        container.router.assignChild(unit, toSameStoreAs: project, in: ctx)
+        container.inventory.registerUnit(unit, location: nil, actor: "t", in: ctx)
+        let alias = try container.aliases.createAlias(for: .unit(unit), in: project, context: ctx)
+        try ctx.save()
+
+        container.inventory.deleteProduct(product, actor: "t", in: ctx)
+        try ctx.save()
+
+        let productReq: NSFetchRequest<Product> = Product.fetchRequest()
+        let unitReq: NSFetchRequest<StockUnit> = StockUnit.fetchRequest()
+        XCTAssertEqual(try ctx.count(for: productReq), 0, "製品は削除される")
+        XCTAssertEqual(try ctx.count(for: unitReq), 0, "個体もカスケードで削除される")
+        XCTAssertNil(alias.unit, "QRラベルの割り当ては解除される")
+        XCTAssertEqual(alias.targetType, .unassigned)
+        XCTAssertTrue(project.eventArray.contains { $0.eventType == .retire && ($0.note ?? "").contains("削除") },
+                      "プロジェクトの履歴に削除の記録が残る")
+    }
 }

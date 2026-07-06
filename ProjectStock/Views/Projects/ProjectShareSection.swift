@@ -79,7 +79,7 @@ struct ProjectShareSection: View {
                             .font(.caption2).foregroundColor(.secondary)
                     }
 
-                    if permission == .notShared && !entitlements.hasTeamFeatures {
+                    if EntitlementService.teamPlanEnabled && permission == .notShared && !entitlements.hasTeamFeatures {
                         // Starting a NEW share requires タナミル チーム. Existing
                         // shares (created before the paywall, or unlocked via an
                         // offer code) are untouched, and participants join free.

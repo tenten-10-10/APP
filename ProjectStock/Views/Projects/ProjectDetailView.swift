@@ -29,6 +29,7 @@ struct ProjectDetailView: View {
     @State private var showingEdit = false
     @State private var showingPrePrint = false
     @State private var confirmingDemoDelete = false
+    @State private var deletingProduct: Product?
     @State private var error: PresentableError?
     @AppStorage("hideFirstRunGuide") private var hideFirstRunGuide = false
 
@@ -105,6 +106,17 @@ struct ProjectDetailView: View {
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
         } message: {
             Text(NSLocalizedString("お試し用プロジェクトと、その中の製品・QRラベル・履歴がすべて削除されます。自分で作成したプロジェクトには影響しません。", comment: ""))
+        }
+        .alert(NSLocalizedString("製品を削除しますか？", comment: ""),
+               isPresented: Binding(get: { deletingProduct != nil },
+                                    set: { if !$0 { deletingProduct = nil } }),
+               presenting: deletingProduct) { product in
+            Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
+                deleteProduct(product); deletingProduct = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingProduct = nil }
+        } message: { product in
+            Text(String(format: NSLocalizedString("「%@」と、その個体・在庫数がすべて削除されます。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), product.displayName))
         }
         .errorAlert($error)
     }
@@ -218,6 +230,20 @@ struct ProjectDetailView: View {
                 NavigationLink(destination: ProductDetailView(product: product)) {
                     ProductRow(product: product)
                 }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    if canEdit {
+                        Button(role: .destructive) { requestDeleteProduct(product) } label: {
+                            Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                        }
+                    }
+                }
+                .contextMenu {
+                    if canEdit {
+                        Button(role: .destructive) { requestDeleteProduct(product) } label: {
+                            Label(NSLocalizedString("この製品を削除", comment: ""), systemImage: "trash")
+                        }
+                    }
+                }
             }
         }
     }
@@ -261,6 +287,26 @@ struct ProjectDetailView: View {
     }
 
     // MARK: - Actions
+
+    /// Deleting a product whose units are out on loan would orphan the loans,
+    /// so demand returns first; everything else goes through the confirmation.
+    private func requestDeleteProduct(_ product: Product) {
+        if product.unitArray.contains(where: { $0.status == .checkedOut }) {
+            error = PresentableError(AppError.underlying(NSLocalizedString("貸出中の個体がある製品は削除できません。先に「返却」してから削除してください。", comment: "")))
+        } else {
+            deletingProduct = product
+        }
+    }
+
+    private func deleteProduct(_ product: Product) {
+        let productID = product.objectID
+        let actor = settings.effectiveOperatorName
+        let result = container.performWrite { ctx in
+            guard let p = try ctx.existingObject(with: productID) as? Product else { return }
+            container.inventory.deleteProduct(p, actor: actor, in: ctx)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+    }
 
     private func addFolder() {
         let name = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)

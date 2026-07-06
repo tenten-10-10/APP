@@ -16,6 +16,8 @@ struct ProductDetailView: View {
     @State private var qrUnit: StockUnit?
     @State private var assignUnit: StockUnit?
     @State private var giveAwayUnit: StockUnit?
+    @State private var deletingUnit: StockUnit?
+    @State private var confirmingProductDelete = false
     @State private var error: PresentableError?
     @State private var canEdit = true
 
@@ -42,6 +44,9 @@ struct ProductDetailView: View {
                     Menu {
                         Button { duplicateProduct() } label: {
                             Label(NSLocalizedString("この製品を複製", comment: ""), systemImage: "plus.square.on.square")
+                        }
+                        Button(role: .destructive) { requestDeleteProduct() } label: {
+                            Label(NSLocalizedString("この製品を削除", comment: ""), systemImage: "trash")
                         }
                     } label: { Image(systemName: "ellipsis.circle") }
                         .accessibilityIdentifier("productMenuButton")
@@ -75,6 +80,23 @@ struct ProductDetailView: View {
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { giveAwayUnit = nil }
         } message: { _ in
             Text(NSLocalizedString("返却なしで手放す操作です。この個体は在庫から外れます（貸出とは違い、返却の管理はしません）。", comment: ""))
+        }
+        .alert(NSLocalizedString("個体を削除しますか？", comment: ""),
+               isPresented: Binding(get: { deletingUnit != nil },
+                                    set: { if !$0 { deletingUnit = nil } }),
+               presenting: deletingUnit) { unit in
+            Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
+                deleteUnit(unit); deletingUnit = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingUnit = nil }
+        } message: { unit in
+            Text(String(format: NSLocalizedString("「%@」をリストから完全に削除します。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。\n手放した記録を残したい場合は、削除ではなく「譲渡」を使ってください。", comment: ""), unit.displaySerial))
+        }
+        .alert(NSLocalizedString("製品を削除しますか？", comment: ""), isPresented: $confirmingProductDelete) {
+            Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteProduct() }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+        } message: {
+            Text(String(format: NSLocalizedString("「%@」と、その個体・在庫数がすべて削除されます。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), product.displayName))
         }
         .sheet(isPresented: $showingAddLot) {
             if let project = product.project { AddLotSheet(product: product, project: project) }
@@ -278,10 +300,41 @@ struct ProductDetailView: View {
                         Button(NSLocalizedString("返却", comment: "")) { unitAction(unit, .returned) }
                             .buttonStyle(.bordered).controlSize(.small)
                     }
+                    if unit.status != .checkedOut {
+                        Button(NSLocalizedString("削除", comment: "")) { requestDeleteUnit(unit) }
+                            .buttonStyle(.bordered).controlSize(.small).tint(.red)
+                            .accessibilityIdentifier("deleteUnitButton")
+                    }
                 }
             }
         }
         .padding(.vertical, 2)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if canEdit {
+                Button(role: .destructive) { requestDeleteUnit(unit) } label: {
+                    Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                }
+            }
+        }
+        .contextMenu {
+            if canEdit {
+                if unit.status == .available {
+                    Button { checkoutUnit = unit } label: {
+                        Label(NSLocalizedString("貸出", comment: ""), systemImage: "person.badge.clock")
+                    }
+                    Button { giveAwayUnit = unit } label: {
+                        Label(NSLocalizedString("譲渡", comment: ""), systemImage: "gift")
+                    }
+                } else if unit.status == .checkedOut {
+                    Button { unitAction(unit, .returned) } label: {
+                        Label(NSLocalizedString("返却", comment: ""), systemImage: "arrow.uturn.left")
+                    }
+                }
+                Button(role: .destructive) { requestDeleteUnit(unit) } label: {
+                    Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                }
+            }
+        }
     }
 
     private var lotsSection: some View {
@@ -409,6 +462,49 @@ struct ProductDetailView: View {
             }
         }
         container.refreshLoanNotifications()
+    }
+
+    /// Deleting the product while units are out on loan would orphan the
+    /// loans, so demand returns first.
+    private func requestDeleteProduct() {
+        if product.unitArray.contains(where: { $0.status == .checkedOut }) {
+            error = PresentableError(AppError.underlying(NSLocalizedString("貸出中の個体がある製品は削除できません。先に「返却」してから削除してください。", comment: "")))
+        } else {
+            confirmingProductDelete = true
+        }
+    }
+
+    private func deleteProduct() {
+        let productID = product.objectID
+        let actor = settings.effectiveOperatorName
+        let result = container.performWrite { ctx in
+            guard let p = try ctx.existingObject(with: productID) as? Product else { return }
+            container.inventory.deleteProduct(p, actor: actor, in: ctx)
+        }
+        switch result {
+        case .success: Haptics.success(); dismiss()
+        case .failure(let err): error = PresentableError(err)
+        }
+    }
+
+    /// Deleting a checked-out unit would orphan its loan, so demand a return
+    /// first; everything else goes through the confirmation alert.
+    private func requestDeleteUnit(_ unit: StockUnit) {
+        if unit.status == .checkedOut {
+            error = PresentableError(AppError.underlying(NSLocalizedString("貸出中の個体は削除できません。先に「返却」してから削除してください。", comment: "")))
+        } else {
+            deletingUnit = unit
+        }
+    }
+
+    private func deleteUnit(_ unit: StockUnit) {
+        let unitID = unit.objectID
+        let actor = settings.effectiveOperatorName
+        let result = container.performWrite { ctx in
+            guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
+            container.inventory.deleteUnit(u, actor: actor, in: ctx)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
     }
 
     /// Give this unit away for good (handed to a client / consumed) — it leaves

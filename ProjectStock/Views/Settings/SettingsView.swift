@@ -60,23 +60,25 @@ struct SettingsView: View {
                 NavigationLink(NSLocalizedString("診断ログ", comment: "")) { DiagnosticsView() }
             }
 
-            Section {
-                Button {
-                    showingPaywall = true
-                } label: {
-                    HStack {
-                        Label(NSLocalizedString("タナミル チーム", comment: ""), systemImage: "person.2.fill")
-                        Spacer()
-                        Text(entitlements.hasTeamFeatures
-                                ? NSLocalizedString("登録済み", comment: "")
-                                : NSLocalizedString("未登録", comment: ""))
-                            .foregroundColor(entitlements.hasTeamFeatures ? .green : .secondary)
-                            .font(.footnote)
+            if EntitlementService.teamPlanEnabled {
+                Section {
+                    Button {
+                        showingPaywall = true
+                    } label: {
+                        HStack {
+                            Label(NSLocalizedString("タナミル チーム", comment: ""), systemImage: "person.2.fill")
+                            Spacer()
+                            Text(entitlements.hasTeamFeatures
+                                    ? NSLocalizedString("登録済み", comment: "")
+                                    : NSLocalizedString("未登録", comment: ""))
+                                .foregroundColor(entitlements.hasTeamFeatures ? .green : .secondary)
+                                .font(.footnote)
+                        }
                     }
+                } footer: {
+                    Text(NSLocalizedString("プロジェクトの共有（チームでの共同管理）が使えるプランです。購入の復元や招待コードの引き換えもここから行えます。", comment: ""))
+                        .font(.caption2)
                 }
-            } footer: {
-                Text(NSLocalizedString("プロジェクトの共有（チームでの共同管理）が使えるプランです。購入の復元や招待コードの引き換えもここから行えます。", comment: ""))
-                    .font(.caption2)
             }
 
             Section {

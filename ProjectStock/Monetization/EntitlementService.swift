@@ -13,6 +13,14 @@ import StoreKit
 @MainActor
 final class EntitlementService: ObservableObject {
 
+    /// Master switch for the タナミル チーム subscription UI (paywall gate on
+    /// sharing + the Settings row). OFF for 1.2.1: the subscription products
+    /// don't exist in App Store Connect yet, so an enabled paywall would show
+    /// an empty price list and block sharing for every user. Flip to true for
+    /// 1.3.0 after the products are created in ASC and attached to the version
+    /// (docs/MONETIZATION_PLAN_JA.md).
+    static let teamPlanEnabled = false
+
     static let monthlyID = "com.tenten.tanamiru.team.monthly"
     static let yearlyID  = "com.tenten.tanamiru.team.yearly"
     static let productIDs: Set<String> = [monthlyID, yearlyID]
