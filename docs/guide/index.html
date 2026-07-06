@@ -104,7 +104,11 @@ p.sub{color:var(--muted);margin:0 0 40px;max-width:40em}
 .trio .num{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.2em}
 .trio h3{margin:8px 0 6px;font-size:19px}
 .trio p{margin:0;font-size:14px;color:var(--muted)}
-.trio .ico{font-size:34px;margin-bottom:8px}
+.trio .ico{margin-bottom:10px;color:var(--olive)}
+.trio .ico svg{width:30px;height:30px}
+/* inline icon (絵文字の代替。テキスト内で1em角) */
+.icx{display:inline-block;width:1em;height:1em;vertical-align:-.12em}
+.icx svg{display:block;width:100%;height:100%}
 
 /* ---------- step layout ---------- */
 .step{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;padding:72px 0;border-bottom:1px dashed var(--line)}
@@ -171,7 +175,8 @@ ol.mini li{margin:8px 0}
 .cam{height:44%;min-height:170px;flex:none;background:
   radial-gradient(150px 100px at 55% 42%,rgba(255,255,255,.09),transparent),
   linear-gradient(160deg,#2a2f22,#151810);position:relative;display:grid;place-items:center}
-.cam .torch{position:absolute;top:10px;right:14px;color:rgba(255,255,255,.8);font-size:13px}
+.cam .torch{position:absolute;top:10px;right:14px;color:rgba(255,255,255,.8)}
+.cam .torch svg{width:15px;height:15px}
 .cam .hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;color:rgba(255,255,255,.75);font-size:10px}
 .frame{width:118px;height:118px;position:relative}
 .frame .qbox{position:absolute;inset:12px;background:#f6f6f0;border-radius:6px;padding:7px}
@@ -206,7 +211,8 @@ ol.mini li{margin:8px 0}
   background:radial-gradient(circle,#eef1e2,transparent 70%)}
 .more h3{margin:6px 0 8px;font-size:18px}
 .more p{margin:0;font-size:14px;color:var(--muted)}
-.more .ico{font-size:30px}
+.more .ico{color:var(--olive)}
+.more .ico svg{width:28px;height:28px}
 
 details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:12px}
 details summary{cursor:pointer;font-weight:700;color:var(--olive-deep)}
@@ -281,9 +287,9 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
     <h2 class="rv">しくみは、3つだけ。</h2>
     <p class="sub rv">バーコードの登録も、商品マスタの準備もいりません。<b>先にQRを刷って、貼って、あとから「これは○○」と教える</b>——現場のスピードに合わせた順番です。</p>
     <div class="trio">
-      <div class="card rv"><div class="ico">🖨️</div><div class="num">STEP A</div><h3>空のQRをまとめて印刷</h3><p>中身が決まっていなくてOK。A4に敷き詰めて一気に発行します。</p></div>
-      <div class="card rv d1"><div class="ico">🏷️</div><div class="num">STEP B</div><h3>現物・棚・箱に貼る</h3><p>届いたサンプル、置き場所、通い箱。貼る場所は自由です。</p></div>
-      <div class="card rv d2"><div class="ico">📱</div><div class="num">STEP C</div><h3>スキャンして登録</h3><p>かざして「これは○○」と名前を付けるだけ。以後はかざせば入出庫。</p></div>
+      <div class="card rv"><div class="ico" data-ic="printer"></div><div class="num">STEP A</div><h3>空のQRをまとめて印刷</h3><p>中身が決まっていなくてOK。A4に敷き詰めて一気に発行します。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="tag"></div><div class="num">STEP B</div><h3>現物・棚・箱に貼る</h3><p>届いたサンプル、置き場所、通い箱。貼る場所は自由です。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="phone"></div><div class="num">STEP C</div><h3>スキャンして登録</h3><p>かざして「これは○○」と名前を付けるだけ。以後はかざせば入出庫。</p></div>
     </div>
   </div>
 </section>
@@ -317,12 +323,12 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
               <span class="callout" style="top:36px;right:4px">① ここをタップ</span>
             </div>
             <div class="content">
-              <div class="search">🔍 検索</div>
+              <div class="search"><span class="icx" data-ic="search"></span> 検索</div>
               <div class="row hd">ピン留め</div>
-              <div class="row"><b>サンプル</b><span class="chip">製品 12</span><br><small>今日 9:12 更新 ・ ☁️ 同期済み</small></div>
+              <div class="row"><b>サンプル</b><span class="chip">製品 12</span><br><small>今日 9:12 更新 ・ <span class="icx" data-ic="cloud"></span> 同期済み</small></div>
               <div class="row hd">すべて</div>
               <div class="row"><b>備品・消耗品</b><span class="chip">製品 8</span><br><small>昨日 更新</small></div>
-              <div class="row"><b>展示会 2026春</b><span class="chip">製品 24</span><br><small>3日前 更新 ・ 👥 共有中</small></div>
+              <div class="row"><b>展示会 2026春</b><span class="chip">製品 24</span><br><small>3日前 更新 ・ <span class="icx" data-ic="people"></span> 共有中</small></div>
               <div class="grow"></div>
             </div>
             <div class="tabbar"><i><span data-ti="home"></span>ホーム</i><b><span data-ti="folder-f"></span>プロジェクト</b><i><span data-ti="scan"></span>スキャン</i><i><span data-ti="act"></span>活動</i><i><span data-ti="gear"></span>設定</i></div>
@@ -343,7 +349,7 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
           <li>間隔0mm＋枠線が初期設定。<b>カッターで直線に切るだけ</b>で切り離せます</li>
           <li>発行したQRは一意に予約済み。<b>同じシートの刷り直し</b>もボタン一つ</li>
         </ol>
-        <div class="point">💡 <b>普通のコピー用紙＋透明テープ</b>でも十分使えます。ラベルシールを使う場合はサイズと間隔を用紙に合わせて調整。</div>
+        <div class="point"><span class="icx" data-ic="bulb"></span> <b>普通のコピー用紙＋透明テープ</b>でも十分使えます。ラベルシールを使う場合はサイズと間隔を用紙に合わせて調整。</div>
       </div>
       <div class="vis rv d1">
         <div class="phone">
@@ -353,14 +359,14 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
             <div class="sb"><span>9:41</span><span><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
             <div class="nav" style="font-size:14px">空のQRをまとめて発行 <span class="r" style="font-size:13px">閉じる</span></div>
             <div class="content">
-              <div class="row">💡 <b>これは何?</b><br><small>品物が届く前でも空のQRを発行できます。先に貼って、あとで登録。</small></div>
+              <div class="row"><span class="icx" data-ic="bulb"></span> <b>これは何?</b><br><small>品物が届く前でも空のQRを発行できます。先に貼って、あとで登録。</small></div>
               <div class="row">12 種類のQRを作成 <span class="r">−　＋</span></div>
               <div class="row">同じQRを 1 枚ずつ <span class="r">−　＋</span></div>
-              <div class="row" style="color:var(--olive-deep);font-weight:700">▦ A4いっぱいに敷き詰める（合計 120 枚）</div>
+              <div class="row" style="color:var(--olive-deep);font-weight:700"><span class="icx" data-ic="grid"></span> A4いっぱいに敷き詰める（合計 120 枚）</div>
               <div class="row">ラベルサイズ: 16 mm<br><small>◦───────●───◦</small></div>
               <div class="row">切り取り線 <span class="r"><b style="color:var(--olive-deep)">枠線</b> ・ トンボ ・ なし</span></div>
               <div class="grow"></div>
-              <div class="btnp">🖨 作成して書き出す
+              <div class="btnp"><span class="icx" data-ic="printer"></span> 作成して書き出す
                 <span class="tap" style="top:50%;right:16px;margin-top:-15px"></span>
                 <span class="callout" style="top:-36px;left:50%;transform:translateX(-50%)">② これで発行</span>
               </div>
@@ -377,7 +383,7 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
         <span class="badge">3</span>
         <h3>現物・棚・箱に貼る</h3>
         <p>印刷したQRを、<b>届いたサンプルそのもの</b>や、置き場所の棚・保管箱に貼ります。この時点ではQRはまだ「空」——<b>どれに何を貼ったか覚えておく必要はありません</b>。次のスキャンで教えてあげるからです。</p>
-        <div class="point">💡 モノに貼るか、場所に貼るかは自由。<b>「モノに1枚・置き場所に1枚」</b>が、あとで移動管理まで効く鉄板パターンです。</div>
+        <div class="point"><span class="icx" data-ic="bulb"></span> モノに貼るか、場所に貼るかは自由。<b>「モノに1枚・置き場所に1枚」</b>が、あとで移動管理まで効く鉄板パターンです。</div>
       </div>
       <div class="vis rv d1">
         <div class="sheet" id="sheetqr"></div>
@@ -395,14 +401,14 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
           <li>名前（例:「試作基板 Rev.B」）を入力 → <span class="ui">作成して割り当て</span></li>
           <li>そのまま <span class="ui">続けて次のQRをスキャン</span> で連続登録</li>
         </ol>
-        <div class="point">💡 登録済みの製品・場所への割り当てもここから。<b>棚に貼ったQRは「保管場所」として登録</b>しておくと移動管理に使えます。</div>
+        <div class="point"><span class="icx" data-ic="bulb"></span> 登録済みの製品・場所への割り当てもここから。<b>棚に貼ったQRは「保管場所」として登録</b>しておくと移動管理に使えます。</div>
       </div>
       <div class="vis rv d1">
         <div class="phone">
           <span class="side v1"></span><span class="side v2"></span><span class="side pw"></span>
           <div class="screen">
             <div class="cam scanwrap">
-              <span class="torch">🔦</span>
+              <span class="torch" data-ic="torch"></span>
               <div class="frame">
                 <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
                 <div class="qbox"><span data-qr="21" data-seed="11"></span></div>
@@ -439,7 +445,7 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
           <li><b>戻ったら</b>：かざして <span class="ui">返却</span>。置き場所が変わったら <span class="ui">場所を移動</span></li>
         </ol>
         <p style="margin-top:12px">操作はすべて履歴（活動タブ）に「いつ・誰が・何を」で自動記録。<b>「あのサンプル、いまどこ？」</b>がなくなります。</p>
-        <div class="point">💡 配布して減っていくサンプル（試供品・ノベルティなど）は <b>入庫／出庫</b> で数を管理。名前から探したいときはホームの<b>検索</b>が最速です。</div>
+        <div class="point"><span class="icx" data-ic="bulb"></span> 配布して減っていくサンプル（試供品・ノベルティなど）は <b>入庫／出庫</b> で数を管理。名前から探したいときはホームの<b>検索</b>が最速です。</div>
       </div>
       <div class="vis rv d1">
         <div class="phone">
@@ -449,13 +455,13 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
             <div class="sb"><span>9:41</span><span><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
             <div class="nav" style="font-size:15px">スキャン結果 <span class="r" style="font-size:13px">閉じる</span></div>
             <div class="content">
-              <div class="row ok">✓ 貸出を記録しました</div>
-              <div class="row"><b>展示用サンプル 003</b><span class="chip">個体管理</span><br><small>📍 棚A-2 ・ 状態: 貸出中</small></div>
+              <div class="row ok"><span class="icx" data-ic="check"></span> 貸出を記録しました</div>
+              <div class="row"><b>展示用サンプル 003</b><span class="chip">個体管理</span><br><small><span class="icx" data-ic="pin"></span> 棚A-2 ・ 状態: 貸出中</small></div>
               <div class="row">貸出先 <span class="r" style="color:var(--ink)"><b>山田（〜7/20）</b></span></div>
-              <div class="btnp">↩ 返却
+              <div class="btnp"><span class="icx" data-ic="back"></span> 返却
                 <span class="tap" style="top:50%;right:16px;margin-top:-15px"></span>
               </div>
-              <div class="btns">⇄ 場所を移動</div>
+              <div class="btns"><span class="icx" data-ic="move"></span> 場所を移動</div>
               <div class="row hd">最近の履歴</div>
               <div class="row"><small>今日 9:41 ・ 田中 ・ 山田へ貸出（7/20まで）</small></div>
               <div class="row"><small>6/28 14:05 ・ 田中 ・ 返却</small></div>
@@ -477,9 +483,9 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
     <h2 class="rv">チームで、同じ在庫を見る。</h2>
     <p class="sub rv">プロジェクトは<b>招待リンク</b>で共有できます。プロジェクトの「共有」タブから <b>「招待リンクを送る」</b> — アプリの入手先と参加リンクがひとつのメッセージになって送られるので、相手はリンクを開いて参加するだけ。入出庫・貸出・棚卸しが全員にリアルタイムで反映され、履歴には「誰がやったか」も残ります。メンバーごとに「編集可／閲覧のみ」を選べます。</p>
     <div class="trio">
-      <div class="card rv"><div class="ico">✉️</div><h3>招待はリンク1本</h3><p>LINEでもメールでもOK。アプリ未導入の相手には入手先も一緒に届きます。</p></div>
-      <div class="card rv d1"><div class="ico">🔄</div><h3>自動で同期</h3><p>「今すぐ同期」ボタンはありません。変更は自動で全員に反映されます。</p></div>
-      <div class="card rv d2"><div class="ico">👀</div><h3>権限を選べる</h3><p>編集できる人と、見るだけの人を分けられます。</p></div>
+      <div class="card rv"><div class="ico" data-ic="mail"></div><h3>招待はリンク1本</h3><p>LINEでもメールでもOK。アプリ未導入の相手には入手先も一緒に届きます。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="sync"></div><h3>自動で同期</h3><p>「今すぐ同期」ボタンはありません。変更は自動で全員に反映されます。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="eye"></div><h3>権限を選べる</h3><p>編集できる人と、見るだけの人を分けられます。</p></div>
     </div>
   </div>
 </section>
@@ -491,10 +497,10 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
     <h2 class="rv">サンプル管理の先に。</h2>
     <p class="sub rv">サンプル管理とまったく同じ「貼って、かざす」の操作のまま、在庫・ロット・棚卸しまで広がります。どれも追加設定は数タップ。</p>
     <div class="more">
-      <div class="card rv"><div class="ico">📦</div><h3>在庫管理・要補充アラート</h3><p>製品に「最低在庫」を設定しておくと、下回った瞬間に「要補充」表示。発注のタイミングを逃しません。</p></div>
-      <div class="card rv d1"><div class="ico">🏷️</div><h3>ロット・使用期限の管理</h3><p>同じ製品でも入荷ロットごとにQRを分けて、使用期限を登録。期限切れ・期限間近をホームで一覧できます。</p></div>
-      <div class="card rv d2"><div class="ico">✅</div><h3>棚卸し</h3><p>連続スキャンで実数をどんどん数えて、期待との差分をワンタップで確定。差分ゼロなら「完了」を押すだけです。</p></div>
-      <div class="card rv d3"><div class="ico">📊</div><h3>履歴・書き出し</h3><p>すべての入出庫が追記型の台帳に記録され、CSVで書き出せます。監査にも棚卸しにも。</p></div>
+      <div class="card rv"><div class="ico" data-ic="box"></div><h3>在庫管理・要補充アラート</h3><p>製品に「最低在庫」を設定しておくと、下回った瞬間に「要補充」表示。発注のタイミングを逃しません。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="tag"></div><h3>ロット・使用期限の管理</h3><p>同じ製品でも入荷ロットごとにQRを分けて、使用期限を登録。期限切れ・期限間近をホームで一覧できます。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="checkc"></div><h3>棚卸し</h3><p>連続スキャンで実数をどんどん数えて、期待との差分をワンタップで確定。差分ゼロなら「完了」を押すだけです。</p></div>
+      <div class="card rv d3"><div class="ico" data-ic="chart"></div><h3>履歴・書き出し</h3><p>すべての入出庫が追記型の台帳に記録され、CSVで書き出せます。監査にも棚卸しにも。</p></div>
     </div>
   </div>
 </section>
@@ -560,6 +566,35 @@ const TI={
   gear:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="10" cy="10" r="5" stroke-width="1.6"/><circle cx="10" cy="10" r="1.9" stroke-width="1.4"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4" stroke-width="1.8"/></svg>'
 };
 document.querySelectorAll('[data-ti]').forEach(el=>{el.innerHTML=TI[el.dataset.ti]||'';});
+/* サイト共通アイコン（絵文字は使わない方針）: 20x20線画・currentColor */
+const IC={
+  pin:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.2s5.2-4.9 5.2-8.9a5.2 5.2 0 1 0-10.4 0c0 4 5.2 8.9 5.2 8.9z"/><circle cx="10" cy="8.2" r="1.9"/></svg>',
+  check:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 10.6 8 14.8 16.2 5.6"/></svg>',
+  printer:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 6.3V3h8.4v3.3"/><path d="M5.8 13.1H4.4c-.9 0-1.6-.7-1.6-1.6V7.9c0-.9.7-1.6 1.6-1.6h11.2c.9 0 1.6.7 1.6 1.6v3.6c0 .9-.7 1.6-1.6 1.6h-1.4"/><rect x="5.8" y="10.9" width="8.4" height="6.1" rx=".9"/><circle cx="14.5" cy="8.7" r=".8" fill="currentColor" stroke="none"/></svg>',
+  tag:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2.9 3.9c0-.6.4-1 1-1h5.2c.4 0 .8.2 1 .4l6.6 6.6c.6.6.6 1.5 0 2.1l-4.7 4.7c-.6.6-1.5.6-2.1 0L3.3 10.1a1.4 1.4 0 0 1-.4-1z"/><circle cx="6.9" cy="6.9" r="1.2"/></svg>',
+  phone:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.4" y="2.6" width="9.2" height="14.8" rx="2.2"/><rect x="7.7" y="6.2" width="4.6" height="4.6" rx=".8"/><circle cx="10" cy="8.5" r=".7" fill="currentColor" stroke="none"/><path d="M8.6 14.6h2.8"/></svg>',
+  gift:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="7.3" width="13.6" height="3.1" rx=".8"/><path d="M4.5 10.4v5.2c0 .7.6 1.3 1.3 1.3h8.4c.7 0 1.3-.6 1.3-1.3v-5.2M10 7.3v9.6"/><path d="M10 7.3S7.3 7 6.5 5.7c-.6-1 .1-2.3 1.3-2.3 1.8 0 2.2 3.9 2.2 3.9zm0 0s2.7-.3 3.5-1.6c.6-1-.1-2.3-1.3-2.3-1.8 0-2.2 3.9-2.2 3.9z"/></svg>',
+  box:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.3 10 2.9l7 3.4v7.4l-7 3.4-7-3.4z"/><path d="m3 6.3 7 3.3 7-3.3M10 9.6v7.5"/></svg>',
+  loan:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.8" cy="6.1" r="2.6"/><path d="M3 16.6c.5-2.9 2.4-4.5 4.8-4.5.9 0 1.8.2 2.5.7"/><circle cx="14.1" cy="13.5" r="3.5"/><path d="M14.1 11.8v1.9l1.4.9"/></svg>',
+  checkc:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="m6.8 10.3 2.2 2.2 4.4-4.8"/></svg>',
+  chart:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 3.4v13.2h13.2"/><path d="M6.8 13.2V9.6M10.2 13.2V6.4M13.6 13.2v-2.6"/></svg>',
+  mail:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="4.6" width="14.4" height="10.8" rx="1.8"/><path d="m3.6 6 6.4 4.9L16.4 6"/></svg>',
+  sync:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 8.3a6 6 0 0 1 10.1-2.5M15.7 11.7a6 6 0 0 1-10.1 2.5"/><path d="M14.7 2.6v3.4h-3.4M5.3 17.4V14h3.4"/></svg>',
+  eye:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 10S5.4 5.2 10 5.2 17.4 10 17.4 10 14.6 14.8 10 14.8 2.6 10 2.6 10z"/><circle cx="10" cy="10" r="2.2"/></svg>',
+  noacct:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="6.9" r="2.9"/><path d="M4.7 16.8c.6-3 2.7-4.6 5.3-4.6s4.7 1.6 5.3 4.6"/><path d="m3.6 3.6 12.8 12.8"/></svg>',
+  cloud:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15.2h8.3a3 3 0 0 0 .6-5.9 4.6 4.6 0 0 0-9-1.1A3.5 3.5 0 0 0 6 15.2z"/></svg>',
+  offline:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.9 7.6a10.6 10.6 0 0 1 9.4-2.7M16 6.9c.4.2.8.5 1.1.7M5.5 10.6a7 7 0 0 1 5.4-1.6M8.1 13.5c.7-.5 1.7-.7 2.6-.5"/><circle cx="10" cy="15.7" r="1.1" fill="currentColor" stroke="none"/><path d="m3.6 3.6 12.8 12.8"/></svg>',
+  lock:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="8.8" width="10.8" height="8" rx="1.8"/><path d="M6.9 8.8V6.4a3.1 3.1 0 0 1 6.2 0v2.4"/><circle cx="10" cy="12.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  book:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.9C8.6 3.7 6.6 3.3 3.4 3.4v12.1c3.2-.1 5.2.3 6.6 1.5 1.4-1.2 3.4-1.6 6.6-1.5V3.4c-3.2-.1-5.2.3-6.6 1.5z"/><path d="M10 4.9V17"/></svg>',
+  search:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.2"/><path d="m12.7 12.7 4.2 4.2"/></svg>',
+  people:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.3" cy="7.2" r="2.5"/><path d="M2.9 16c.5-2.6 2.2-4.1 4.4-4.1s3.9 1.5 4.4 4.1"/><circle cx="13.9" cy="7.8" r="2.1"/><path d="M13.4 12.1c1.9.2 3.3 1.5 3.8 3.9"/></svg>',
+  bulb:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.9a4.7 4.7 0 0 1 2.6 8.6c-.5.4-.8.9-.8 1.5v.4H8.2v-.4c0-.6-.3-1.1-.8-1.5A4.7 4.7 0 0 1 10 2.9z"/><path d="M8.5 15.8h3M9.2 17.6h1.6"/></svg>',
+  torch:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.9h6v2.2l-1.6 2.2v9c0 .5-.4.9-.9.9H9.5c-.5 0-.9-.4-.9-.9v-9L7 5.1z"/><path d="M8.6 9.4h2.8"/></svg>',
+  back:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.2 4.8 4.4 8.6l3.8 3.8"/><path d="M4.4 8.6h7.2a3.9 3.9 0 0 1 0 7.8H9.2"/></svg>',
+  move:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m13.6 4.2 3 3-3 3M16.6 7.2H5.4M6.4 9.8l-3 3 3 3M3.4 12.8h11.2"/></svg>',
+  grid:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="3.4" y="3.4" width="13.2" height="13.2" rx="1.4"/><path d="M3.4 7.8h13.2M3.4 12.2h13.2M7.8 3.4v13.2M12.2 3.4v13.2"/></svg>'
+};
+document.querySelectorAll('[data-ic]').forEach(el=>{el.innerHTML=IC[el.dataset.ic]||'';});
 // printed A4 sheet: 9 labels, each a real-looking QR + code caption
 const sheet=document.getElementById('sheetqr');
 if(sheet){

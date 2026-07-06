@@ -167,7 +167,8 @@ p.sub{color:var(--muted);margin:0 0 42px;max-width:42em}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:30px 26px;
   box-shadow:0 8px 26px -14px rgba(44,54,26,.18);transition:transform .3s,box-shadow .3s;position:relative;overflow:hidden}
 .card:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
-.card .ico{font-size:32px;margin-bottom:8px}
+.card .ico{margin-bottom:10px;color:var(--olive)}
+.card .ico svg{width:30px;height:30px}
 .card h3{margin:6px 0 6px;font-size:18px}
 .card p{margin:0;font-size:14px;color:var(--muted)}
 .card .num{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.2em}
@@ -187,7 +188,11 @@ p.sub{color:var(--muted);margin:0 0 42px;max-width:42em}
 .tlist .t{display:flex;gap:12px;align-items:flex-start;font-size:15px}
 .tlist .t b{display:block}
 .tlist .t small{opacity:.85}
-.tlist .ic{flex:none;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:15px}
+.tlist .ic{flex:none;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.16);display:grid;place-items:center;color:#fff}
+.tlist .ic svg{width:16px;height:16px}
+/* inline icon (絵文字の代替。テキスト内で1em角) */
+.icx{display:inline-block;width:1em;height:1em;vertical-align:-.12em}
+.icx svg{display:block;width:100%;height:100%}
 
 /* guide banner */
 .gbanner{display:flex;align-items:center;justify-content:space-between;gap:24px;background:var(--card);
@@ -273,10 +278,10 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
             <div class="sb"><span>9:41</span><span><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
             <div class="mnav">サンプル<div class="hero-scan"></div></div>
             <div class="content">
-              <div class="row newrow ok">✓ 展示用サンプル 003 を登録しました</div>
-              <div class="row"><b>試作基板 Rev.B</b><span class="chip">数量管理</span><br><small>12 個 ・ 📍 棚A-2</small></div>
-              <div class="row"><b>カタログ 2026</b><span class="chip">数量管理</span><br><small>240 部 ・ 📍 倉庫B</small></div>
-              <div class="row"><b>デモ機 α</b><span class="chip">個体管理</span><br><small>📍 展示会場 ・ 貸出中（山田・〜7/20）</small></div>
+              <div class="row newrow ok"><span class="icx" data-ic="check"></span> 展示用サンプル 003 を登録しました</div>
+              <div class="row"><b>試作基板 Rev.B</b><span class="chip">数量管理</span><br><small>12 個 ・ <span class="icx" data-ic="pin"></span> 棚A-2</small></div>
+              <div class="row"><b>カタログ 2026</b><span class="chip">数量管理</span><br><small>240 部 ・ <span class="icx" data-ic="pin"></span> 倉庫B</small></div>
+              <div class="row"><b>デモ機 α</b><span class="chip">個体管理</span><br><small><span class="icx" data-ic="pin"></span> 展示会場 ・ 貸出中（山田・〜7/20）</small></div>
               <div class="grow"></div>
             </div>
             <div class="tabbar"><i><span data-ti="home"></span>ホーム</i><b><span data-ti="folder-f"></span>プロジェクト</b><i><span data-ti="scan"></span>スキャン</i><i><span data-ti="act"></span>活動</i><i><span data-ti="gear"></span>設定</i></div>
@@ -309,9 +314,9 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
     <h2 class="rv">しくみは、3つだけ。</h2>
     <p class="sub rv">タナミルは順番が逆です。<b>先にQRを刷って貼り、あとから「これは○○」と教える</b>。だから商品マスタの準備もバーコードの登録もいりません。</p>
     <div class="trio">
-      <div class="card rv"><div class="ico">🖨️</div><div class="num">STEP 1</div><h3>空のQRをまとめて印刷</h3><p>中身が決まっていなくてOK。A4普通紙に敷き詰めて一気に発行。コピー用紙とテープで今日から始められます。</p></div>
-      <div class="card rv d1"><div class="ico">🏷️</div><div class="num">STEP 2</div><h3>現物・棚・箱に貼る</h3><p>届いたサンプル、置き場所、通い箱。貼る場所は自由。どれに何を貼ったか覚えておく必要はありません。</p></div>
-      <div class="card rv d2"><div class="ico">📱</div><div class="num">STEP 3</div><h3>かざして「これは○○」</h3><p>スキャンして名前を付けるだけで登録完了。以後はかざせば確認・移動・貸出・入出庫がその場で終わります。</p></div>
+      <div class="card rv"><div class="ico" data-ic="printer"></div><div class="num">STEP 1</div><h3>空のQRをまとめて印刷</h3><p>中身が決まっていなくてOK。A4普通紙に敷き詰めて一気に発行。コピー用紙とテープで今日から始められます。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="tag"></div><div class="num">STEP 2</div><h3>現物・棚・箱に貼る</h3><p>届いたサンプル、置き場所、通い箱。貼る場所は自由。どれに何を貼ったか覚えておく必要はありません。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="phone"></div><div class="num">STEP 3</div><h3>かざして「これは○○」</h3><p>スキャンして名前を付けるだけで登録完了。以後はかざせば確認・移動・貸出・入出庫がその場で終わります。</p></div>
     </div>
     <p class="rv" style="margin-top:28px"><a href="/guide/"><b>→ 5分で分かる使い方ガイド</b></a></p>
   </div>
@@ -324,12 +329,12 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
     <h2 class="rv">現場で使う機能だけ、ぜんぶ。</h2>
     <p class="sub rv">同じ「貼って、かざす」の操作のまま、管理の幅が広がります。</p>
     <div class="grid6">
-      <div class="card rv"><div class="ico">🎁</div><h3>サンプル管理</h3><p>「どこにある・誰が持ってる」が一目で。持ち出しは貸出記録、戻ったらかざして返却。</p></div>
-      <div class="card rv d1"><div class="ico">📦</div><h3>在庫・要補充アラート</h3><p>最低在庫を切ったら「要補充」表示。発注のタイミングを逃しません。</p></div>
-      <div class="card rv d2"><div class="ico">🏷️</div><h3>ロット・使用期限</h3><p>入荷ロットごとにQRを分けて期限を登録。期限切れ・間近をホームで一覧。</p></div>
-      <div class="card rv"><div class="ico">🤝</div><h3>貸出・返却</h3><p>「誰に・いつまで」を記録。期限超過は通知でお知らせ。工具・機材・備品に。</p></div>
-      <div class="card rv d1"><div class="ico">✅</div><h3>棚卸し</h3><p>連続スキャンで実数を数えて、差分をワンタップ確定。半日仕事が散歩になります。</p></div>
-      <div class="card rv d2"><div class="ico">📊</div><h3>履歴・CSV書き出し</h3><p>すべての操作を「いつ・誰が・何を」で自動記録。CSVで書き出して監査にも。</p></div>
+      <div class="card rv"><div class="ico" data-ic="gift"></div><h3>サンプル管理</h3><p>「どこにある・誰が持ってる」が一目で。持ち出しは貸出記録、戻ったらかざして返却。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="box"></div><h3>在庫・要補充アラート</h3><p>最低在庫を切ったら「要補充」表示。発注のタイミングを逃しません。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="tag"></div><h3>ロット・使用期限</h3><p>入荷ロットごとにQRを分けて期限を登録。期限切れ・間近をホームで一覧。</p></div>
+      <div class="card rv"><div class="ico" data-ic="loan"></div><h3>貸出・返却</h3><p>「誰に・いつまで」を記録。期限超過は通知でお知らせ。工具・機材・備品に。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="checkc"></div><h3>棚卸し</h3><p>連続スキャンで実数を数えて、差分をワンタップ確定。半日仕事が散歩になります。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="chart"></div><h3>履歴・CSV書き出し</h3><p>すべての操作を「いつ・誰が・何を」で自動記録。CSVで書き出して監査にも。</p></div>
     </div>
   </div>
 </section>
@@ -341,9 +346,9 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
     <h2 class="rv">チームで、同じ在庫を見る。</h2>
     <p class="sub rv">プロジェクトは<b>招待リンク1本</b>で共有。入出庫・貸出・棚卸しが全員にリアルタイムで反映され、履歴には「誰がやったか」も残ります。<b>参加する側は無料</b>です。</p>
     <div class="trio">
-      <div class="card rv"><div class="ico">✉️</div><h3>招待はリンク1本</h3><p>LINEでもメールでもOK。アプリ未導入の相手には入手先も一緒に届きます。</p></div>
-      <div class="card rv d1"><div class="ico">🔄</div><h3>自動で同期</h3><p>「今すぐ同期」ボタンはありません。変更は自動で全員に反映されます。</p></div>
-      <div class="card rv d2"><div class="ico">👀</div><h3>権限を選べる</h3><p>編集できる人と、見るだけの人をメンバーごとに設定できます。</p></div>
+      <div class="card rv"><div class="ico" data-ic="mail"></div><h3>招待はリンク1本</h3><p>LINEでもメールでもOK。アプリ未導入の相手には入手先も一緒に届きます。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="sync"></div><h3>自動で同期</h3><p>「今すぐ同期」ボタンはありません。変更は自動で全員に反映されます。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="eye"></div><h3>権限を選べる</h3><p>編集できる人と、見るだけの人をメンバーごとに設定できます。</p></div>
     </div>
     <p class="rv" style="margin-top:24px;color:var(--muted);font-size:14px">チーム共有プランの詳細は近日公開します。</p>
   </div>
@@ -356,10 +361,10 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
     <h2 class="rv">あなたのデータは、あなたのもの。</h2>
     <p class="sub rv" style="color:rgba(255,255,255,.85)">タナミルは運営者のサーバーを持ちません。安心して現場に置けます。</p>
     <div class="tlist">
-      <div class="t rv"><span class="ic">🙅</span><span><b>アカウント登録不要</b><small>インストールしてすぐ使えます。メールアドレスも不要。</small></span></div>
-      <div class="t rv d1"><span class="ic">☁️</span><span><b>データはあなたのiCloudだけ</b><small>運営者のサーバーには一切送信されません。</small></span></div>
-      <div class="t rv d2"><span class="ic">📵</span><span><b>オフラインでも使える</b><small>電波のない倉庫でも記録OK。戻れば自動で同期。</small></span></div>
-      <div class="t rv d3"><span class="ic">🔒</span><span><b>QRに中身は入らない</b><small>ラベルには短い識別子のみ。名前や数量は含まれません。</small></span></div>
+      <div class="t rv"><span class="ic" data-ic="noacct"></span><span><b>アカウント登録不要</b><small>インストールしてすぐ使えます。メールアドレスも不要。</small></span></div>
+      <div class="t rv d1"><span class="ic" data-ic="cloud"></span><span><b>データはあなたのiCloudだけ</b><small>運営者のサーバーには一切送信されません。</small></span></div>
+      <div class="t rv d2"><span class="ic" data-ic="offline"></span><span><b>オフラインでも使える</b><small>電波のない倉庫でも記録OK。戻れば自動で同期。</small></span></div>
+      <div class="t rv d3"><span class="ic" data-ic="lock"></span><span><b>QRに中身は入らない</b><small>ラベルには短い識別子のみ。名前や数量は含まれません。</small></span></div>
     </div>
   </div>
 </section>
@@ -369,7 +374,7 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
   <div class="wrap">
     <div class="gbanner rv">
       <div>
-        <h3>📖 5分で始める、使い方ガイド</h3>
+        <h3><span class="icx" data-ic="book"></span> 5分で始める、使い方ガイド</h3>
         <p>QRの印刷から登録・日々の運用まで、画面付きで順番に説明しています。導入前の下見にもどうぞ。</p>
       </div>
       <a class="gbtn" href="/guide/">ガイドを見る →</a>
@@ -443,6 +448,35 @@ const TI={
   gear:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="10" cy="10" r="5" stroke-width="1.6"/><circle cx="10" cy="10" r="1.9" stroke-width="1.4"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4" stroke-width="1.8"/></svg>'
 };
 document.querySelectorAll('[data-ti]').forEach(el=>{el.innerHTML=TI[el.dataset.ti]||'';});
+/* サイト共通アイコン（絵文字は使わない方針）: 20x20線画・currentColor */
+const IC={
+  pin:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.2s5.2-4.9 5.2-8.9a5.2 5.2 0 1 0-10.4 0c0 4 5.2 8.9 5.2 8.9z"/><circle cx="10" cy="8.2" r="1.9"/></svg>',
+  check:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 10.6 8 14.8 16.2 5.6"/></svg>',
+  printer:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 6.3V3h8.4v3.3"/><path d="M5.8 13.1H4.4c-.9 0-1.6-.7-1.6-1.6V7.9c0-.9.7-1.6 1.6-1.6h11.2c.9 0 1.6.7 1.6 1.6v3.6c0 .9-.7 1.6-1.6 1.6h-1.4"/><rect x="5.8" y="10.9" width="8.4" height="6.1" rx=".9"/><circle cx="14.5" cy="8.7" r=".8" fill="currentColor" stroke="none"/></svg>',
+  tag:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2.9 3.9c0-.6.4-1 1-1h5.2c.4 0 .8.2 1 .4l6.6 6.6c.6.6.6 1.5 0 2.1l-4.7 4.7c-.6.6-1.5.6-2.1 0L3.3 10.1a1.4 1.4 0 0 1-.4-1z"/><circle cx="6.9" cy="6.9" r="1.2"/></svg>',
+  phone:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.4" y="2.6" width="9.2" height="14.8" rx="2.2"/><rect x="7.7" y="6.2" width="4.6" height="4.6" rx=".8"/><circle cx="10" cy="8.5" r=".7" fill="currentColor" stroke="none"/><path d="M8.6 14.6h2.8"/></svg>',
+  gift:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="7.3" width="13.6" height="3.1" rx=".8"/><path d="M4.5 10.4v5.2c0 .7.6 1.3 1.3 1.3h8.4c.7 0 1.3-.6 1.3-1.3v-5.2M10 7.3v9.6"/><path d="M10 7.3S7.3 7 6.5 5.7c-.6-1 .1-2.3 1.3-2.3 1.8 0 2.2 3.9 2.2 3.9zm0 0s2.7-.3 3.5-1.6c.6-1-.1-2.3-1.3-2.3-1.8 0-2.2 3.9-2.2 3.9z"/></svg>',
+  box:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.3 10 2.9l7 3.4v7.4l-7 3.4-7-3.4z"/><path d="m3 6.3 7 3.3 7-3.3M10 9.6v7.5"/></svg>',
+  loan:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.8" cy="6.1" r="2.6"/><path d="M3 16.6c.5-2.9 2.4-4.5 4.8-4.5.9 0 1.8.2 2.5.7"/><circle cx="14.1" cy="13.5" r="3.5"/><path d="M14.1 11.8v1.9l1.4.9"/></svg>',
+  checkc:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="m6.8 10.3 2.2 2.2 4.4-4.8"/></svg>',
+  chart:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 3.4v13.2h13.2"/><path d="M6.8 13.2V9.6M10.2 13.2V6.4M13.6 13.2v-2.6"/></svg>',
+  mail:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="4.6" width="14.4" height="10.8" rx="1.8"/><path d="m3.6 6 6.4 4.9L16.4 6"/></svg>',
+  sync:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 8.3a6 6 0 0 1 10.1-2.5M15.7 11.7a6 6 0 0 1-10.1 2.5"/><path d="M14.7 2.6v3.4h-3.4M5.3 17.4V14h3.4"/></svg>',
+  eye:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 10S5.4 5.2 10 5.2 17.4 10 17.4 10 14.6 14.8 10 14.8 2.6 10 2.6 10z"/><circle cx="10" cy="10" r="2.2"/></svg>',
+  noacct:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="6.9" r="2.9"/><path d="M4.7 16.8c.6-3 2.7-4.6 5.3-4.6s4.7 1.6 5.3 4.6"/><path d="m3.6 3.6 12.8 12.8"/></svg>',
+  cloud:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15.2h8.3a3 3 0 0 0 .6-5.9 4.6 4.6 0 0 0-9-1.1A3.5 3.5 0 0 0 6 15.2z"/></svg>',
+  offline:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.9 7.6a10.6 10.6 0 0 1 9.4-2.7M16 6.9c.4.2.8.5 1.1.7M5.5 10.6a7 7 0 0 1 5.4-1.6M8.1 13.5c.7-.5 1.7-.7 2.6-.5"/><circle cx="10" cy="15.7" r="1.1" fill="currentColor" stroke="none"/><path d="m3.6 3.6 12.8 12.8"/></svg>',
+  lock:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="8.8" width="10.8" height="8" rx="1.8"/><path d="M6.9 8.8V6.4a3.1 3.1 0 0 1 6.2 0v2.4"/><circle cx="10" cy="12.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  book:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.9C8.6 3.7 6.6 3.3 3.4 3.4v12.1c3.2-.1 5.2.3 6.6 1.5 1.4-1.2 3.4-1.6 6.6-1.5V3.4c-3.2-.1-5.2.3-6.6 1.5z"/><path d="M10 4.9V17"/></svg>',
+  search:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.2"/><path d="m12.7 12.7 4.2 4.2"/></svg>',
+  people:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.3" cy="7.2" r="2.5"/><path d="M2.9 16c.5-2.6 2.2-4.1 4.4-4.1s3.9 1.5 4.4 4.1"/><circle cx="13.9" cy="7.8" r="2.1"/><path d="M13.4 12.1c1.9.2 3.3 1.5 3.8 3.9"/></svg>',
+  bulb:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.9a4.7 4.7 0 0 1 2.6 8.6c-.5.4-.8.9-.8 1.5v.4H8.2v-.4c0-.6-.3-1.1-.8-1.5A4.7 4.7 0 0 1 10 2.9z"/><path d="M8.5 15.8h3M9.2 17.6h1.6"/></svg>',
+  torch:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.9h6v2.2l-1.6 2.2v9c0 .5-.4.9-.9.9H9.5c-.5 0-.9-.4-.9-.9v-9L7 5.1z"/><path d="M8.6 9.4h2.8"/></svg>',
+  back:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.2 4.8 4.4 8.6l3.8 3.8"/><path d="M4.4 8.6h7.2a3.9 3.9 0 0 1 0 7.8H9.2"/></svg>',
+  move:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m13.6 4.2 3 3-3 3M16.6 7.2H5.4M6.4 9.8l-3 3 3 3M3.4 12.8h11.2"/></svg>',
+  grid:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="3.4" y="3.4" width="13.2" height="13.2" rx="1.4"/><path d="M3.4 7.8h13.2M3.4 12.2h13.2M7.8 3.4v13.2M12.2 3.4v13.2"/></svg>'
+};
+document.querySelectorAll('[data-ic]').forEach(el=>{el.innerHTML=IC[el.dataset.ic]||'';});
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.14});
 document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 </script>

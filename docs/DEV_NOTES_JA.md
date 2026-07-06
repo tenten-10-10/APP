@@ -321,3 +321,9 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
   「QRを付け直す（紛失時）」→ 空QRをスキャンで再割り当て。
   このとき**旧ラベルは自動で無効化**（1個体=1QR。紛失したQRが後日
   出てきても退役済みなので誤読しない）。
+
+### 10.5 サイトのアイコン方針
+- **サイト（tanamiru-site/・docs/guide/）に絵文字は使用禁止**（ユーザー指示）。
+  各ページ内の `IC` マップ（20×20 線画SVG・stroke=currentColor・タブバー
+  アイコンと同スタイル）に集約。インラインは `.icx`、カード見出しは `.ico`。
+  ガイドは docs/guide が原本 → tanamiru-site/guide へ cp+sed 同期。
