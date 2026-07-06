@@ -57,6 +57,15 @@ section.alt{background:#f3f4ec}
 .float{animation:float 7s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(-1.5deg)}}
 
+/* ---------- site header ---------- */
+.site-head{background:var(--olive-deep);color:#fff;position:relative;z-index:60}
+.site-head .wrap{display:flex;align-items:center;justify-content:space-between;padding:12px 22px}
+.hbrand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:800;letter-spacing:.05em;font-size:16px}
+.hbrand img{width:30px;height:30px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.35);display:block}
+.hcta{color:#fff;text-decoration:none;font-size:13px;font-weight:700;border:1.5px solid rgba(255,255,255,.55);border-radius:999px;padding:6px 16px;transition:.25s}
+.hcta:hover{background:#fff;color:var(--olive-deep)}
+.pill{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:4px 16px;font-size:13px;font-weight:700;letter-spacing:.1em}
+
 /* ---------- hero ---------- */
 header.hero{position:relative;color:#fff;overflow:hidden;
   background:linear-gradient(135deg,var(--olive-2),var(--olive-deep));}
@@ -139,7 +148,7 @@ ol.mini li{margin:8px 0}
 .batt{display:inline-block;width:20px;height:10px;border:1.5px solid #1d2417;border-radius:3px;position:relative;vertical-align:-1px}
 .batt::before{content:"";position:absolute;inset:1.5px;right:5px;background:#1d2417;border-radius:1px}
 .batt::after{content:"";position:absolute;right:-4px;top:2.5px;width:2px;height:4px;background:#1d2417;border-radius:0 1px 1px 0}
-.nav{padding:8px 16px 4px;font-weight:800;font-size:17px;letter-spacing:.01em}
+.nav{padding:8px 16px 4px;font-weight:800;font-size:17px;letter-spacing:.01em;position:relative}
 .nav .r{float:right;color:var(--olive);font-weight:700;font-size:15px}
 .content{flex:1;overflow:hidden;padding:4px 12px 10px;display:flex;flex-direction:column;gap:9px}
 .row{background:#fff;border-radius:13px;padding:11px 13px;box-shadow:0 2px 8px -4px rgba(0,0,0,.1);position:relative;flex:none}
@@ -218,10 +227,17 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
 </head>
 <body>
 
+<div class="site-head">
+  <div class="wrap">
+    <a class="hbrand" href="#"><img src="appicon.png" alt="タナミル">タナミル</a>
+    <a class="hcta" href="https://apps.apple.com/app/id6784470155" target="_blank" rel="noopener">App Store</a>
+  </div>
+</div>
+
 <header class="hero">
   <div class="wrap hero-in">
     <div>
-      <div class="brand"><img class="mark" src="appicon.png" alt="タナミル">タナミル 使い方ガイド</div>
+      <span class="pill">使い方ガイド</span>
       <h1>QRを貼って、<br>かざすだけ。</h1>
       <p class="lead">サンプル・部品・備品・消耗品——「どこに何がいくつあるか」を、印刷したQRラベルとiPhoneひとつで管理。このページでは、<b>最初のサンプル管理</b>を始めるまでを順番に説明します。</p>
       <a class="cta" href="https://apps.apple.com/app/id6784470155" target="_blank" rel="noopener"> App Store で入手</a>
@@ -288,9 +304,10 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
           <div class="screen">
             <i class="island"></i>
             <div class="sb"><span>9:41</span><span><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
-            <div class="nav">プロジェクト <span class="r">＋</span></div>
-            <div class="tap" style="top:66px;right:20px"></div>
-            <div class="callout" style="top:92px;right:14px">① ここをタップ</div>
+            <div class="nav">プロジェクト <span class="r">＋</span>
+              <span class="tap" style="top:3px;right:11px"></span>
+              <span class="callout" style="top:36px;right:4px">① ここをタップ</span>
+            </div>
             <div class="content">
               <div class="search">🔍 検索</div>
               <div class="row hd">ピン留め</div>
@@ -335,9 +352,10 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
               <div class="row">ラベルサイズ: 16 mm<br><small>◦───────●───◦</small></div>
               <div class="row">切り取り線 <span class="r"><b style="color:var(--olive-deep)">枠線</b> ・ トンボ ・ なし</span></div>
               <div class="grow"></div>
-              <div class="btnp">🖨 作成して書き出す</div>
-              <div class="tap" style="bottom:74px;left:50%;margin-left:-15px"></div>
-              <div class="callout" style="bottom:50px;left:50%;transform:translateX(-50%)">② これで発行</div>
+              <div class="btnp">🖨 作成して書き出す
+                <span class="tap" style="top:50%;right:16px;margin-top:-15px"></span>
+                <span class="callout" style="top:-36px;left:50%;transform:translateX(-50%)">② これで発行</span>
+              </div>
             </div>
             <div class="homebar"></div>
           </div>
@@ -386,9 +404,10 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
             </div>
             <div class="content" style="padding-top:10px">
               <div class="row hd">ラベルを割り当て　·　TNM-7K3D-Q8XF</div>
-              <div class="btnp">⊞ このQRに品物を登録</div>
-              <div class="tap" style="top:56px;left:50%;margin-left:-15px"></div>
-              <div class="callout" style="top:82px;left:50%;transform:translateX(-50%)">③ ここをタップ</div>
+              <div class="btnp">⊞ このQRに品物を登録
+                <span class="tap" style="top:50%;right:16px;margin-top:-15px"></span>
+                <span class="callout" style="top:-32px;right:0">③ ここをタップ</span>
+              </div>
               <div class="btns">既存の製品へ割り当て</div>
               <div class="btns">保管場所・コンテナへ割り当て</div>
               <div class="grow"></div>
@@ -420,10 +439,11 @@ footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
               <div class="row"><b>試作基板 Rev.B</b><span class="chip">数量管理</span><br><small>12 個 ・ 📍 棚A-2</small></div>
               <div class="row">数量 <span class="r" style="color:var(--ink)"><b>3</b></span></div>
               <div style="display:flex;gap:8px;flex:none">
-                <div class="btnp" style="flex:1">＋ 入庫</div>
+                <div class="btnp" style="flex:1">＋ 入庫
+                  <span class="tap" style="top:50%;left:50%;margin:-15px 0 0 -15px"></span>
+                </div>
                 <div class="btns" style="flex:1">− 出庫</div>
               </div>
-              <div class="tap" style="top:178px;left:24%"></div>
               <div class="btns">⇄ 場所を移動</div>
               <div class="row hd">最近の履歴</div>
               <div class="row"><small>今日 9:41 ・ 麦倉 ・ ＋3 入庫</small></div>
