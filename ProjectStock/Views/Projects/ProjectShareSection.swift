@@ -63,20 +63,6 @@ struct ProjectShareSection: View {
                                   systemImage: "person.2")
                                 .font(.footnote).foregroundColor(.secondary)
                         }
-                        // The friendly invite (App Store link + join link in one
-                        // message) is the PRIMARY action for non-technical users;
-                        // Apple's management sheet is secondary.
-                        Button {
-                            sendInvite()
-                        } label: {
-                            Label(NSLocalizedString("招待リンクを送る", comment: ""), systemImage: "envelope")
-                                .font(.body.weight(.semibold))
-                                .foregroundColor(Brand.primary)
-                        }
-                        .accessibilityIdentifier("sendInviteButton")
-                        .sheet(item: $inviteSheet) { ShareSheet(items: [$0.text]) }
-                        Text(NSLocalizedString("アプリの入手先と参加リンクをまとめて送信します。", comment: ""))
-                            .font(.caption2).foregroundColor(.secondary)
                     }
 
                     if permission == .notShared && !RemoteConfig.shared.bool("sharingEnabled", default: true) {
@@ -102,18 +88,30 @@ struct ProjectShareSection: View {
                         Text(NSLocalizedString("共有には「タナミル チーム」への登録が必要です（2週間無料）。招待コードをお持ちの方も、ここから引き換えできます。参加する側は無料です。", comment: ""))
                             .font(.caption2).foregroundColor(.secondary)
                     } else {
+                        // The friendly invite (App Store link + join link in one
+                        // message) is the PRIMARY action for non-technical users —
+                        // for NOT-YET-shared projects too: one tap creates the
+                        // share, makes it link-joinable, and composes the message.
+                        // Apple's management sheet is secondary.
+                        Button {
+                            sendInvite()
+                        } label: {
+                            Label(NSLocalizedString("招待リンクを送る", comment: ""), systemImage: "envelope")
+                                .font(.body.weight(.semibold))
+                                .foregroundColor(Brand.primary)
+                        }
+                        .accessibilityIdentifier("sendInviteButton")
+                        .sheet(item: $inviteSheet) { ShareSheet(items: [$0.text]) }
+                        Text(NSLocalizedString("アプリの入手先と参加リンクをまとめて送信します。リンクを知っている人が参加できます。", comment: ""))
+                            .font(.caption2).foregroundColor(.secondary)
+
                         Button {
                             startShare()
                         } label: {
-                            Label(permission == .owner ? NSLocalizedString("共有設定・メンバー管理", comment: "") : NSLocalizedString("このプロジェクトを共有", comment: ""),
+                            Label(permission == .owner ? NSLocalizedString("共有設定・メンバー管理", comment: "") : NSLocalizedString("共有の詳細設定（メンバー・権限）", comment: ""),
                                   systemImage: "person.crop.circle.badge.plus")
                         }
                         .accessibilityIdentifier("shareProjectButton")
-
-                        if permission == .notShared {
-                            Text(NSLocalizedString("押すと参加リンクを作成します。リンクを開いた相手は、このプロジェクトを一緒に使えるようになります。", comment: ""))
-                                .font(.caption2).foregroundColor(.secondary)
-                        }
                     }
                 }
             }
@@ -169,11 +167,26 @@ struct ProjectShareSection: View {
     /// with an invite-only share the link led to an Apple sign-in page and
     /// then a dead end.
     private func sendInvite() {
-        guard let share = container.sharing.existingShare(for: project) else {
-            error = PresentableError(AppError.shareCreationFailed(
-                NSLocalizedString("まだ共有が開始されていません。「このプロジェクトを共有」から共有を開始してください。", comment: "")))
-            return
+        if let share = container.sharing.existingShare(for: project) {
+            promoteAndCompose(share)
+        } else {
+            // One tap does everything: create the share, make it link-joinable,
+            // compose the message. Requiring a prior trip through Apple's share
+            // sheet left owners with "no share yet" errors (the sheet only
+            // creates the share once a send method is chosen there).
+            container.sharing.prepareShare(for: project) { result in
+                switch result {
+                case .success(.existing(let share, _)), .success(.created(let share, _)):
+                    refreshPermission()
+                    promoteAndCompose(share)
+                case .failure(let err):
+                    error = PresentableError(err)
+                }
+            }
         }
+    }
+
+    private func promoteAndCompose(_ share: CKShare) {
         guard let url = share.url else {
             // The share exists but its URL hasn't come back from the server yet
             // (happens right after creating the share). Telling the user to

@@ -652,3 +652,5 @@
 "共有への参加に失敗しました（%@）。招待リンクをコピーして、プロジェクト画面の「招待リンクから参加」からもう一度お試しください。" = "Couldn’t join the share (%@). Copy the invite link and try again from Projects → “Join from invite link”.";
 "共有に参加しました" = "Joined the share";
 "共有に参加できませんでした" = "Couldn’t join the share";
+"アプリの入手先と参加リンクをまとめて送信します。リンクを知っている人が参加できます。" = "Sends the App Store link and the join link in one message. Anyone with the link can join.";
+"共有の詳細設定（メンバー・権限）" = "Sharing details (members & permissions)";
