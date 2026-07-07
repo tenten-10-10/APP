@@ -21,6 +21,9 @@ struct ProductFormView: View {
     @State private var folderID: NSManagedObjectID?
     @State private var locationID: NSManagedObjectID?
     @State private var photo: UIImage?
+    /// True once the user explicitly removed the photo — the save path needs
+    /// to distinguish "left untouched" from "deleted" (both are `photo == nil`).
+    @State private var photoCleared = false
     @State private var showingPhotoPicker = false
     @State private var error: PresentableError?
     @State private var skuWarning = false
@@ -59,21 +62,20 @@ struct ProductFormView: View {
                     // 中に隠れていると大半のユーザーが最低在庫0のまま保存し、
                     // 「要補充」表示が一度も機能しないアプリになる。
                     TextField(NSLocalizedString("単位（例: 個, 本）", comment: ""), text: $unitName)
-                    if trackingMode == .quantity {
-                        HStack {
-                            Text(NSLocalizedString("最低在庫", comment: ""))
-                            Spacer()
-                            TextField("0", text: $minimumStock)
-                                .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                                .frame(maxWidth: 100)
-                        }
+                    // 最低在庫は全モードで有効（個体・ロットも合計数が
+                    // 閾値を切れば「要補充」を出せる）。数量モード限定に
+                    // していたのは単なる出し忘れだった。
+                    HStack {
+                        Text(NSLocalizedString("最低在庫", comment: ""))
+                        Spacer()
+                        TextField("0", text: $minimumStock)
+                            .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                            .frame(maxWidth: 100)
                     }
                 } header: {
                     Text(NSLocalizedString("管理方法", comment: ""))
                 } footer: {
-                    if trackingMode == .quantity {
-                        Text(NSLocalizedString("最低在庫を設定すると、在庫がそれを下回ったときに「要補充」と表示されます。", comment: ""))
-                    }
+                    Text(NSLocalizedString("最低在庫を設定すると、在庫（個体・ロットは合計数）がそれを下回ったときに「要補充」と表示されます。", comment: ""))
                 }
 
                 Section {
@@ -115,6 +117,14 @@ struct ProductFormView: View {
                             Label(photo == nil ? NSLocalizedString("写真を追加", comment: "") : NSLocalizedString("写真を変更", comment: ""),
                                   systemImage: "camera")
                         }
+                        if photo != nil {
+                            Button(role: .destructive) {
+                                photo = nil
+                                photoCleared = true
+                            } label: {
+                                Label(NSLocalizedString("写真を削除", comment: ""), systemImage: "trash")
+                            }
+                        }
                         MultilineTextField(text: $note, placeholder: NSLocalizedString("メモ（任意）", comment: ""))
                             .frame(minHeight: 60)
                     } label: {
@@ -133,7 +143,10 @@ struct ProductFormView: View {
                 }
             }
             .sheet(isPresented: $showingPhotoPicker) {
-                PhotoPicker { picked in photo = picked }
+                PhotoPicker { picked in
+                    photo = picked
+                    photoCleared = false
+                }
             }
             .alert(NSLocalizedString("新しいフォルダ", comment: ""), isPresented: $showNewFolder) {
                 TextField(NSLocalizedString("フォルダ名", comment: ""), text: $newFolderName)
@@ -229,6 +242,7 @@ struct ProductFormView: View {
         let editingID = editing?.objectID
         let actor = settings.effectiveOperatorName
         let photoThumbnail = photo.flatMap { ImageResizer.jpegData(from: $0, maxEdge: 250) }
+        let clearedPhoto = photoCleared
 
         let result = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: projectID) as? Project else { return }
@@ -250,7 +264,11 @@ struct ProductFormView: View {
             product.note = values.note
             product.folder = folderObj
             product.defaultLocation = locationObj
-            if let photoThumbnail { product.photoThumbnail = photoThumbnail }
+            if let photoThumbnail {
+                product.photoThumbnail = photoThumbnail
+            } else if clearedPhoto {
+                product.photoThumbnail = nil
+            }
             product.touch()
 
             if editingID == nil && values.mode == .quantity && values.initial > 0 {

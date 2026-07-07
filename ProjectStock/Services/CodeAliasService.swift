@@ -95,6 +95,17 @@ struct CodeAliasService {
         }
     }
 
+    /// Detach a label from its target and return it to the blank (unassigned)
+    /// pool — the recovery path for "貼る対象を間違えた". The printed sticker
+    /// stays usable: scanning it simply offers assignment again. Scan history
+    /// and creation date are preserved.
+    func unassign(alias: CodeAlias) {
+        alias.product = nil
+        alias.unit = nil
+        alias.location = nil
+        alias.targetType = .unassigned
+    }
+
     // MARK: - Retirement (spec §4.2: history is never deleted)
 
     func retire(alias: CodeAlias) {

@@ -63,6 +63,10 @@ private struct KnownTargetView: View {
     /// tell a first-time user whether the action was actually recorded.
     @State private var feedback: String?
     @State private var feedbackIsError = false
+    /// The event just recorded from this sheet, so a slip of the finger can be
+    /// undone RIGHT HERE (before this, the only path was hunting the row down
+    /// in the 活動 tab).
+    @State private var undoableEventID: NSManagedObjectID?
 
     var body: some View {
         List {
@@ -71,6 +75,15 @@ private struct KnownTargetView: View {
                     Label(feedback, systemImage: feedbackIsError ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
                         .font(.footnote)
                         .foregroundColor(feedbackIsError ? .orange : .green)
+                    if !feedbackIsError && undoableEventID != nil {
+                        Button {
+                            undoLastAction()
+                        } label: {
+                            Label(NSLocalizedString("今の操作を取り消す", comment: ""), systemImage: "arrow.uturn.backward")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundColor(.orange)
+                        }
+                    }
                 }
             }
             switch alias.targetType {
@@ -214,17 +227,19 @@ private struct KnownTargetView: View {
         let productID = product.objectID
         let actor = settings.effectiveOperatorName
         let loc = product.currentLocation?.objectID
+        var recorded: InventoryEvent?
         _ = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: productID) as? Product else { return }
             let location = loc.flatMap { try? ctx.existingObject(with: $0) as? Location }
-            if sign > 0 { container.inventory.receive(product: p, quantity: value, location: location, actor: actor, in: ctx) }
-            else { container.inventory.consume(product: p, quantity: value, location: location, actor: actor, in: ctx) }
+            if sign > 0 { recorded = container.inventory.receive(product: p, quantity: value, location: location, actor: actor, in: ctx) }
+            else { recorded = container.inventory.consume(product: p, quantity: value, location: location, actor: actor, in: ctx) }
         }
         Haptics.success()
         feedback = String(format: sign > 0
             ? NSLocalizedString("＋%@ 入庫を記録しました", comment: "")
             : NSLocalizedString("−%@ 出庫を記録しました", comment: ""), value.quantityString)
         feedbackIsError = false
+        undoableEventID = recorded?.objectID
     }
 
     private func lotChange(_ lot: StockUnit, _ sign: Double) {
@@ -237,31 +252,35 @@ private struct KnownTargetView: View {
         }
         let lotID = lot.objectID
         let actor = settings.effectiveOperatorName
+        var recorded: InventoryEvent?
         _ = container.performWrite { ctx in
             guard let l = try ctx.existingObject(with: lotID) as? StockUnit else { return }
-            if sign > 0 { container.inventory.receiveToLot(l, quantity: value, actor: actor, in: ctx) }
-            else { container.inventory.consumeFromLot(l, quantity: value, actor: actor, in: ctx) }
+            if sign > 0 { recorded = container.inventory.receiveToLot(l, quantity: value, actor: actor, in: ctx) }
+            else { recorded = container.inventory.consumeFromLot(l, quantity: value, actor: actor, in: ctx) }
         }
         Haptics.success()
         feedback = String(format: sign > 0
             ? NSLocalizedString("＋%@ 入庫を記録しました", comment: "")
             : NSLocalizedString("−%@ 出庫を記録しました", comment: ""), value.quantityString)
         feedbackIsError = false
+        undoableEventID = recorded?.objectID
     }
 
     private func unitChange(_ unit: StockUnit, _ type: InventoryEventType) {
         let unitID = unit.objectID
         let actor = settings.effectiveOperatorName
+        var recorded: InventoryEvent?
         _ = container.performWrite { ctx in
             guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
-            if type == .checkout { container.inventory.checkout(unit: u, actor: actor, in: ctx) }
-            else { container.inventory.returnUnit(u, to: u.location, actor: actor, in: ctx) }
+            if type == .checkout { recorded = container.inventory.checkout(unit: u, actor: actor, in: ctx) }
+            else { recorded = container.inventory.returnUnit(u, to: u.location, actor: actor, in: ctx) }
         }
         Haptics.success()
         feedback = type == .checkout
             ? NSLocalizedString("貸出を記録しました", comment: "")
             : NSLocalizedString("返却を記録しました", comment: "")
         feedbackIsError = false
+        undoableEventID = recorded?.objectID
         container.refreshLoanNotifications()
     }
 
@@ -271,16 +290,41 @@ private struct KnownTargetView: View {
         let destID = destination.objectID
         let from = product.currentLocation?.objectID
         let actor = settings.effectiveOperatorName
+        var recorded: InventoryEvent?
         _ = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: productID) as? Product,
                   let dst = try ctx.existingObject(with: destID) as? Location else { return }
             let src = from.flatMap { try? ctx.existingObject(with: $0) as? Location }
             p.defaultLocation = dst; p.touch()
-            container.inventory.transferQuantity(product: p, quantity: p.currentQuantity, from: src, to: dst, actor: actor, in: ctx)
+            recorded = container.inventory.transferQuantity(product: p, quantity: p.currentQuantity, from: src, to: dst, actor: actor, in: ctx)
         }
         Haptics.success()
         feedback = String(format: NSLocalizedString("「%@」へ移動しました", comment: ""), destination.displayName)
         feedbackIsError = false
+        undoableEventID = recorded?.objectID
+    }
+
+    /// Reverse the event this sheet just recorded (逆仕訳). The original stays
+    /// in the ledger; the correction is added on top — same mechanics as the
+    /// 活動タブの「訂正」, just reachable at the moment the mistake happened.
+    private func undoLastAction() {
+        guard let eventID = undoableEventID else { return }
+        let actor = settings.effectiveOperatorName
+        let result = container.performWrite { ctx in
+            guard let original = try ctx.existingObject(with: eventID) as? InventoryEvent else { return }
+            container.inventory.reverse(event: original, actor: actor,
+                                        note: NSLocalizedString("スキャン画面からの取り消し", comment: ""), in: ctx)
+        }
+        switch result {
+        case .success:
+            Haptics.success()
+            undoableEventID = nil
+            feedback = NSLocalizedString("取り消しました", comment: "")
+            feedbackIsError = false
+            container.refreshLoanNotifications()
+        case .failure(let err):
+            error = PresentableError(err)
+        }
     }
 }
 

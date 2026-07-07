@@ -173,6 +173,7 @@
 		327B4671275F8456B741F330 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "README.md"; sourceTree = "<group>"; };
 		334B09779D8ABE683F9484C6 /* InventoryEvent+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 10FB1B4C7B39C64913ABA587 /* InventoryEvent+CoreDataClass.swift */; };
 		33961581B753CF5A907ABEE8 /* CommonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CommonViews.swift"; sourceTree = "<group>"; };
+		33EBFF74E350ED3F80ABE92E /* BlankLabelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BlankLabelsView.swift"; sourceTree = "<group>"; };
 		342C222317F894D827D7FAE7 /* BackupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackupService.swift"; sourceTree = "<group>"; };
 		3640E0EA4809D881AF5B50FE /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppConfig.swift"; sourceTree = "<group>"; };
 		36BA3702647F5C5F24E75F2D /* RemoteConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RemoteConfigService.swift"; sourceTree = "<group>"; };
@@ -274,6 +275,7 @@
 		};
 		4182146D1A2809FD1C7A57A3 /* StocktakeCoordinator.swift in Build */ = {isa = PBXBuildFile; fileRef = A87E251B91A8470096807D5D /* StocktakeCoordinator.swift */; };
 		4255A66D40383C2F4D16F847 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceController.swift"; sourceTree = "<group>"; };
+		429AEF7D462EC85CD7B2C22E /* CrudGapsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CrudGapsTests.swift"; sourceTree = "<group>"; };
 		42FF7FD7B9D7D4E01E70104F /* AssignLabelToUnitSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AssignLabelToUnitSheet.swift"; sourceTree = "<group>"; };
 		440DD1B347E291DD122560E2 /* ProjectShareSection.swift in Build */ = {isa = PBXBuildFile; fileRef = AB59A775F44D1A531E961EF4 /* ProjectShareSection.swift */; };
 		44C90BC7BAFBB88C666E88D8 /* RemoteConfigService.swift in Build */ = {isa = PBXBuildFile; fileRef = 36BA3702647F5C5F24E75F2D /* RemoteConfigService.swift */; };
@@ -282,6 +284,7 @@
 			isa = PBXGroup;
 			children = (
 				37484AE21A0D68CD3278474B /* BackupAndLocalStoreTests.swift */,
+				429AEF7D462EC85CD7B2C22E /* CrudGapsTests.swift */,
 				9F14ADEAA62E7F34521BF339 /* HierarchyAndScanTests.swift */,
 				D22459D68E4841F797DE19C3 /* InventoryServiceTests.swift */,
 				C370886168D0AF67289661F5 /* PersistenceAndRoutingTests.swift */,
@@ -310,6 +313,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4506BB35AD951621DAF900B8 /* in Sources */,
+				B0B4B4CEFBD72F6A694CF57D /* in Sources */,
 				98BF69C08594D5583807A977 /* in Sources */,
 				4130755D44470C06D70BB6C2 /* in Sources */,
 				EB9AE6161C7E904957F6FC14 /* in Sources */,
@@ -393,6 +397,7 @@
 		5E3436B3EF604009ED3B99FE /* TestSupport.swift in Build */ = {isa = PBXBuildFile; fileRef = 5E657EFE9BD2CD27B246EBC2 /* TestSupport.swift */; };
 		5E657EFE9BD2CD27B246EBC2 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TestSupport.swift"; sourceTree = "<group>"; };
 		5F3E421052BB3AE7553F0210 /* Loans.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Loans.swift"; sourceTree = "<group>"; };
+		612175C2C21D5FD6C27B8AEF /* BlankLabelsView.swift in Build */ = {isa = PBXBuildFile; fileRef = 33EBFF74E350ED3F80ABE92E /* BlankLabelsView.swift */; };
 		61C53EB744E963458EA4E635 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C61D360E969652A4ECD012CB /* Project object */;
@@ -431,10 +436,12 @@
 			sourceTree = "<group>";
 		};
 		737885C2CF1DD1C6C0F3C880 /* QREPSRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = D3344E5809B34A6995540E49 /* QREPSRenderer.swift */; };
+		7420267F0F0CEFD8266B3F86 /* LoanEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoanEditSheet.swift"; sourceTree = "<group>"; };
 		74AD5A86ABB4B81E53ECA651 /* StockUnit+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 589EDCB99A93C603592817C1 /* StockUnit+CoreDataClass.swift */; };
 		7596F5C1DFA295EB8041CD3E /* Projects */ = {
 			isa = PBXGroup;
 			children = (
+				9D3D5F40C7DF85464D82831D /* FolderDetailView.swift */,
 				784695695899E04F16A44566 /* LocationDetailView.swift */,
 				207889D659156760DDFA56E4 /* LocationFormView.swift */,
 				E1CB06BAE8BBBACE102B4BFC /* ProjectDetailView.swift */,
@@ -495,6 +502,7 @@
 			path = "Settings";
 			sourceTree = "<group>";
 		};
+		850A54C9D96E1DC46B2710E7 /* LoanEditSheet.swift in Build */ = {isa = PBXBuildFile; fileRef = 7420267F0F0CEFD8266B3F86 /* LoanEditSheet.swift */; };
 		864D31C520C41F5D29E6E9F1 /* AppDelegate.swift in Build */ = {isa = PBXBuildFile; fileRef = F661437FD299A78F03EC7C3E /* AppDelegate.swift */; };
 		880FB4772896924D6DD851A3 /* BackupListView.swift in Build */ = {isa = PBXBuildFile; fileRef = E7AB266FC30E0CEBB403AE26 /* BackupListView.swift */; };
 		88170F113C9EE2A489662227 /* CloudSharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CloudSharingService.swift"; sourceTree = "<group>"; };
@@ -505,7 +513,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.11;
+				MARKETING_VERSION = 1.2.51;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -589,6 +597,7 @@
 			productReference = 22651B4640558F9A54C3D3F3 /* ProjectStockUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		9D3D5F40C7DF85464D82831D /* FolderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FolderDetailView.swift"; sourceTree = "<group>"; };
 		9F0754DFE8278023F93DA3AF /* ProjectStock.xcdatamodeld in Build */ = {isa = PBXBuildFile; fileRef = 7E1CEE9178467909FA347B4D /* ProjectStock.xcdatamodeld */; };
 		9F14ADEAA62E7F34521BF339 /* HierarchyAndScanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HierarchyAndScanTests.swift"; sourceTree = "<group>"; };
 		9FC2CC4575393AD60C996313 /* WebBorrow */ = {
@@ -633,6 +642,7 @@
 		};
 		AD7BC2A2BF509346CF9A8A94 /* ProjectStockUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectStockUITests.swift"; sourceTree = "<group>"; };
 		AE105ADF2FFC5292443E243D /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppSettings.swift"; sourceTree = "<group>"; };
+		B0B4B4CEFBD72F6A694CF57D /* CrudGapsTests.swift in Build */ = {isa = PBXBuildFile; fileRef = 429AEF7D462EC85CD7B2C22E /* CrudGapsTests.swift */; };
 		B176D7D0DBEA8623D606057F /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
@@ -790,7 +800,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.11;
+				MARKETING_VERSION = 1.2.51;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -820,6 +830,7 @@
 		D3B431CBFA9CC4F1DD88B7C6 /* Loans */ = {
 			isa = PBXGroup;
 			children = (
+				7420267F0F0CEFD8266B3F86 /* LoanEditSheet.swift */,
 				6E321A06193EEBA18E431DCD /* LoansView.swift */,
 			);
 			path = "Loans";
@@ -912,17 +923,20 @@
 				82FAE6A52E7F5D5E0C2AF6FD /* in Sources */,
 				591C707EFD2E3A4206606D07 /* in Sources */,
 				4A87321DDE4D36ED3C91C77A /* in Sources */,
+				850A54C9D96E1DC46B2710E7 /* in Sources */,
 				BD8E5950C35C658CA8262E0D /* in Sources */,
 				BCBF739E288484C5B271BCE3 /* in Sources */,
 				50FC6B6EB523245D3FF4CFD0 /* in Sources */,
 				CC7DA07507417302ED109CB5 /* in Sources */,
 				FAE1D4EEE246C0B65A91A691 /* in Sources */,
+				F1FC13EFE12BA85049D6C49B /* in Sources */,
 				08E6B8231488C22B928BD72D /* in Sources */,
 				D6C9E62686840913BD81724A /* in Sources */,
 				12FE5139392AFB0391C8A620 /* in Sources */,
 				B8CF289CFABEF88FE89EFB97 /* in Sources */,
 				440DD1B347E291DD122560E2 /* in Sources */,
 				099BD096AF58449E52617803 /* in Sources */,
+				612175C2C21D5FD6C27B8AEF /* in Sources */,
 				B1906FDB33638A1E64DF658C /* in Sources */,
 				08223C81EC70703CC3C01A92 /* in Sources */,
 				CAE05AB800C300B6C8321E79 /* in Sources */,
@@ -947,7 +961,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.11;
+				MARKETING_VERSION = 1.2.51;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -959,6 +973,7 @@
 		E5B24E0C916D48FC654C816C /* QR */ = {
 			isa = PBXGroup;
 			children = (
+				33EBFF74E350ED3F80ABE92E /* BlankLabelsView.swift */,
 				6FE50AE458089BB9CA15834C /* PrePrintView.swift */,
 				673610E2B25B7D5EE31A8218 /* QRLabelStudioView.swift */,
 			);
@@ -982,7 +997,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.11;
+				MARKETING_VERSION = 1.2.51;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -1010,7 +1025,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.11;
+				MARKETING_VERSION = 1.2.51;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1044,6 +1059,7 @@
 			sourceTree = "<group>";
 		};
 		F1F2319C8B528D9FD7A4027D /* QRRasterRenderer.swift in Build */ = {isa = PBXBuildFile; fileRef = 63E4207EF146D2153623957C /* QRRasterRenderer.swift */; };
+		F1FC13EFE12BA85049D6C49B /* FolderDetailView.swift in Build */ = {isa = PBXBuildFile; fileRef = 9D3D5F40C7DF85464D82831D /* FolderDetailView.swift */; };
 		F4AD3F5C053625C76B1D92BC /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
 		F5676A9A6858602DD3A284F3 /* AssignmentView.swift in Build */ = {isa = PBXBuildFile; fileRef = 1B335609141E0E1922C2CFB3 /* AssignmentView.swift */; };
 		F661437FD299A78F03EC7C3E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate.swift"; sourceTree = "<group>"; };
@@ -1071,7 +1087,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.11;
+				MARKETING_VERSION = 1.2.51;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

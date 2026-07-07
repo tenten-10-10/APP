@@ -16,6 +16,11 @@ struct ProductDetailView: View {
     @State private var qrUnit: StockUnit?
     @State private var assignUnit: StockUnit?
     @State private var deletingUnit: StockUnit?
+    @State private var renamingUnit: StockUnit?
+    @State private var editingLoanUnit: StockUnit?
+    @State private var deletingLot: StockUnit?
+    @State private var unassigningLabel: CodeAlias?
+    @State private var retiringLabel: CodeAlias?
     @State private var confirmingProductDelete = false
     @State private var error: PresentableError?
     @State private var canEdit = true
@@ -75,6 +80,15 @@ struct ProductDetailView: View {
         .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
         .sheet(item: $qrUnit) { unit in unitQRStudio(unit) }
         .sheet(item: $assignUnit) { unit in AssignLabelToUnitSheet(unit: unit) }
+        .sheet(item: $renamingUnit) { unit in
+            RenameSheet(title: NSLocalizedString("名前を変更", comment: ""),
+                        placeholder: NSLocalizedString("名前・番号", comment: ""),
+                        initialText: (unit.serialNumber ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
+                        footer: NSLocalizedString("QRの割り当て・貸出・履歴はそのまま引き継がれます。", comment: "")) { newName in
+                renameUnit(unit, to: newName)
+            }
+        }
+        .sheet(item: $editingLoanUnit) { unit in LoanEditSheet(unit: unit) }
         .alert(NSLocalizedString("個体を削除しますか？", comment: ""),
                isPresented: Binding(get: { deletingUnit != nil },
                                     set: { if !$0 { deletingUnit = nil } }),
@@ -91,6 +105,39 @@ struct ProductDetailView: View {
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
         } message: {
             Text(String(format: NSLocalizedString("「%@」と、その個体・在庫数がすべて削除されます。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), product.displayName))
+        }
+        .alert(NSLocalizedString("ロットを削除しますか？", comment: ""),
+               isPresented: Binding(get: { deletingLot != nil },
+                                    set: { if !$0 { deletingLot = nil } }),
+               presenting: deletingLot) { lot in
+            Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
+                deleteLot(lot); deletingLot = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingLot = nil }
+        } message: { lot in
+            Text(String(format: NSLocalizedString("ロット「%@」を数量ごと削除します。割り当てていたQRラベルは空に戻り、再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), lot.lotNumberDisplay))
+        }
+        .alert(NSLocalizedString("QRの割り当てを解除しますか？", comment: ""),
+               isPresented: Binding(get: { unassigningLabel != nil },
+                                    set: { if !$0 { unassigningLabel = nil } }),
+               presenting: unassigningLabel) { alias in
+            Button(NSLocalizedString("解除する", comment: "")) {
+                unassignLabel(alias); unassigningLabel = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { unassigningLabel = nil }
+        } message: { alias in
+            Text(String(format: NSLocalizedString("%@ は空のQRに戻り、スキャンして別の品物・場所に割り当て直せます。", comment: ""), alias.code))
+        }
+        .alert(NSLocalizedString("QRを無効化しますか？", comment: ""),
+               isPresented: Binding(get: { retiringLabel != nil },
+                                    set: { if !$0 { retiringLabel = nil } }),
+               presenting: retiringLabel) { alias in
+            Button(NSLocalizedString("無効化する", comment: ""), role: .destructive) {
+                retireLabel(alias); retiringLabel = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { retiringLabel = nil }
+        } message: { alias in
+            Text(String(format: NSLocalizedString("%@ は読み取っても使えなくなります（元に戻せません）。シールを紛失・破棄したときに使ってください。", comment: ""), alias.code))
         }
         .sheet(isPresented: $showingAddLot) {
             if let project = product.project { AddLotSheet(product: product, project: project) }
@@ -199,26 +246,57 @@ struct ProductDetailView: View {
                 .padding(.vertical, 2)
             }
             ForEach(product.labelArray) { alias in
-                NavigationLink(destination: studio(for: alias.code)) {
-                    HStack {
-                        Image(systemName: "qrcode")
-                        VStack(alignment: .leading) {
-                            Text(alias.code).font(.system(.callout, design: .monospaced))
-                            if !alias.isActive {
-                                Text(NSLocalizedString("無効", comment: "")).font(.caption2).foregroundColor(.red)
-                            } else if alias.scanCount > 0 {
-                                Text(String(format: NSLocalizedString("スキャン %d 回", comment: ""), alias.scanCount))
-                                    .font(.caption2).foregroundColor(.secondary)
+                if alias.isActive {
+                    NavigationLink(destination: studio(for: alias.code)) {
+                        HStack {
+                            Image(systemName: "qrcode")
+                            VStack(alignment: .leading) {
+                                Text(alias.code).font(.system(.callout, design: .monospaced))
+                                if alias.scanCount > 0 {
+                                    Text(String(format: NSLocalizedString("スキャン %d 回", comment: ""), alias.scanCount))
+                                        .font(.caption2).foregroundColor(.secondary)
+                                }
                             }
                         }
                     }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if canEdit {
+                            Button(role: .destructive) { retiringLabel = alias } label: {
+                                Label(NSLocalizedString("無効化", comment: ""), systemImage: "nosign")
+                            }
+                            Button { unassigningLabel = alias } label: {
+                                Label(NSLocalizedString("割り当て解除", comment: ""), systemImage: "minus.circle")
+                            }
+                            .tint(.orange)
+                        }
+                    }
+                    .contextMenu {
+                        if canEdit {
+                            Button { unassigningLabel = alias } label: {
+                                Label(NSLocalizedString("割り当て解除（空のQRに戻す）", comment: ""), systemImage: "minus.circle")
+                            }
+                            Button(role: .destructive) { retiringLabel = alias } label: {
+                                Label(NSLocalizedString("無効化（紛失・破棄したとき）", comment: ""), systemImage: "nosign")
+                            }
+                        }
+                    }
+                } else {
+                    // 無効化済み: 印刷・共有させない（貼っても読めないラベルを
+                    // 量産する行き止まりを防ぐ）。表示のみ。
+                    HStack {
+                        Image(systemName: "qrcode")
+                        Text(alias.code).font(.system(.callout, design: .monospaced))
+                        Spacer()
+                        Text(NSLocalizedString("無効", comment: "")).font(.caption2).foregroundColor(.red)
+                    }
+                    .foregroundColor(.secondary)
                 }
             }
         } header: {
             Text(NSLocalizedString("QRラベル", comment: ""))
         } footer: {
             if !product.labelArray.isEmpty {
-                Text(NSLocalizedString("ラベルを開くと、メール送信・印刷ができます。", comment: ""))
+                Text(NSLocalizedString("ラベルを開くと、メール送信・印刷ができます。行を左にスワイプすると、割り当て解除（別の品物へ使い回す）や無効化ができます。", comment: ""))
             }
         }
     }
@@ -310,6 +388,9 @@ struct ProductDetailView: View {
         }
         .contextMenu {
             if canEdit {
+                Button { renamingUnit = unit } label: {
+                    Label(NSLocalizedString("名前を変更", comment: ""), systemImage: "pencil")
+                }
                 if unit.status == .available {
                     Button { checkoutUnit = unit } label: {
                         Label(NSLocalizedString("貸出", comment: ""), systemImage: "person.badge.clock")
@@ -317,6 +398,9 @@ struct ProductDetailView: View {
                 } else if unit.status == .checkedOut {
                     Button { unitAction(unit, .returned) } label: {
                         Label(NSLocalizedString("返却", comment: ""), systemImage: "arrow.uturn.left")
+                    }
+                    Button { editingLoanUnit = unit } label: {
+                        Label(NSLocalizedString("期限・借り手を変更", comment: ""), systemImage: "calendar.badge.clock")
                     }
                 }
                 if unit.activeLabels.first != nil {
@@ -343,6 +427,20 @@ struct ProductDetailView: View {
             }
             ForEach(product.lotArray) { lot in
                 NavigationLink(destination: LotDetailView(lot: lot)) { lotRow(lot) }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if canEdit && deleteEnabled {
+                            Button(role: .destructive) { deletingLot = lot } label: {
+                                Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                            }
+                        }
+                    }
+                    .contextMenu {
+                        if canEdit && deleteEnabled {
+                            Button(role: .destructive) { deletingLot = lot } label: {
+                                Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                            }
+                        }
+                    }
             }
             if canEdit {
                 Button { showingAddLot = true } label: {
@@ -369,14 +467,41 @@ struct ProductDetailView: View {
         }
     }
 
-    private var historySection: some View {
-        Section(NSLocalizedString("履歴", comment: "")) {
-            let recent = Array(product.eventArray.prefix(15))
-            if recent.isEmpty {
+    @ViewBuilder private var historySection: some View {
+        let recent = Array(product.eventArray.prefix(15))
+        if recent.isEmpty {
+            Section(NSLocalizedString("履歴", comment: "")) {
                 Text(NSLocalizedString("履歴がありません", comment: "")).foregroundColor(.secondary)
             }
-            ForEach(recent) { EventRow(event: $0) }
+        } else {
+            Section {
+                EmptyView()
+            } header: {
+                Text(NSLocalizedString("履歴", comment: ""))
+            } footer: {
+                if canEdit {
+                    Text(NSLocalizedString("間違えた記録は、行を左にスワイプして「訂正」で打ち消せます。", comment: ""))
+                }
+            }
+            EventListView(events: recent, onCorrect: canEdit ? correctEvent : nil)
         }
+    }
+
+    /// Reverse a mistaken event right here — hunting for the same row in the
+    /// 活動 tab was the only way before.
+    private func correctEvent(_ event: InventoryEvent) {
+        let eventID = event.objectID
+        let actor = settings.effectiveOperatorName
+        if let project = event.project, !container.sharing.canEdit(project) {
+            error = PresentableError(AppError.readOnlyProject); return
+        }
+        let result = container.performWrite { ctx in
+            guard let original = try ctx.existingObject(with: eventID) as? InventoryEvent else { return }
+            container.inventory.reverse(event: original, actor: actor,
+                                        note: NSLocalizedString("製品画面からの訂正", comment: ""), in: ctx)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+        container.refreshLoanNotifications()
     }
 
     // MARK: - Helpers
@@ -502,6 +627,45 @@ struct ProductDetailView: View {
         let result = container.performWrite { ctx in
             guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
             container.inventory.deleteUnit(u, actor: actor, in: ctx)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+    }
+
+    private func deleteLot(_ lot: StockUnit) {
+        let lotID = lot.objectID
+        let actor = settings.effectiveOperatorName
+        let result = container.performWrite { ctx in
+            guard let l = try ctx.existingObject(with: lotID) as? StockUnit else { return }
+            container.inventory.deleteUnit(l, actor: actor, in: ctx)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+        container.refreshExpiryNotifications()
+    }
+
+    private func renameUnit(_ unit: StockUnit, to newName: String) {
+        let unitID = unit.objectID
+        let result = container.performWrite { ctx in
+            guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
+            container.inventory.renameUnit(u, to: newName)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+        container.refreshLoanNotifications()   // 通知本文に個体名が入るため
+    }
+
+    private func unassignLabel(_ alias: CodeAlias) {
+        let aliasID = alias.objectID
+        let result = container.performWrite { ctx in
+            guard let a = try ctx.existingObject(with: aliasID) as? CodeAlias else { return }
+            container.aliases.unassign(alias: a)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+    }
+
+    private func retireLabel(_ alias: CodeAlias) {
+        let aliasID = alias.objectID
+        let result = container.performWrite { ctx in
+            guard let a = try ctx.existingObject(with: aliasID) as? CodeAlias else { return }
+            container.aliases.retire(alias: a)
         }
         if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
     }

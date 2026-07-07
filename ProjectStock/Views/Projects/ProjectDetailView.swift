@@ -30,6 +30,9 @@ struct ProjectDetailView: View {
     @State private var showingPrePrint = false
     @State private var confirmingDemoDelete = false
     @State private var deletingProduct: Product?
+    @State private var renamingFolder: Folder?
+    @State private var deletingFolder: Folder?
+    @State private var showingBlankLabels = false
     @State private var error: PresentableError?
     @AppStorage("hideFirstRunGuide") private var hideFirstRunGuide = false
 
@@ -84,6 +87,9 @@ struct ProjectDetailView: View {
                     if canEdit {
                         Button { showingEdit = true } label: { Label(NSLocalizedString("編集", comment: ""), systemImage: "pencil") }
                         Button { showingPrePrint = true } label: { Label(NSLocalizedString("空のQRをまとめて発行", comment: ""), systemImage: "printer") }
+                        Button { showingBlankLabels = true } label: {
+                            Label(NSLocalizedString("空のQR一覧（未割当）", comment: ""), systemImage: "qrcode")
+                        }
                         if project.isArchived {
                             Button { setArchived(false) } label: { Label(NSLocalizedString("アーカイブ解除", comment: ""), systemImage: "tray.and.arrow.up") }
                         } else {
@@ -122,6 +128,31 @@ struct ProjectDetailView: View {
         } message: { product in
             Text(String(format: NSLocalizedString("「%@」と、その個体・在庫数がすべて削除されます。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), product.displayName))
         }
+        .sheet(item: $renamingFolder) { folder in
+            RenameSheet(title: NSLocalizedString("フォルダ名を変更", comment: ""),
+                        placeholder: NSLocalizedString("フォルダ名", comment: ""),
+                        initialText: folder.displayName) { newName in
+                renameFolder(folder, to: newName)
+            }
+        }
+        .alert(NSLocalizedString("フォルダを削除しますか？", comment: ""),
+               isPresented: Binding(get: { deletingFolder != nil },
+                                    set: { if !$0 { deletingFolder = nil } }),
+               presenting: deletingFolder) { folder in
+            Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
+                deleteFolder(folder); deletingFolder = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingFolder = nil }
+        } message: { folder in
+            Text(String(format: NSLocalizedString("フォルダ「%@」を削除します。中の製品は削除されず「フォルダなし」になります（サブフォルダも削除されます）。", comment: ""), folder.displayName))
+        }
+        .background(
+            NavigationLink(isActive: $showingBlankLabels) {
+                BlankLabelsView(project: project)
+            } label: { EmptyView() }
+            .opacity(0)
+            .accessibilityHidden(true)
+        )
         .errorAlert($error)
     }
 
@@ -262,11 +293,44 @@ struct ProjectDetailView: View {
         if folders.isEmpty {
             EmptyStateView(systemImage: "folder", title: NSLocalizedString("フォルダがありません", comment: ""))
         } else {
-            ForEach(folders) { folder in
-                HStack {
-                    Label(folder.displayName, systemImage: "folder")
-                    Spacer()
-                    Text("\(folder.productArray.count)").foregroundColor(.secondary)
+            ForEach(Array(folders.enumerated()), id: \.element.objectID) { index, folder in
+                NavigationLink(destination: FolderDetailView(folder: folder, canEdit: canEdit)) {
+                    HStack {
+                        Label(folder.displayName, systemImage: "folder")
+                        Spacer()
+                        Text("\(folder.productArray.count)").foregroundColor(.secondary)
+                    }
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    if canEdit {
+                        Button(role: .destructive) { deletingFolder = folder } label: {
+                            Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                        }
+                        Button { renamingFolder = folder } label: {
+                            Label(NSLocalizedString("名前を変更", comment: ""), systemImage: "pencil")
+                        }
+                        .tint(.orange)
+                    }
+                }
+                .contextMenu {
+                    if canEdit {
+                        Button { renamingFolder = folder } label: {
+                            Label(NSLocalizedString("名前を変更", comment: ""), systemImage: "pencil")
+                        }
+                        if index > 0 {
+                            Button { moveFolder(folder, offset: -1) } label: {
+                                Label(NSLocalizedString("上へ移動", comment: ""), systemImage: "arrow.up")
+                            }
+                        }
+                        if index < folders.count - 1 {
+                            Button { moveFolder(folder, offset: +1) } label: {
+                                Label(NSLocalizedString("下へ移動", comment: ""), systemImage: "arrow.down")
+                            }
+                        }
+                        Button(role: .destructive) { deletingFolder = folder } label: {
+                            Label(NSLocalizedString("削除", comment: ""), systemImage: "trash")
+                        }
+                    }
                 }
             }
         }
@@ -320,7 +384,48 @@ struct ProjectDetailView: View {
         let result = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: projectID) as? Project else { return }
             let folder = Folder.make(in: ctx, name: name, project: p)
+            // New folders go to the end of the current visible order (folders
+            // historically all carried sortIndex 0, so "end" = max + 1).
+            folder.sortIndex = (p.folderArray.map(\.sortIndex).max() ?? -1) + 1
             container.router.assignChild(folder, toSameStoreAs: p, in: ctx)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) }
+    }
+
+    private func renameFolder(_ folder: Folder, to newName: String) {
+        let folderID = folder.objectID
+        let result = container.performWrite { ctx in
+            guard let f = try ctx.existingObject(with: folderID) as? Folder else { return }
+            f.name = newName
+            f.touch()
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+    }
+
+    /// Products fall back to "no folder" (Nullify); sub-folders cascade.
+    private func deleteFolder(_ folder: Folder) {
+        let folderID = folder.objectID
+        let result = container.performWrite { ctx in
+            guard let f = try ctx.existingObject(with: folderID) as? Folder else { return }
+            ctx.delete(f)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+    }
+
+    /// Reorder via the context menu (List drag-reorder needs edit mode, which
+    /// this segmented screen doesn't expose). Rewrites every sortIndex to the
+    /// new visible order so legacy all-zero indices become stable.
+    private func moveFolder(_ folder: Folder, offset: Int) {
+        var folders = project.folderArray
+        guard let index = folders.firstIndex(where: { $0.objectID == folder.objectID }) else { return }
+        let target = index + offset
+        guard folders.indices.contains(target) else { return }
+        folders.swapAt(index, target)
+        let ids = folders.map { $0.objectID }
+        let result = container.performWrite { ctx in
+            for (i, oid) in ids.enumerated() {
+                if let f = try? ctx.existingObject(with: oid) as? Folder { f.sortIndex = Int64(i) }
+            }
         }
         if case .failure(let err) = result { error = PresentableError(err) }
     }

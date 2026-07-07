@@ -50,6 +50,7 @@ struct SearchView: View {
         let q = searchText.lowercased()
         return units.filter {
             !$0.isLot &&
+            $0.product != nil &&   // 行が生成できない一致は「シリアル番号」の空セクションになる
             !(($0.serialNumber ?? "").trimmingCharacters(in: .whitespaces).isEmpty) &&
             ($0.serialNumber ?? "").lowercased().contains(q)
         }

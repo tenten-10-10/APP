@@ -22,6 +22,10 @@ final class StocktakeCoordinator: ObservableObject {
         var expected: Double
         var counted: Double
         var unitLabel: String
+        /// Unit codes counted into THIS line, so removing the line can free
+        /// them from the session-wide dedupe set (a mis-scanned unit must be
+        /// countable again after its line is removed).
+        var unitCodes: Set<String> = []
         var id: NSManagedObjectID { productID }
         var delta: Double { counted - expected }
     }
@@ -60,13 +64,16 @@ final class StocktakeCoordinator: ObservableObject {
         let id = product.objectID
         if var line = current.lines[id] {
             line.counted += increment
+            if let code = unitCode { line.unitCodes.insert(code) }
             current.lines[id] = line
         } else {
-            current.lines[id] = CountLine(productID: id,
-                                          productName: product.displayName,
-                                          expected: product.currentQuantity,
-                                          counted: increment,
-                                          unitLabel: product.unitLabel)
+            var line = CountLine(productID: id,
+                                 productName: product.displayName,
+                                 expected: product.currentQuantity,
+                                 counted: increment,
+                                 unitLabel: product.unitLabel)
+            if let code = unitCode { line.unitCodes.insert(code) }
+            current.lines[id] = line
         }
         session = current
     }
@@ -76,6 +83,17 @@ final class StocktakeCoordinator: ObservableObject {
         guard var current = session, var line = current.lines[productID] else { return }
         line.counted = max(0, value)
         current.lines[productID] = line
+        session = current
+    }
+
+    /// Drop a mis-scanned line entirely. Its unit codes leave the dedupe set
+    /// so the right items can still be counted afterwards.
+    func removeLine(for productID: NSManagedObjectID) {
+        guard var current = session else { return }
+        if let line = current.lines[productID] {
+            current.seenUnitCodes.subtract(line.unitCodes)
+        }
+        current.lines.removeValue(forKey: productID)
         session = current
     }
 

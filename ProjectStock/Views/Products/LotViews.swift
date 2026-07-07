@@ -113,16 +113,19 @@ struct AddLotSheet: View {
 }
 
 /// Detail / operations for a single lot: adjust quantity, manage its QR label,
-/// and view history.
+/// edit / delete the lot, and view history.
 struct LotDetailView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var lot: StockUnit
 
     @State private var amountText = "1"
     @State private var error: PresentableError?
     @State private var canEdit = true
     @State private var showingAssign = false
+    @State private var showingEdit = false
+    @State private var confirmingDelete = false
 
     private var amount: Double { max(0, Double(amountText) ?? 0) }
 
@@ -181,18 +184,87 @@ struct LotDetailView: View {
                 }
             }
 
-            Section(NSLocalizedString("履歴", comment: "")) {
-                let recent = Array(lot.eventArray.prefix(15))
-                if recent.isEmpty { Text(NSLocalizedString("履歴がありません", comment: "")).foregroundColor(.secondary) }
-                ForEach(recent) { EventRow(event: $0) }
-            }
+            historySection
         }
         .listStyle(.insetGrouped)
         .navigationTitle(lot.lotNumberDisplay)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if canEdit {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button { showingEdit = true } label: {
+                            Label(NSLocalizedString("ロット番号・期限を編集", comment: ""), systemImage: "pencil")
+                        }
+                        Button(role: .destructive) { confirmingDelete = true } label: {
+                            Label(NSLocalizedString("このロットを削除", comment: ""), systemImage: "trash")
+                        }
+                    } label: { Image(systemName: "ellipsis.circle") }
+                }
+            }
+        }
         .onAppear { canEdit = lot.project.map { container.sharing.canEdit($0) } ?? true }
         .sheet(isPresented: $showingAssign) { AssignLabelToUnitSheet(unit: lot) }
+        .sheet(isPresented: $showingEdit) { EditLotSheet(lot: lot) }
+        .alert(NSLocalizedString("ロットを削除しますか？", comment: ""), isPresented: $confirmingDelete) {
+            Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteLot() }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+        } message: {
+            Text(String(format: NSLocalizedString("ロット「%@」を数量ごと削除します。割り当てていたQRラベルは空に戻り、再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), lot.lotNumberDisplay))
+        }
         .errorAlert($error)
+    }
+
+    @ViewBuilder private var historySection: some View {
+        let recent = Array(lot.eventArray.prefix(15))
+        if recent.isEmpty {
+            Section(NSLocalizedString("履歴", comment: "")) {
+                Text(NSLocalizedString("履歴がありません", comment: "")).foregroundColor(.secondary)
+            }
+        } else {
+            Section {
+                EmptyView()
+            } header: {
+                Text(NSLocalizedString("履歴", comment: ""))
+            } footer: {
+                if canEdit {
+                    Text(NSLocalizedString("間違えた記録は、行を左にスワイプして「訂正」で打ち消せます。", comment: ""))
+                }
+            }
+            EventListView(events: recent, onCorrect: canEdit ? correctEvent : nil)
+        }
+    }
+
+    private func correctEvent(_ event: InventoryEvent) {
+        let eventID = event.objectID
+        let actor = settings.effectiveOperatorName
+        if let project = event.project, !container.sharing.canEdit(project) {
+            error = PresentableError(AppError.readOnlyProject); return
+        }
+        let result = container.performWrite { ctx in
+            guard let original = try ctx.existingObject(with: eventID) as? InventoryEvent else { return }
+            container.inventory.reverse(event: original, actor: actor,
+                                        note: NSLocalizedString("ロット画面からの訂正", comment: ""), in: ctx)
+        }
+        if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
+        container.refreshExpiryNotifications()
+    }
+
+    private func deleteLot() {
+        let lotID = lot.objectID
+        let actor = settings.effectiveOperatorName
+        let result = container.performWrite { ctx in
+            guard let l = try ctx.existingObject(with: lotID) as? StockUnit else { return }
+            container.inventory.deleteUnit(l, actor: actor, in: ctx)
+        }
+        switch result {
+        case .success:
+            Haptics.success()
+            container.refreshExpiryNotifications()
+            dismiss()
+        case .failure(let err):
+            error = PresentableError(err)
+        }
     }
 
     private func studio(for code: String) -> some View {
@@ -213,4 +285,79 @@ struct LotDetailView: View {
         if case .failure(let err) = result { error = PresentableError(err) } else { Haptics.success() }
     }
 
+}
+
+/// Edit an existing lot's number / expiry — typos in either used to be
+/// permanent (and a wrong expiry kept firing wrong reminders forever).
+struct EditLotSheet: View {
+    @EnvironmentObject private var container: ServiceContainer
+    @Environment(\.dismiss) private var dismiss
+    let lot: StockUnit
+
+    @State private var lotNumber = ""
+    @State private var hasExpiry = false
+    @State private var expiry = Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date()
+    @State private var error: PresentableError?
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(NSLocalizedString("ロット", comment: "")) {
+                    TextField(NSLocalizedString("ロット番号", comment: ""), text: $lotNumber)
+                }
+                Section {
+                    Toggle(NSLocalizedString("有効期限を設定", comment: ""), isOn: $hasExpiry.animation())
+                    if hasExpiry {
+                        DatePicker(NSLocalizedString("有効期限", comment: ""), selection: $expiry, displayedComponents: [.date])
+                    }
+                } footer: {
+                    Text(NSLocalizedString("期限を変更すると、お知らせの予定も新しい期限に合わせて更新されます。数量と履歴はそのまま保持されます。", comment: ""))
+                }
+            }
+            .navigationTitle(NSLocalizedString("ロットを編集", comment: ""))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(NSLocalizedString("保存", comment: "")) { save() }
+                        .disabled(lotNumber.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .onAppear(perform: load)
+            .errorAlert($error)
+        }
+    }
+
+    private func load() {
+        lotNumber = (lot.lotNumber ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if let current = lot.expiresAt {
+            hasExpiry = true
+            expiry = current
+        }
+    }
+
+    private func save() {
+        let lotID = lot.objectID
+        let name = lotNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        let due: Date? = hasExpiry ? expiry : nil
+        let result = container.performWrite { ctx in
+            guard let l = try ctx.existingObject(with: lotID) as? StockUnit else { return }
+            container.inventory.renameUnit(l, to: name)
+            l.expiresAt = due
+        }
+        switch result {
+        case .success:
+            Haptics.success()
+            if due != nil {
+                NotificationService.shared.requestAuthorization { _ in
+                    container.refreshExpiryNotifications()
+                }
+            } else {
+                container.refreshExpiryNotifications()
+            }
+            dismiss()
+        case .failure(let err):
+            error = PresentableError(err)
+        }
+    }
 }

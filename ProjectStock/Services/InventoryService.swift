@@ -159,16 +159,18 @@ struct InventoryService {
         return event
     }
 
-    /// Permanently remove a unit that was added by mistake. Unlike `retireUnit`
-    /// (which keeps the row as a 譲渡/引退 record), the unit disappears from
-    /// the list. Its QR labels are released back to blank so they can be
-    /// re-assigned, and a product-level event records that the deletion
-    /// happened (the ledger itself is never erased). Checked-out units must be
-    /// returned first — deleting one would orphan its active loan.
+    /// Permanently remove a unit OR lot that was added by mistake. Unlike
+    /// `retireUnit` (which keeps the row as an 引退 record), the item
+    /// disappears from the list. Its QR labels are released back to blank so
+    /// they can be re-assigned, and a product-level event records that the
+    /// deletion happened (the ledger itself is never erased). Checked-out
+    /// units must be returned first — deleting one would orphan its loan.
     func deleteUnit(_ unit: StockUnit, actor: String,
                     occurredAt: Date = Date(), in context: NSManagedObjectContext) {
         let product = unit.product
-        let serial = unit.displaySerial
+        let note = unit.isLot
+            ? String(format: NSLocalizedString("ロット「%@」を削除", comment: ""), unit.lotNumberDisplay)
+            : String(format: NSLocalizedString("個体「%@」を削除", comment: ""), unit.displaySerial)
         let from = unit.location
         for label in unit.labelArray {
             label.unit = nil
@@ -176,12 +178,33 @@ struct InventoryService {
         }
         _ = makeEvent(type: .retire, product: product, unit: nil,
                       delta: 0, source: from, destination: nil,
-                      actor: actor,
-                      note: String(format: NSLocalizedString("個体「%@」を削除", comment: ""), serial),
+                      actor: actor, note: note,
                       occurredAt: occurredAt,
                       isCorrection: false, corrects: nil, in: context)
         context.delete(unit)
         if let product { recompute(product: product) }
+    }
+
+    /// Rename a unit / lot in place (typo fixes must not require delete+recreate,
+    /// which would sever the loan and ledger history).
+    func renameUnit(_ unit: StockUnit, to newName: String) {
+        if unit.isLot { unit.lotNumber = newName } else { unit.serialNumber = newName }
+        unit.touch()
+    }
+
+    /// Edit the borrower / due date of the CURRENT loan in place. Corrections
+    /// via 訂正→再貸出 reset the loan date; extending a deadline or fixing a
+    /// name must keep 「いつから借りているか」 intact, so we update the
+    /// establishing checkout event itself. Returns false when the unit is not
+    /// on loan.
+    @discardableResult
+    func updateLoan(for unit: StockUnit, borrower: String?, dueAt: Date?) -> Bool {
+        guard let loan = currentLoan(for: unit) else { return false }
+        let trimmed = borrower?.trimmingCharacters(in: .whitespacesAndNewlines)
+        loan.event.borrower = (trimmed?.isEmpty ?? true) ? nil : trimmed
+        loan.event.dueAt = dueAt
+        unit.touch()
+        return true
     }
 
     /// Permanently delete a product and (via the Cascade rule) all of its

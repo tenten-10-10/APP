@@ -327,3 +327,17 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
   各ページ内の `IC` マップ（20×20 線画SVG・stroke=currentColor・タブバー
   アイコンと同スタイル）に集約。インラインは `.icx`、カード見出しは `.ico`。
   ガイドは docs/guide が原本 → tanamiru-site/guide へ cp+sed 同期。
+
+### 10.6 1.2.51 動線総点検（7領域の並列監査より）
+- 方針: 「作れるのに、変えられない・消せない・戻せない」を全廃する。
+  リネームは共通 RenameSheet（iOS15はalert内TextFieldが出ないためシート式）。
+- 追加した回復動線: 個体/ロットのリネーム、ロット編集・削除、貸出の
+  期限延長・借り手修正（updateLoan: 成立checkoutイベントを直接更新して
+  貸出日を保持）、QRのunassign（空に戻して使い回し）、誤割当のやり直し、
+  スキャン直後の取り消し（直近イベントをreverse）、棚卸し行のsetCount/
+  removeLine（除去時はseenUnitCodesから引く）、場所の編集配線＋
+  deleteLocation（子はCascade・在庫はNullifyで残る・ラベルは空へ）、
+  フォルダのリネーム/削除/並び替え/FolderDetailView、空きQR一覧
+  (BlankLabelsView)、訂正の確認ダイアログ（EventListViewに集約）。
+- 教訓: LocationFormViewの編集モードのように「実装済みだが未配線」の
+  機能が残りやすい。画面を作ったら必ず呼び出し元まで通すこと。

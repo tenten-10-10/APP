@@ -124,6 +124,26 @@ struct LocationService {
         return (products.count, units.count)
     }
 
+    /// Delete a location together with its sub-locations (the model's Cascade
+    /// rule). Inventory is never deleted with it: products / units keep
+    /// existing with their location cleared (Nullify), and QR labels bound to
+    /// any deleted location are released back to blank so the printed
+    /// stickers stay reusable. History events keep existing with the location
+    /// link cleared.
+    func deleteLocation(_ location: Location, in context: NSManagedObjectContext) {
+        var stack: [Location] = [location]
+        var guardCount = 0
+        while let next = stack.popLast(), guardCount < 100_000 {
+            guardCount += 1
+            for label in next.labelArray {
+                label.location = nil
+                label.targetType = .unassigned
+            }
+            stack.append(contentsOf: next.childArray)
+        }
+        context.delete(location)
+    }
+
     private func isInside(_ location: Location?, _ container: Location) -> Bool {
         var current = location
         var guardCount = 0

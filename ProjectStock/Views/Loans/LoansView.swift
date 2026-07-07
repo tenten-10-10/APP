@@ -21,6 +21,8 @@ struct LoansView: View {
     /// Loan pending the return confirmation dialog. Returning rewrites the
     /// ledger, so a mis-tap should not commit it silently.
     @State private var confirmingReturn: Loan?
+    /// Loan whose deadline / borrower is being edited.
+    @State private var editingLoan: Loan?
 
     private var loans: [Loan] {
         checkedOutUnits.compactMap { container.inventory.currentLoan(for: $0) }
@@ -76,6 +78,9 @@ struct LoansView: View {
                             loan.unit.displaySerial, loan.borrowerDisplay))
             }
         }
+        .sheet(item: $editingLoan) { loan in
+            LoanEditSheet(unit: loan.unit)
+        }
         .errorAlert($error)
     }
 
@@ -109,14 +114,29 @@ struct LoansView: View {
             // A visible return button: swipe actions are invisible to many
             // non-technical users, and returning is THE core action here.
             if container.sharing.canEdit(loan.unit.project) {
-                Button {
-                    confirmingReturn = loan
-                } label: {
-                    Label(NSLocalizedString("返却する", comment: ""), systemImage: "arrow.uturn.left")
-                        .font(.caption.weight(.semibold))
+                HStack(spacing: 8) {
+                    Button {
+                        confirmingReturn = loan
+                    } label: {
+                        Label(NSLocalizedString("返却する", comment: ""), systemImage: "arrow.uturn.left")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.green)
+                    // 「もう1週間」「名前を打ち間違えた」「期限を付け忘れた」を
+                    // その場で直せる（従来は訂正→再貸出しかなく貸出日が消えた）。
+                    Button {
+                        editingLoan = loan
+                    } label: {
+                        Label(loan.dueAt == nil
+                                ? NSLocalizedString("期限を設定", comment: "")
+                                : NSLocalizedString("変更", comment: ""),
+                              systemImage: "calendar.badge.clock")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.secondary)
                 }
-                .buttonStyle(.bordered)
-                .tint(.green)
                 .padding(.top, 2)
             }
         }
@@ -129,6 +149,16 @@ struct LoansView: View {
                     Label(NSLocalizedString("返却", comment: ""), systemImage: "arrow.uturn.left")
                 }
                 .tint(.green)
+            }
+        }
+        .swipeActions(edge: .leading) {
+            if container.sharing.canEdit(loan.unit.project) {
+                Button {
+                    editingLoan = loan
+                } label: {
+                    Label(NSLocalizedString("期限・借り手を変更", comment: ""), systemImage: "calendar.badge.clock")
+                }
+                .tint(.orange)
             }
         }
     }

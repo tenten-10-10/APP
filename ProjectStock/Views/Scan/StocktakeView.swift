@@ -65,7 +65,7 @@ struct StocktakeView: View {
                         Spacer()
                     }
                 }
-                Section(NSLocalizedString("カウント", comment: "")) {
+                Section {
                     if stocktake.lines.isEmpty {
                         Text(NSLocalizedString("まだスキャンされていません", comment: "")).foregroundColor(.secondary)
                     }
@@ -82,7 +82,28 @@ struct StocktakeView: View {
                                 Text((line.delta > 0 ? "+" : "") + line.delta.quantityString)
                                     .foregroundColor(line.delta > 0 ? .green : .red).monospacedDigit()
                             }
+                            // 二度読み・数え間違いをその場で直せるように（誤った
+                            // カウントのまま「完了」で確定させない）。
+                            Stepper("", value: Binding(
+                                get: { line.counted },
+                                set: { stocktake.setCount($0, for: line.productID) }
+                            ), in: 0...1_000_000)
+                            .labelsHidden()
+                            .fixedSize()
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                stocktake.removeLine(for: line.productID)
+                            } label: {
+                                Label(NSLocalizedString("取り除く", comment: ""), systemImage: "trash")
+                            }
+                        }
+                    }
+                } header: {
+                    Text(NSLocalizedString("カウント", comment: ""))
+                } footer: {
+                    if !stocktake.lines.isEmpty {
+                        Text(NSLocalizedString("−＋で実数を直せます。間違えた行は左スワイプで取り除けます（取り除いた個体はもう一度スキャンできます）。", comment: ""))
                     }
                 }
             }

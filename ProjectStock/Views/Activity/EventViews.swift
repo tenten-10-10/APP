@@ -72,6 +72,10 @@ struct EventListView: View {
     let events: [InventoryEvent]
     var onCorrect: ((InventoryEvent) -> Void)? = nil
 
+    /// Correction rewrites the ledger, so a mis-swipe must not commit it
+    /// silently — every entry point gets the same confirmation here.
+    @State private var pendingCorrection: InventoryEvent?
+
     /// One day's worth of events. A named `Identifiable` type is used instead
     /// of a tuple because Swift key paths cannot index tuple elements.
     private struct DayGroup: Identifiable {
@@ -99,14 +103,30 @@ struct EventListView: View {
                     ForEach(group.items) { event in
                         EventRow(event: event)
                             .swipeActions(edge: .trailing) {
-                                if let onCorrect, !event.isCorrection {
+                                if onCorrect != nil, !event.isCorrection {
                                     Button {
-                                        onCorrect(event)
+                                        pendingCorrection = event
                                     } label: {
                                         Label(NSLocalizedString("訂正", comment: ""), systemImage: "arrow.uturn.backward")
                                     }
                                     .tint(.orange)
                                 }
+                            }
+                            .confirmationDialog(
+                                NSLocalizedString("この記録を訂正しますか？", comment: ""),
+                                isPresented: Binding(
+                                    get: { pendingCorrection?.objectID == event.objectID },
+                                    set: { if !$0 { pendingCorrection = nil } }
+                                ),
+                                titleVisibility: .visible
+                            ) {
+                                Button(NSLocalizedString("訂正する（逆の記録で打ち消す）", comment: ""), role: .destructive) {
+                                    onCorrect?(event)
+                                    pendingCorrection = nil
+                                }
+                                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { pendingCorrection = nil }
+                            } message: {
+                                Text(NSLocalizedString("反対方向の記録を追加して打ち消します。元の記録は履歴に残ります。", comment: ""))
                             }
                     }
                 }

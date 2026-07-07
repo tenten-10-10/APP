@@ -9,6 +9,9 @@ struct WebBorrowInboxView: View {
     @EnvironmentObject private var settings: AppSettings
 
     @State private var busyID: String?
+    /// 却下は復元できない（申請がリストから消える）ので、誤タップで
+    /// 消してしまわないよう確認を挟む。
+    @State private var confirmingReject: WebBorrowRequest?
 
     var body: some View {
         List {
@@ -63,6 +66,20 @@ struct WebBorrowInboxView: View {
                                     set: { if !$0 { webBorrow.errorMessage = nil } })) {
             Button(NSLocalizedString("OK", comment: "")) { webBorrow.errorMessage = nil }
         }
+        .confirmationDialog(NSLocalizedString("この申請を却下しますか？", comment: ""),
+                            isPresented: Binding(get: { confirmingReject != nil },
+                                                 set: { if !$0 { confirmingReject = nil } }),
+                            titleVisibility: .visible,
+                            presenting: confirmingReject) { request in
+            Button(NSLocalizedString("却下する", comment: ""), role: .destructive) {
+                act(request) { await webBorrow.reject(request) }
+                confirmingReject = nil
+            }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { confirmingReject = nil }
+        } message: { request in
+            Text(String(format: NSLocalizedString("%@ さんの申請を却下します。却下した申請は一覧から消え、元に戻せません。", comment: ""),
+                        request.trimmedBorrower.isEmpty ? NSLocalizedString("（借り手未記入）", comment: "") : request.trimmedBorrower))
+        }
     }
 
     @ViewBuilder private func requestRow(_ request: WebBorrowRequest) -> some View {
@@ -103,7 +120,7 @@ struct WebBorrowInboxView: View {
                 .disabled(busyID != nil)
 
                 Button(role: .destructive) {
-                    act(request) { await webBorrow.reject(request) }
+                    confirmingReject = request
                 } label: {
                     Label(NSLocalizedString("却下", comment: ""), systemImage: "xmark.circle")
                         .frame(maxWidth: .infinity)

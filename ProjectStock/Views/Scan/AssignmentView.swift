@@ -36,6 +36,14 @@ struct AssignmentView: View {
                             .font(.body.weight(.semibold))
                     }
                     .accessibilityIdentifier("continueScanning")
+                    // 割当先を取り違えた直後の復帰路。以前は誤割当を戻す手段が
+                    // なく、貼った現物と登録がズレたまま運用が始まってしまった。
+                    Button {
+                        undoAssignment()
+                    } label: {
+                        Label(NSLocalizedString("割り当てをやり直す", comment: ""), systemImage: "arrow.uturn.backward")
+                            .foregroundColor(.orange)
+                    }
                 }
             } else if !canEdit {
                 Section { Text(NSLocalizedString("このプロジェクトは読み取り専用のため割り当てできません。", comment: "")).foregroundColor(.secondary) }
@@ -75,6 +83,22 @@ struct AssignmentView: View {
 
     private func allUnits(in project: Project) -> [StockUnit] {
         project.productArray.flatMap { $0.unitArray }
+    }
+
+    /// Release the just-made assignment and show the target picker again.
+    private func undoAssignment() {
+        let aliasID = alias.objectID
+        let result = container.performWrite { ctx in
+            guard let a = try ctx.existingObject(with: aliasID) as? CodeAlias else { return }
+            container.aliases.unassign(alias: a)
+        }
+        switch result {
+        case .success:
+            Haptics.success()
+            assignedSummary = nil
+        case .failure(let err):
+            error = PresentableError(err)
+        }
     }
 
     private func assign(_ target: CodeAliasService.AliasTarget) {

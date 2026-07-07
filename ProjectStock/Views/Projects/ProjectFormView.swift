@@ -67,32 +67,34 @@ struct ProjectFormView: View {
                     .padding(.vertical, 4)
                 }
 
-                if !isEditing {
-                    Section {
-                        ForEach(TrackingMode.allCases) { mode in
-                            Button { defaultMode = mode } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: mode.systemImageName)
-                                        .font(.title3).frame(width: 28)
-                                        .foregroundColor(defaultMode == mode ? Brand.primary : .secondary)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(mode.localizedTitle).foregroundColor(.primary)
-                                        Text(mode.explanation).font(.caption).foregroundColor(.secondary)
-                                    }
-                                    Spacer()
-                                    Image(systemName: defaultMode == mode ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(defaultMode == mode ? Brand.primary : Color(.tertiaryLabel))
+                Section {
+                    ForEach(TrackingMode.allCases) { mode in
+                        Button { defaultMode = mode } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: mode.systemImageName)
+                                    .font(.title3).frame(width: 28)
+                                    .foregroundColor(defaultMode == mode ? Brand.primary : .secondary)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(mode.localizedTitle).foregroundColor(.primary)
+                                    Text(mode.explanation).font(.caption).foregroundColor(.secondary)
                                 }
+                                Spacer()
+                                Image(systemName: defaultMode == mode ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(defaultMode == mode ? Brand.primary : Color(.tertiaryLabel))
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("projectMode_\(mode.rawValue)")
-                            .accessibilityAddTraits(defaultMode == mode ? [.isSelected] : [])
                         }
-                    } header: {
-                        Text(NSLocalizedString("主に扱うもの", comment: ""))
-                    } footer: {
-                        Text(NSLocalizedString("新しい製品の初期値になります。製品ごとにあとで変更できます。", comment: ""))
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("projectMode_\(mode.rawValue)")
+                        .accessibilityAddTraits(defaultMode == mode ? [.isSelected] : [])
                     }
+                } header: {
+                    Text(NSLocalizedString("主に扱うもの", comment: ""))
+                } footer: {
+                    // 編集時も変更可能に（新規製品の初期値のみに効く安全な設定
+                    // なのに、作成後は一切変えられなかった）。
+                    Text(isEditing
+                            ? NSLocalizedString("新しい製品の初期値になります。既存の製品には影響しません。", comment: "")
+                            : NSLocalizedString("新しい製品の初期値になります。製品ごとにあとで変更できます。", comment: ""))
                 }
             }
             .navigationTitle(isEditing ? NSLocalizedString("プロジェクトを編集", comment: "") : NSLocalizedString("新規プロジェクト", comment: ""))
@@ -117,6 +119,7 @@ struct ProjectFormView: View {
         name = project.displayName
         note = project.note ?? ""
         color = project.color
+        defaultMode = project.defaultTrackingMode
     }
 
     private func save() {
@@ -133,6 +136,7 @@ struct ProjectFormView: View {
                 existing.name = trimmedName
                 existing.note = trimmedNote
                 existing.color = chosen
+                existing.defaultTrackingMode = mode
                 existing.touch()
             } else {
                 let created = container.projects.createProject(name: trimmedName, ownerDisplayName: owner,
