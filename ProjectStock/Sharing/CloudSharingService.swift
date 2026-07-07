@@ -81,6 +81,28 @@ final class CloudSharingService: ObservableObject {
         permission(for: project).canEdit
     }
 
+    /// Batched share state for a list of projects, in ONE `fetchShares` call
+    /// (per-row `permission(for:)` would fetch shares once per row on every
+    /// scroll). Returns only shared projects — owner (I shared it out) and
+    /// participant (shared to me); non-shared projects are omitted.
+    func sharePermissions(among projects: [Project]) -> [NSManagedObjectID: SharePermission] {
+        guard persistence.cloudKitEnabled, !projects.isEmpty else { return [:] }
+        let shares = (try? persistence.container.fetchShares(matching: projects.map(\.objectID))) ?? [:]
+        var result: [NSManagedObjectID: SharePermission] = [:]
+        for project in projects {
+            if router.isShared(project) { // lives in the shared store → shared TO us
+                if let share = shares[project.objectID], let me = share.currentUserParticipant {
+                    result[project.objectID] = me.permission == .readWrite ? .readWrite : .readOnly
+                } else {
+                    result[project.objectID] = .readOnly
+                }
+            } else if shares[project.objectID] != nil {
+                result[project.objectID] = .owner
+            }
+        }
+        return result
+    }
+
     /// Nil-safe variant: an object with no project is treated as locally
     /// editable (avoids constructing throwaway managed objects in views).
     func canEdit(_ project: Project?) -> Bool {

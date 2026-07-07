@@ -21,6 +21,9 @@ struct ProjectsView: View {
 
     @State private var searchText = ""
     @State private var showArchived = false
+    /// Which projects are currently shared (owner or participant). Refreshed on
+    /// appear and when the set of projects changes, so the list badge stays live.
+    @State private var sharePermissions: [NSManagedObjectID: SharePermission] = [:]
     @State private var showingCreate = false
     @State private var createdProject: Project?
     @State private var editingProject: Project?
@@ -61,6 +64,13 @@ struct ProjectsView: View {
                 Button(NSLocalizedString("OK", comment: "")) { infoAlert = nil }
             }
             .errorAlert($error)
+            .onAppear { refreshShareState() }
+            .onChange(of: projects.count) { _ in refreshShareState() }
+    }
+
+    /// One batched CKShare lookup for the whole list (see CloudSharingService).
+    private func refreshShareState() {
+        sharePermissions = container.sharing.sharePermissions(among: Array(projects))
     }
 
     /// Hidden link that pushes the just-created project so the user lands
@@ -89,7 +99,7 @@ struct ProjectsView: View {
             Section {
                 ForEach(filtered) { project in
                     NavigationLink(destination: ProjectDetailView(project: project)) {
-                        ProjectRow(project: project)
+                        ProjectRow(project: project, permission: sharePermissions[project.objectID])
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) { deletingProject = project } label: {
@@ -294,8 +304,15 @@ struct ProjectsView: View {
 }
 
 private struct ProjectRow: View {
-    @EnvironmentObject private var container: ServiceContainer
     @ObservedObject var project: Project
+    /// Non-nil when the project is shared (owner or participant). Precomputed by
+    /// the list in one batched fetch — see ProjectsView.refreshShareState().
+    var permission: SharePermission?
+
+    private var isShared: Bool {
+        guard let permission else { return false }
+        return permission != .notShared
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -315,19 +332,36 @@ private struct ProjectRow: View {
                             .font(.caption2).padding(.horizontal, 5).padding(.vertical, 1)
                             .background(Capsule().fill(Color(.tertiarySystemFill)))
                     }
+                    if isShared { shareBadge }
                 }
                 HStack(spacing: 8) {
                     Label("\(project.activeProductCount)", systemImage: "shippingbox")
                         .font(.caption).foregroundColor(.secondary)
                     if project.lowStockCount > 0 { LowStockChip() }
-                    if container.router.isShared(project) {
-                        Image(systemName: "person.2.fill").font(.caption2).foregroundColor(.secondary)
-                            .accessibilityLabel(Text(NSLocalizedString("共有プロジェクト", comment: "")))
-                    }
                 }
             }
             Spacer()
         }
         .padding(.vertical, 2)
+    }
+
+    /// "共有中" pill so it's clear at a glance which projects are shared with
+    /// others (or shared to you). Olive-tinted to match the brand.
+    private var shareBadge: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "person.2.fill").font(.system(size: 9, weight: .semibold))
+            Text(shareLabel).font(.caption2.weight(.semibold))
+        }
+        .padding(.horizontal, 6).padding(.vertical, 1.5)
+        .background(Capsule().fill(Brand.primary.opacity(0.14)))
+        .foregroundColor(Brand.primary)
+        .accessibilityLabel(Text(shareLabel))
+    }
+
+    private var shareLabel: String {
+        switch permission {
+        case .readOnly: return NSLocalizedString("共有中（閲覧）", comment: "")
+        default:        return NSLocalizedString("共有中", comment: "")
+        }
     }
 }
