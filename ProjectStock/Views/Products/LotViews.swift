@@ -129,91 +129,110 @@ struct LotDetailView: View {
 
     private var amount: Double { max(0, Double(amountText) ?? 0) }
 
+    // Layered like LocationDetailView/ProductDetailView: one flat expression
+    // with sections + toolbar + sheets + alerts can blow the type-checker.
     var body: some View {
-        List {
-            Section {
-                LabeledRow(title: NSLocalizedString("ロット番号", comment: ""), value: lot.lotNumberDisplay)
-                HStack {
-                    Text(NSLocalizedString("数量", comment: ""))
-                    Spacer()
-                    Text("\(lot.lotQuantity.quantityString) \(lot.product?.unitLabel ?? "")")
-                        .foregroundColor(.secondary)
-                }
-                if let expiry = lot.expiresAt {
-                    HStack {
-                        Text(NSLocalizedString("有効期限", comment: ""))
-                        Spacer()
-                        Text(DateFormatters.day.string(from: expiry))
-                            .foregroundColor(lot.isExpired ? .red : .secondary)
-                        ExpiryChip(unit: lot)
-                    }
-                }
+        decoratedList
+            .sheet(isPresented: $showingAssign) { AssignLabelToUnitSheet(unit: lot) }
+            .sheet(isPresented: $showingEdit) { EditLotSheet(lot: lot) }
+            .alert(NSLocalizedString("ロットを削除しますか？", comment: ""), isPresented: $confirmingDelete) {
+                Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteLot() }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+            } message: {
+                Text(String(format: NSLocalizedString("ロット「%@」を数量ごと削除します。割り当てていたQRラベルは空に戻り、再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), lot.lotNumberDisplay))
             }
+            .errorAlert($error)
+    }
 
+    private var decoratedList: some View {
+        contentList
+            .listStyle(.insetGrouped)
+            .navigationTitle(lot.lotNumberDisplay)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarMenu }
+            .onAppear { canEdit = lot.project.map { container.sharing.canEdit($0) } ?? true }
+    }
+
+    // iOS 15: `if` はToolbarContentBuilder直下に置けないため item 内で分岐
+    private var toolbarMenu: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
             if canEdit {
-                Section(NSLocalizedString("数量の更新", comment: "")) {
-                    HStack {
-                        Text(NSLocalizedString("数量", comment: ""))
-                        Spacer()
-                        TextField("1", text: $amountText).keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing).frame(maxWidth: 80)
+                Menu {
+                    Button { showingEdit = true } label: {
+                        Label(NSLocalizedString("ロット番号・期限を編集", comment: ""), systemImage: "pencil")
                     }
-                    HStack {
-                        Button { change(+1) } label: { Label(NSLocalizedString("入庫", comment: ""), systemImage: "plus.circle") }
-                            .buttonStyle(.borderedProminent)
-                        Button { change(-1) } label: { Label(NSLocalizedString("出庫", comment: ""), systemImage: "minus.circle") }
-                            .buttonStyle(.bordered)
+                    Button(role: .destructive) { confirmingDelete = true } label: {
+                        Label(NSLocalizedString("このロットを削除", comment: ""), systemImage: "trash")
                     }
-                }
+                } label: { Image(systemName: "ellipsis.circle") }
             }
+        }
+    }
 
-            Section(NSLocalizedString("QRラベル", comment: "")) {
-                if lot.activeLabels.isEmpty {
-                    Text(NSLocalizedString("空のQRをスキャンしてこのロットに割り当てると、QRで管理できます。", comment: ""))
-                        .font(.caption).foregroundColor(.secondary)
-                    if canEdit {
-                        Button { showingAssign = true } label: {
-                            Label(NSLocalizedString("QRを割り当て", comment: ""), systemImage: "qrcode.viewfinder")
-                        }
-                    }
-                }
-                ForEach(lot.activeLabels) { label in
-                    NavigationLink(destination: studio(for: label.code)) {
-                        Label(label.code, systemImage: "qrcode")
-                    }
-                }
-            }
-
+    private var contentList: some View {
+        List {
+            infoSection
+            if canEdit { adjustSection }
+            labelSection
             historySection
         }
-        .listStyle(.insetGrouped)
-        .navigationTitle(lot.lotNumberDisplay)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            // iOS 15: `if` はToolbarContentBuilder直下に置けないため item 内で分岐
-            ToolbarItem(placement: .navigationBarTrailing) {
-                if canEdit {
-                    Menu {
-                        Button { showingEdit = true } label: {
-                            Label(NSLocalizedString("ロット番号・期限を編集", comment: ""), systemImage: "pencil")
-                        }
-                        Button(role: .destructive) { confirmingDelete = true } label: {
-                            Label(NSLocalizedString("このロットを削除", comment: ""), systemImage: "trash")
-                        }
-                    } label: { Image(systemName: "ellipsis.circle") }
+    }
+
+    private var infoSection: some View {
+        Section {
+            LabeledRow(title: NSLocalizedString("ロット番号", comment: ""), value: lot.lotNumberDisplay)
+            HStack {
+                Text(NSLocalizedString("数量", comment: ""))
+                Spacer()
+                Text("\(lot.lotQuantity.quantityString) \(lot.product?.unitLabel ?? "")")
+                    .foregroundColor(.secondary)
+            }
+            if let expiry = lot.expiresAt {
+                HStack {
+                    Text(NSLocalizedString("有効期限", comment: ""))
+                    Spacer()
+                    Text(DateFormatters.day.string(from: expiry))
+                        .foregroundColor(lot.isExpired ? .red : .secondary)
+                    ExpiryChip(unit: lot)
                 }
             }
         }
-        .onAppear { canEdit = lot.project.map { container.sharing.canEdit($0) } ?? true }
-        .sheet(isPresented: $showingAssign) { AssignLabelToUnitSheet(unit: lot) }
-        .sheet(isPresented: $showingEdit) { EditLotSheet(lot: lot) }
-        .alert(NSLocalizedString("ロットを削除しますか？", comment: ""), isPresented: $confirmingDelete) {
-            Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteLot() }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
-        } message: {
-            Text(String(format: NSLocalizedString("ロット「%@」を数量ごと削除します。割り当てていたQRラベルは空に戻り、再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), lot.lotNumberDisplay))
+    }
+
+    private var adjustSection: some View {
+        Section(NSLocalizedString("数量の更新", comment: "")) {
+            HStack {
+                Text(NSLocalizedString("数量", comment: ""))
+                Spacer()
+                TextField("1", text: $amountText).keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing).frame(maxWidth: 80)
+            }
+            HStack {
+                Button { change(+1) } label: { Label(NSLocalizedString("入庫", comment: ""), systemImage: "plus.circle") }
+                    .buttonStyle(.borderedProminent)
+                Button { change(-1) } label: { Label(NSLocalizedString("出庫", comment: ""), systemImage: "minus.circle") }
+                    .buttonStyle(.bordered)
+            }
         }
-        .errorAlert($error)
+    }
+
+    private var labelSection: some View {
+        Section(NSLocalizedString("QRラベル", comment: "")) {
+            if lot.activeLabels.isEmpty {
+                Text(NSLocalizedString("空のQRをスキャンしてこのロットに割り当てると、QRで管理できます。", comment: ""))
+                    .font(.caption).foregroundColor(.secondary)
+                if canEdit {
+                    Button { showingAssign = true } label: {
+                        Label(NSLocalizedString("QRを割り当て", comment: ""), systemImage: "qrcode.viewfinder")
+                    }
+                }
+            }
+            ForEach(lot.activeLabels) { label in
+                NavigationLink(destination: studio(for: label.code)) {
+                    Label(label.code, systemImage: "qrcode")
+                }
+            }
+        }
     }
 
     @ViewBuilder private var historySection: some View {

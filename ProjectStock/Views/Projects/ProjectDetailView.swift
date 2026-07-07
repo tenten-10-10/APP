@@ -42,7 +42,123 @@ struct ProjectDetailView: View {
     /// an app release if a sync-related loss bug is ever found in the field.
     private var deleteEnabled: Bool { RemoteConfig.shared.bool("deleteEnabled", default: true) }
 
+    // The body is layered into computed properties: one flat expression with
+    // this many sections + sheets + alerts blows the type-checker's budget
+    // ("unable to type-check this expression in reasonable time").
     var body: some View {
+        alertedContent
+            .sheet(item: $renamingFolder) { folder in
+                RenameSheet(title: NSLocalizedString("フォルダ名を変更", comment: ""),
+                            placeholder: NSLocalizedString("フォルダ名", comment: ""),
+                            initialText: folder.displayName) { newName in
+                    renameFolder(folder, to: newName)
+                }
+            }
+            .alert(NSLocalizedString("フォルダを削除しますか？", comment: ""),
+                   isPresented: deletingFolderPresented,
+                   presenting: deletingFolder) { folder in
+                Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
+                    deleteFolder(folder); deletingFolder = nil
+                }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingFolder = nil }
+            } message: { folder in
+                Text(String(format: NSLocalizedString("フォルダ「%@」を削除します。中の製品は削除されず「フォルダなし」になります（サブフォルダも削除されます）。", comment: ""), folder.displayName))
+            }
+            .background(
+                NavigationLink(isActive: $showingBlankLabels) {
+                    BlankLabelsView(project: project)
+                } label: { EmptyView() }
+                .opacity(0)
+                .accessibilityHidden(true)
+            )
+            .errorAlert($error)
+    }
+
+    private var deletingProductPresented: Binding<Bool> {
+        Binding(get: { deletingProduct != nil }, set: { if !$0 { deletingProduct = nil } })
+    }
+    private var deletingFolderPresented: Binding<Bool> {
+        Binding(get: { deletingFolder != nil }, set: { if !$0 { deletingFolder = nil } })
+    }
+
+    private var alertedContent: some View {
+        sheetedContent
+            .alert(NSLocalizedString("新規フォルダ", comment: ""), isPresented: $showingAddFolder) {
+                TextField(NSLocalizedString("フォルダ名", comment: ""), text: $newFolderName)
+                Button(NSLocalizedString("作成", comment: "")) { addFolder() }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { newFolderName = "" }
+            }
+            .alert(NSLocalizedString("お試しデータを削除しますか？", comment: ""), isPresented: $confirmingDemoDelete) {
+                Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteDemoProject() }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+            } message: {
+                Text(NSLocalizedString("お試し用プロジェクトと、その中の製品・QRラベル・履歴がすべて削除されます。自分で作成したプロジェクトには影響しません。", comment: ""))
+            }
+            .alert(NSLocalizedString("製品を削除しますか？", comment: ""),
+                   isPresented: deletingProductPresented,
+                   presenting: deletingProduct) { product in
+                Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
+                    deleteProduct(product); deletingProduct = nil
+                }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingProduct = nil }
+            } message: { product in
+                Text(String(format: NSLocalizedString("「%@」と、その個体・在庫数がすべて削除されます。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), product.displayName))
+            }
+    }
+
+    private var sheetedContent: some View {
+        decoratedContent
+            .sheet(isPresented: $showingAddProduct) { ProductFormView(project: project) }
+            .sheet(isPresented: $showingAddLocation) { LocationFormView(project: project) }
+            .sheet(isPresented: $showingEdit) { ProjectFormView(project: project) }
+            .sheet(isPresented: $showingPrePrint) { PrePrintView(project: project) }
+    }
+
+    private var decoratedContent: some View {
+        mainStack
+            .navigationTitle(project.displayName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
+            .onAppear { permission = container.sharing.permission(for: project) }
+    }
+
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
+            // Dedicated, always-visible entry so sharing with others is easy
+            // to find (the 共有 tab alone is easy to miss on a narrow screen).
+            Button {
+                withAnimation { segment = .share }
+            } label: {
+                Image(systemName: "person.crop.circle.badge.plus")
+            }
+            .accessibilityLabel(Text(NSLocalizedString("共有・招待", comment: "")))
+            .accessibilityIdentifier("shareToolbarButton")
+
+            Menu {
+                Button {
+                    withAnimation { segment = .share }
+                } label: {
+                    Label(NSLocalizedString("共有・メンバーを招待", comment: ""), systemImage: "person.2.badge.plus")
+                }
+                if canEdit {
+                    Button { showingEdit = true } label: { Label(NSLocalizedString("編集", comment: ""), systemImage: "pencil") }
+                    Button { showingPrePrint = true } label: { Label(NSLocalizedString("空のQRをまとめて発行", comment: ""), systemImage: "printer") }
+                    Button { showingBlankLabels = true } label: {
+                        Label(NSLocalizedString("空のQR一覧（未割当）", comment: ""), systemImage: "qrcode")
+                    }
+                    if project.isArchived {
+                        Button { setArchived(false) } label: { Label(NSLocalizedString("アーカイブ解除", comment: ""), systemImage: "tray.and.arrow.up") }
+                    } else {
+                        Button { setArchived(true) } label: { Label(NSLocalizedString("アーカイブ", comment: ""), systemImage: "archivebox") }
+                    }
+                } else {
+                    Label(NSLocalizedString("読み取り専用", comment: ""), systemImage: "eye")
+                }
+            } label: { Image(systemName: "ellipsis.circle") }
+        }
+    }
+
+    private var mainStack: some View {
         VStack(spacing: 0) {
             header
             if project.isSample { demoBanner }
@@ -64,96 +180,6 @@ struct ProjectDetailView: View {
             }
             .listStyle(.insetGrouped)
         }
-        .navigationTitle(project.displayName)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                // Dedicated, always-visible entry so sharing with others is easy
-                // to find (the 共有 tab alone is easy to miss on a narrow screen).
-                Button {
-                    withAnimation { segment = .share }
-                } label: {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                }
-                .accessibilityLabel(Text(NSLocalizedString("共有・招待", comment: "")))
-                .accessibilityIdentifier("shareToolbarButton")
-
-                Menu {
-                    Button {
-                        withAnimation { segment = .share }
-                    } label: {
-                        Label(NSLocalizedString("共有・メンバーを招待", comment: ""), systemImage: "person.2.badge.plus")
-                    }
-                    if canEdit {
-                        Button { showingEdit = true } label: { Label(NSLocalizedString("編集", comment: ""), systemImage: "pencil") }
-                        Button { showingPrePrint = true } label: { Label(NSLocalizedString("空のQRをまとめて発行", comment: ""), systemImage: "printer") }
-                        Button { showingBlankLabels = true } label: {
-                            Label(NSLocalizedString("空のQR一覧（未割当）", comment: ""), systemImage: "qrcode")
-                        }
-                        if project.isArchived {
-                            Button { setArchived(false) } label: { Label(NSLocalizedString("アーカイブ解除", comment: ""), systemImage: "tray.and.arrow.up") }
-                        } else {
-                            Button { setArchived(true) } label: { Label(NSLocalizedString("アーカイブ", comment: ""), systemImage: "archivebox") }
-                        }
-                    } else {
-                        Label(NSLocalizedString("読み取り専用", comment: ""), systemImage: "eye")
-                    }
-                } label: { Image(systemName: "ellipsis.circle") }
-            }
-        }
-        .onAppear { permission = container.sharing.permission(for: project) }
-        .sheet(isPresented: $showingAddProduct) { ProductFormView(project: project) }
-        .sheet(isPresented: $showingAddLocation) { LocationFormView(project: project) }
-        .sheet(isPresented: $showingEdit) { ProjectFormView(project: project) }
-        .sheet(isPresented: $showingPrePrint) { PrePrintView(project: project) }
-        .alert(NSLocalizedString("新規フォルダ", comment: ""), isPresented: $showingAddFolder) {
-            TextField(NSLocalizedString("フォルダ名", comment: ""), text: $newFolderName)
-            Button(NSLocalizedString("作成", comment: "")) { addFolder() }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { newFolderName = "" }
-        }
-        .alert(NSLocalizedString("お試しデータを削除しますか？", comment: ""), isPresented: $confirmingDemoDelete) {
-            Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteDemoProject() }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
-        } message: {
-            Text(NSLocalizedString("お試し用プロジェクトと、その中の製品・QRラベル・履歴がすべて削除されます。自分で作成したプロジェクトには影響しません。", comment: ""))
-        }
-        .alert(NSLocalizedString("製品を削除しますか？", comment: ""),
-               isPresented: Binding(get: { deletingProduct != nil },
-                                    set: { if !$0 { deletingProduct = nil } }),
-               presenting: deletingProduct) { product in
-            Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
-                deleteProduct(product); deletingProduct = nil
-            }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingProduct = nil }
-        } message: { product in
-            Text(String(format: NSLocalizedString("「%@」と、その個体・在庫数がすべて削除されます。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), product.displayName))
-        }
-        .sheet(item: $renamingFolder) { folder in
-            RenameSheet(title: NSLocalizedString("フォルダ名を変更", comment: ""),
-                        placeholder: NSLocalizedString("フォルダ名", comment: ""),
-                        initialText: folder.displayName) { newName in
-                renameFolder(folder, to: newName)
-            }
-        }
-        .alert(NSLocalizedString("フォルダを削除しますか？", comment: ""),
-               isPresented: Binding(get: { deletingFolder != nil },
-                                    set: { if !$0 { deletingFolder = nil } }),
-               presenting: deletingFolder) { folder in
-            Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
-                deleteFolder(folder); deletingFolder = nil
-            }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingFolder = nil }
-        } message: { folder in
-            Text(String(format: NSLocalizedString("フォルダ「%@」を削除します。中の製品は削除されず「フォルダなし」になります（サブフォルダも削除されます）。", comment: ""), folder.displayName))
-        }
-        .background(
-            NavigationLink(isActive: $showingBlankLabels) {
-                BlankLabelsView(project: project)
-            } label: { EmptyView() }
-            .opacity(0)
-            .accessibilityHidden(true)
-        )
-        .errorAlert($error)
     }
 
     // MARK: - Demo data banner

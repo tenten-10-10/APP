@@ -31,7 +31,141 @@ struct ProductDetailView: View {
     /// an app release if a sync-related loss bug is ever found in the field.
     private var deleteEnabled: Bool { RemoteConfig.shared.bool("deleteEnabled", default: true) }
 
+    // The body is layered into computed properties: one flat expression with
+    // this many sections + sheets + alerts blows the type-checker's budget
+    // ("unable to type-check this expression in reasonable time").
     var body: some View {
+        alertedList
+            .alert(NSLocalizedString("QRの割り当てを解除しますか？", comment: ""),
+                   isPresented: unassignPresented,
+                   presenting: unassigningLabel) { alias in
+                Button(NSLocalizedString("解除する", comment: "")) {
+                    unassignLabel(alias); unassigningLabel = nil
+                }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { unassigningLabel = nil }
+            } message: { alias in
+                Text(String(format: NSLocalizedString("%@ は空のQRに戻り、スキャンして別の品物・場所に割り当て直せます。", comment: ""), alias.code))
+            }
+            .alert(NSLocalizedString("QRを無効化しますか？", comment: ""),
+                   isPresented: retirePresented,
+                   presenting: retiringLabel) { alias in
+                Button(NSLocalizedString("無効化する", comment: ""), role: .destructive) {
+                    retireLabel(alias); retiringLabel = nil
+                }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { retiringLabel = nil }
+            } message: { alias in
+                Text(String(format: NSLocalizedString("%@ は読み取っても使えなくなります（元に戻せません）。シールを紛失・破棄したときに使ってください。", comment: ""), alias.code))
+            }
+            .errorAlert($error)
+    }
+
+    private var deletingUnitPresented: Binding<Bool> {
+        Binding(get: { deletingUnit != nil }, set: { if !$0 { deletingUnit = nil } })
+    }
+    private var deletingLotPresented: Binding<Bool> {
+        Binding(get: { deletingLot != nil }, set: { if !$0 { deletingLot = nil } })
+    }
+    private var unassignPresented: Binding<Bool> {
+        Binding(get: { unassigningLabel != nil }, set: { if !$0 { unassigningLabel = nil } })
+    }
+    private var retirePresented: Binding<Bool> {
+        Binding(get: { retiringLabel != nil }, set: { if !$0 { retiringLabel = nil } })
+    }
+
+    private var alertedList: some View {
+        sheetedList
+            .alert(NSLocalizedString("個体を削除しますか？", comment: ""),
+                   isPresented: deletingUnitPresented,
+                   presenting: deletingUnit) { unit in
+                Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
+                    deleteUnit(unit); deletingUnit = nil
+                }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingUnit = nil }
+            } message: { unit in
+                Text(String(format: NSLocalizedString("「%@」をリストから完全に削除します。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), unit.displaySerial))
+            }
+            .alert(NSLocalizedString("製品を削除しますか？", comment: ""), isPresented: $confirmingProductDelete) {
+                Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteProduct() }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+            } message: {
+                Text(String(format: NSLocalizedString("「%@」と、その個体・在庫数がすべて削除されます。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), product.displayName))
+            }
+            .alert(NSLocalizedString("ロットを削除しますか？", comment: ""),
+                   isPresented: deletingLotPresented,
+                   presenting: deletingLot) { lot in
+                Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
+                    deleteLot(lot); deletingLot = nil
+                }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingLot = nil }
+            } message: { lot in
+                Text(String(format: NSLocalizedString("ロット「%@」を数量ごと削除します。割り当てていたQRラベルは空に戻り、再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), lot.lotNumberDisplay))
+            }
+    }
+
+    private var sheetedList: some View {
+        itemSheetedList
+            .sheet(isPresented: $showingEdit) {
+                if let project = product.project { ProductFormView(project: project, editing: product) }
+            }
+            .sheet(isPresented: $showingMove) {
+                if let project = product.project {
+                    LocationPickerSheet(project: project, excluding: nil) { destination in move(to: destination) }
+                }
+            }
+            .sheet(isPresented: $showingAddUnit) {
+                if let project = product.project { AddUnitSheet(product: product, project: project) }
+            }
+            .sheet(isPresented: $showingAddLot) {
+                if let project = product.project { AddLotSheet(product: product, project: project) }
+            }
+    }
+
+    private var itemSheetedList: some View {
+        decoratedList
+            .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
+            .sheet(item: $qrUnit) { unit in unitQRStudio(unit) }
+            .sheet(item: $assignUnit) { unit in AssignLabelToUnitSheet(unit: unit) }
+            .sheet(item: $renamingUnit) { unit in
+                RenameSheet(title: NSLocalizedString("名前を変更", comment: ""),
+                            placeholder: NSLocalizedString("名前・番号", comment: ""),
+                            initialText: (unit.serialNumber ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
+                            footer: NSLocalizedString("QRの割り当て・貸出・履歴はそのまま引き継がれます。", comment: "")) { newName in
+                    renameUnit(unit, to: newName)
+                }
+            }
+            .sheet(item: $editingLoanUnit) { unit in LoanEditSheet(unit: unit) }
+    }
+
+    private var decoratedList: some View {
+        contentList
+            .listStyle(.insetGrouped)
+            .navigationTitle(product.displayName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
+            .onAppear { canEdit = product.project.map { container.sharing.canEdit($0) } ?? true }
+    }
+
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
+            if canEdit {
+                Menu {
+                    Button { duplicateProduct() } label: {
+                        Label(NSLocalizedString("この製品を複製", comment: ""), systemImage: "plus.square.on.square")
+                    }
+                    if deleteEnabled {
+                        Button(role: .destructive) { requestDeleteProduct() } label: {
+                            Label(NSLocalizedString("この製品を削除", comment: ""), systemImage: "trash")
+                        }
+                    }
+                } label: { Image(systemName: "ellipsis.circle") }
+                    .accessibilityIdentifier("productMenuButton")
+                Button { showingEdit = true } label: { Image(systemName: "pencil") }
+                    .accessibilityIdentifier("editProductButton")
+            }
+        }
+    }
+
+    private var contentList: some View {
         List {
             headerSection
             if canEdit { quickActionsSection }
@@ -43,106 +177,6 @@ struct ProductDetailView: View {
             if product.trackingMode == .lot { lotsSection }
             historySection
         }
-        .listStyle(.insetGrouped)
-        .navigationTitle(product.displayName)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                if canEdit {
-                    Menu {
-                        Button { duplicateProduct() } label: {
-                            Label(NSLocalizedString("この製品を複製", comment: ""), systemImage: "plus.square.on.square")
-                        }
-                        if deleteEnabled {
-                            Button(role: .destructive) { requestDeleteProduct() } label: {
-                                Label(NSLocalizedString("この製品を削除", comment: ""), systemImage: "trash")
-                            }
-                        }
-                    } label: { Image(systemName: "ellipsis.circle") }
-                        .accessibilityIdentifier("productMenuButton")
-                    Button { showingEdit = true } label: { Image(systemName: "pencil") }
-                        .accessibilityIdentifier("editProductButton")
-                }
-            }
-        }
-        .onAppear { canEdit = product.project.map { container.sharing.canEdit($0) } ?? true }
-        .sheet(isPresented: $showingEdit) {
-            if let project = product.project { ProductFormView(project: project, editing: product) }
-        }
-        .sheet(isPresented: $showingMove) {
-            if let project = product.project {
-                LocationPickerSheet(project: project, excluding: nil) { destination in move(to: destination) }
-            }
-        }
-        .sheet(isPresented: $showingAddUnit) {
-            if let project = product.project { AddUnitSheet(product: product, project: project) }
-        }
-        .sheet(item: $checkoutUnit) { unit in CheckoutSheet(unit: unit) }
-        .sheet(item: $qrUnit) { unit in unitQRStudio(unit) }
-        .sheet(item: $assignUnit) { unit in AssignLabelToUnitSheet(unit: unit) }
-        .sheet(item: $renamingUnit) { unit in
-            RenameSheet(title: NSLocalizedString("名前を変更", comment: ""),
-                        placeholder: NSLocalizedString("名前・番号", comment: ""),
-                        initialText: (unit.serialNumber ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-                        footer: NSLocalizedString("QRの割り当て・貸出・履歴はそのまま引き継がれます。", comment: "")) { newName in
-                renameUnit(unit, to: newName)
-            }
-        }
-        .sheet(item: $editingLoanUnit) { unit in LoanEditSheet(unit: unit) }
-        .alert(NSLocalizedString("個体を削除しますか？", comment: ""),
-               isPresented: Binding(get: { deletingUnit != nil },
-                                    set: { if !$0 { deletingUnit = nil } }),
-               presenting: deletingUnit) { unit in
-            Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
-                deleteUnit(unit); deletingUnit = nil
-            }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingUnit = nil }
-        } message: { unit in
-            Text(String(format: NSLocalizedString("「%@」をリストから完全に削除します。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), unit.displaySerial))
-        }
-        .alert(NSLocalizedString("製品を削除しますか？", comment: ""), isPresented: $confirmingProductDelete) {
-            Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteProduct() }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
-        } message: {
-            Text(String(format: NSLocalizedString("「%@」と、その個体・在庫数がすべて削除されます。割り当てていたQRラベルは空に戻り、別の品物に再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), product.displayName))
-        }
-        .alert(NSLocalizedString("ロットを削除しますか？", comment: ""),
-               isPresented: Binding(get: { deletingLot != nil },
-                                    set: { if !$0 { deletingLot = nil } }),
-               presenting: deletingLot) { lot in
-            Button(NSLocalizedString("削除", comment: ""), role: .destructive) {
-                deleteLot(lot); deletingLot = nil
-            }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { deletingLot = nil }
-        } message: { lot in
-            Text(String(format: NSLocalizedString("ロット「%@」を数量ごと削除します。割り当てていたQRラベルは空に戻り、再利用できます（操作履歴には削除の記録が残ります）。", comment: ""), lot.lotNumberDisplay))
-        }
-        .alert(NSLocalizedString("QRの割り当てを解除しますか？", comment: ""),
-               isPresented: Binding(get: { unassigningLabel != nil },
-                                    set: { if !$0 { unassigningLabel = nil } }),
-               presenting: unassigningLabel) { alias in
-            Button(NSLocalizedString("解除する", comment: "")) {
-                unassignLabel(alias); unassigningLabel = nil
-            }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { unassigningLabel = nil }
-        } message: { alias in
-            Text(String(format: NSLocalizedString("%@ は空のQRに戻り、スキャンして別の品物・場所に割り当て直せます。", comment: ""), alias.code))
-        }
-        .alert(NSLocalizedString("QRを無効化しますか？", comment: ""),
-               isPresented: Binding(get: { retiringLabel != nil },
-                                    set: { if !$0 { retiringLabel = nil } }),
-               presenting: retiringLabel) { alias in
-            Button(NSLocalizedString("無効化する", comment: ""), role: .destructive) {
-                retireLabel(alias); retiringLabel = nil
-            }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { retiringLabel = nil }
-        } message: { alias in
-            Text(String(format: NSLocalizedString("%@ は読み取っても使えなくなります（元に戻せません）。シールを紛失・破棄したときに使ってください。", comment: ""), alias.code))
-        }
-        .sheet(isPresented: $showingAddLot) {
-            if let project = product.project { AddLotSheet(product: product, project: project) }
-        }
-        .errorAlert($error)
     }
 
     // MARK: - Sections
