@@ -140,6 +140,7 @@ struct ProductDetailView: View {
         contentList
             .listStyle(.insetGrouped)
             .navigationTitle(product.displayName)
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
             .onAppear { canEdit = product.project.map { container.sharing.canEdit($0) } ?? true }
@@ -748,6 +749,7 @@ struct AddUnitSheet: View {
                 }
             }
             .navigationTitle(NSLocalizedString("個体を追加", comment: ""))
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() } }

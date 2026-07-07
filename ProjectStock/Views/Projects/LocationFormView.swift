@@ -41,6 +41,7 @@ struct LocationFormView: View {
                 }
             }
             .navigationTitle(editing == nil ? NSLocalizedString("新規の場所", comment: "") : NSLocalizedString("場所を編集", comment: ""))
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() } }

@@ -78,6 +78,7 @@ struct AssignmentView: View {
             }
         }
         .navigationTitle(NSLocalizedString("ラベルを割り当て", comment: ""))
+        .keyboardDoneBar()
         .errorAlert($error)
     }
 
@@ -180,6 +181,7 @@ private struct NewProductAssignView: View {
             }
         }
         .navigationTitle(NSLocalizedString("新規製品", comment: ""))
+        .keyboardDoneBar()
         .errorAlert($error)
     }
 

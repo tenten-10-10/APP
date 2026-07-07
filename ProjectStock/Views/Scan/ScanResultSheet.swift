@@ -99,6 +99,7 @@ private struct KnownTargetView: View {
             }
         }
         .navigationTitle(NSLocalizedString("スキャン結果", comment: ""))
+        .keyboardDoneBar()
         .errorAlert($error)
         .sheet(isPresented: $showingMove) {
             if let project = alias.project {

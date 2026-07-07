@@ -56,6 +56,27 @@ struct LabeledRow: View {
     }
 }
 
+/// Adds a 「閉じる」 bar above the keyboard so inputs whose keyboards have no
+/// return key (number / decimal pads) can always be dismissed. Apply ONCE per
+/// screen (Form / List root); SwiftUI shows it for every field on that screen.
+struct KeyboardDoneBar: ViewModifier {
+    func body(content: Content) -> some View {
+        content.toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button(NSLocalizedString("閉じる", comment: "")) {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                                    to: nil, from: nil, for: nil)
+                }
+            }
+        }
+    }
+}
+
+extension View {
+    func keyboardDoneBar() -> some View { modifier(KeyboardDoneBar()) }
+}
+
 /// iOS 15-safe multiline text input (avoids iOS 16's `TextField(axis:)`).
 struct MultilineTextField: View {
     @Binding var text: String
@@ -204,6 +225,7 @@ struct RenameSheet: View {
                 }
             }
             .navigationTitle(title)
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

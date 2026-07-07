@@ -133,6 +133,7 @@ struct ProductFormView: View {
                 }
             }
             .navigationTitle(isEditing ? NSLocalizedString("製品を編集", comment: "") : NSLocalizedString("新規製品", comment: ""))
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() } }

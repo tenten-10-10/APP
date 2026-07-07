@@ -34,6 +34,7 @@ struct LoanEditSheet: View {
                 }
             }
             .navigationTitle(NSLocalizedString("貸出内容を変更", comment: ""))
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

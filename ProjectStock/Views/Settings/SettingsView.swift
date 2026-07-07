@@ -172,6 +172,7 @@ struct SettingsView: View {
             }
         }
         .navigationTitle(NSLocalizedString("設定", comment: ""))
+        .keyboardDoneBar()
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .alert(NSLocalizedString("お試しデータを削除しますか？", comment: ""), isPresented: $confirmingDemoDelete) {
             Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteDemoData() }

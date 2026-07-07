@@ -49,6 +49,7 @@ struct CheckoutSheet: View {
                 }
             }
             .navigationTitle(NSLocalizedString("貸出", comment: ""))
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

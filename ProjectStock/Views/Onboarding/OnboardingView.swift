@@ -58,6 +58,7 @@ struct OnboardingView: View {
                 .padding(.bottom, 24)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
+        .keyboardDoneBar()
         .errorAlert($error)
         .interactiveDismissDisabled(true)
         .onAppear {
@@ -110,36 +111,41 @@ struct OnboardingView: View {
         .accessibilityElement(children: .combine)
     }
 
+    // ScrollView (not a fixed VStack): with the keyboard up, the fixed layout
+    // had nowhere to go and the name field ended up hidden BEHIND the keyboard
+    // on smaller screens. Inside a ScrollView, SwiftUI's keyboard avoidance
+    // scrolls the focused field into view.
     private var nameStepView: some View {
-        VStack(spacing: 28) {
-            Spacer(minLength: 0)
-            ZStack {
-                Circle()
-                    .fill(Brand.gradient)
-                    .frame(width: 148, height: 148)
-                    .shadow(color: Brand.primary.opacity(0.35), radius: 18, y: 8)
-                Image(systemName: "person.crop.circle.badge.checkmark")
-                    .font(.system(size: 60, weight: .semibold))
-                    .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 28) {
+                ZStack {
+                    Circle()
+                        .fill(Brand.gradient)
+                        .frame(width: 148, height: 148)
+                        .shadow(color: Brand.primary.opacity(0.35), radius: 18, y: 8)
+                    Image(systemName: "person.crop.circle.badge.checkmark")
+                        .font(.system(size: 60, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .accessibilityHidden(true)
+                VStack(spacing: 12) {
+                    Text(NSLocalizedString("担当者名を設定", comment: ""))
+                        .font(.title.bold())
+                        .multilineTextAlignment(.center)
+                    Text(NSLocalizedString("複数人で共有して使うとき、入出庫などの操作が「誰がやったか」として履歴に残ります。あなたの担当者名を入力してください（あとから設定で変更できます）。", comment: ""))
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    TextField(NSLocalizedString("例: 田中", comment: ""), text: $operatorName)
+                        .textFieldStyle(.roundedBorder)
+                        .submitLabel(.done)
+                        .accessibilityIdentifier("onboardingOperatorName")
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal, 28)
             }
-            .accessibilityHidden(true)
-            VStack(spacing: 12) {
-                Text(NSLocalizedString("担当者名を設定", comment: ""))
-                    .font(.title.bold())
-                    .multilineTextAlignment(.center)
-                Text(NSLocalizedString("複数人で共有して使うとき、入出庫などの操作が「誰がやったか」として履歴に残ります。あなたの担当者名を入力してください（あとから設定で変更できます）。", comment: ""))
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                TextField(NSLocalizedString("例: 田中", comment: ""), text: $operatorName)
-                    .textFieldStyle(.roundedBorder)
-                    .submitLabel(.done)
-                    .accessibilityIdentifier("onboardingOperatorName")
-                    .padding(.top, 4)
-            }
-            .padding(.horizontal, 28)
-            Spacer(minLength: 0)
+            .padding(.vertical, 24)
         }
     }
 

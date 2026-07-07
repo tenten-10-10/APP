@@ -59,6 +59,7 @@ struct JoinShareSheet: View {
                 }
             }
             .navigationTitle(NSLocalizedString("招待リンクから参加", comment: ""))
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

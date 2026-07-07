@@ -69,6 +69,7 @@ struct AddLotSheet: View {
                 }
             }
             .navigationTitle(NSLocalizedString("ロットを追加", comment: ""))
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() } }
@@ -148,6 +149,7 @@ struct LotDetailView: View {
         contentList
             .listStyle(.insetGrouped)
             .navigationTitle(lot.lotNumberDisplay)
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarMenu }
             .onAppear { canEdit = lot.project.map { container.sharing.canEdit($0) } ?? true }
@@ -335,6 +337,7 @@ struct EditLotSheet: View {
                 }
             }
             .navigationTitle(NSLocalizedString("ロットを編集", comment: ""))
+            .keyboardDoneBar()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() } }
