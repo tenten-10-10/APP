@@ -19,128 +19,163 @@ struct LocationDetailView: View {
     @State private var error: PresentableError?
     @State private var moveResult: String?
 
+    // The body is layered into computed properties: one flat expression with
+    // this many sections + sheets + alerts blows the type-checker's budget
+    // ("unable to type-check this expression in reasonable time").
     var body: some View {
+        decoratedList
+            .alert(NSLocalizedString("場所を削除しますか？", comment: ""), isPresented: $confirmingDelete) {
+                Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteLocation() }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
+            } message: {
+                Text(String(format: NSLocalizedString("「%@」とそのサブの場所を削除します。中の製品・個体は削除されず「場所なし」になります。貼っていたQRラベルは空に戻り、再利用できます。", comment: ""), location.displayName))
+            }
+            .alert(NSLocalizedString("QRの割り当てを解除しますか？", comment: ""),
+                   isPresented: unassignPresented,
+                   presenting: unassigningLabel) { alias in
+                Button(NSLocalizedString("解除する", comment: "")) { unassign(alias); unassigningLabel = nil }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { unassigningLabel = nil }
+            } message: { alias in
+                Text(String(format: NSLocalizedString("%@ は空のQRに戻り、スキャンして別の品物・場所に割り当て直せます。", comment: ""), alias.code))
+            }
+            .alert(NSLocalizedString("QRを無効化しますか？", comment: ""),
+                   isPresented: retirePresented,
+                   presenting: retiringLabel) { alias in
+                Button(NSLocalizedString("無効化する", comment: ""), role: .destructive) { retire(alias); retiringLabel = nil }
+                Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { retiringLabel = nil }
+            } message: { alias in
+                Text(String(format: NSLocalizedString("%@ は読み取っても使えなくなります（元に戻せません）。", comment: ""), alias.code))
+            }
+            .alert(item: moveResultItem) { presentable in
+                Alert(title: Text(NSLocalizedString("移動完了", comment: "")), message: Text(presentable.message),
+                      dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+            }
+            .errorAlert($error)
+    }
+
+    private var unassignPresented: Binding<Bool> {
+        Binding(get: { unassigningLabel != nil }, set: { if !$0 { unassigningLabel = nil } })
+    }
+    private var retirePresented: Binding<Bool> {
+        Binding(get: { retiringLabel != nil }, set: { if !$0 { retiringLabel = nil } })
+    }
+    private var moveResultItem: Binding<PresentableError?> {
+        Binding(get: { moveResult.map { PresentableError(message: $0) } }, set: { _ in moveResult = nil })
+    }
+
+    private var decoratedList: some View {
+        contentList
+            .listStyle(.insetGrouped)
+            .navigationTitle(location.displayName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarMenu }
+            .sheet(isPresented: $showingEdit) {
+                if let project = location.project {
+                    LocationFormView(project: project, editing: location)
+                }
+            }
+            .sheet(isPresented: $showingAddChild) {
+                if let project = location.project {
+                    LocationFormView(project: project, defaultParent: location)
+                }
+            }
+            .sheet(isPresented: $showingBulkMove) {
+                if let project = location.project {
+                    LocationPickerSheet(project: project, excluding: location) { destination in
+                        bulkMove(to: destination)
+                    }
+                }
+            }
+    }
+
+    @ToolbarContentBuilder private var toolbarMenu: some ToolbarContent {
+        if canEdit {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button { showingEdit = true } label: {
+                        Label(NSLocalizedString("場所を編集（名前・種類・親）", comment: ""), systemImage: "pencil")
+                    }
+                    Button(role: .destructive) { confirmingDelete = true } label: {
+                        Label(NSLocalizedString("この場所を削除", comment: ""), systemImage: "trash")
+                    }
+                } label: { Image(systemName: "ellipsis.circle") }
+            }
+        }
+    }
+
+    private var contentList: some View {
         List {
-            Section(NSLocalizedString("情報", comment: "")) {
-                LabeledRow(title: NSLocalizedString("種類", comment: ""), value: location.kind.localizedTitle)
-                LabeledRow(title: NSLocalizedString("パス", comment: ""), value: location.breadcrumb)
-            }
+            infoSection
+            childrenSection
+            productsSection
+            unitsSection
+            labelsSection
+            actionsSection
+        }
+    }
 
-            if !location.childArray.isEmpty {
-                Section(NSLocalizedString("サブの場所", comment: "")) {
-                    ForEach(location.childArray) { child in
-                        NavigationLink(destination: LocationDetailView(location: child, canEdit: canEdit)) {
-                            LocationRow(location: child)
-                        }
+    private var infoSection: some View {
+        Section(NSLocalizedString("情報", comment: "")) {
+            LabeledRow(title: NSLocalizedString("種類", comment: ""), value: location.kind.localizedTitle)
+            LabeledRow(title: NSLocalizedString("パス", comment: ""), value: location.breadcrumb)
+        }
+    }
+
+    @ViewBuilder private var childrenSection: some View {
+        if !location.childArray.isEmpty {
+            Section(NSLocalizedString("サブの場所", comment: "")) {
+                ForEach(location.childArray) { child in
+                    NavigationLink(destination: LocationDetailView(location: child, canEdit: canEdit)) {
+                        LocationRow(location: child)
                     }
                 }
             }
+        }
+    }
 
-            Section(NSLocalizedString("製品", comment: "")) {
-                let products = location.productArray
-                if products.isEmpty {
-                    Text(NSLocalizedString("この場所に既定の製品はありません", comment: "")).foregroundColor(.secondary)
-                } else {
-                    ForEach(products) { product in
+    private var productsSection: some View {
+        Section(NSLocalizedString("製品", comment: "")) {
+            let products = location.productArray
+            if products.isEmpty {
+                Text(NSLocalizedString("この場所に既定の製品はありません", comment: "")).foregroundColor(.secondary)
+            } else {
+                ForEach(products) { product in
+                    NavigationLink(destination: ProductDetailView(product: product)) {
+                        ProductRow(product: product)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var unitsSection: some View {
+        if !location.unitArray.isEmpty {
+            Section(NSLocalizedString("個体", comment: "")) {
+                ForEach(location.unitArray) { unit in
+                    if let product = unit.product {
                         NavigationLink(destination: ProductDetailView(product: product)) {
-                            ProductRow(product: product)
-                        }
-                    }
-                }
-            }
-
-            if !location.unitArray.isEmpty {
-                Section(NSLocalizedString("個体", comment: "")) {
-                    ForEach(location.unitArray) { unit in
-                        if let product = unit.product {
-                            NavigationLink(destination: ProductDetailView(product: product)) {
-                                unitRow(unit)
-                            }
-                        } else {
                             unitRow(unit)
                         }
+                    } else {
+                        unitRow(unit)
                     }
                 }
             }
+        }
+    }
 
-            labelsSection
-
-            if canEdit {
-                Section {
-                    Button { showingAddChild = true } label: {
-                        Label(NSLocalizedString("サブの場所を追加", comment: ""), systemImage: "plus")
-                    }
-                    Button { showingBulkMove = true } label: {
-                        Label(NSLocalizedString("中身をまとめて移動", comment: ""), systemImage: "arrow.left.arrow.right")
-                    }
-                    .accessibilityIdentifier("bulkMoveButton")
+    @ViewBuilder private var actionsSection: some View {
+        if canEdit {
+            Section {
+                Button { showingAddChild = true } label: {
+                    Label(NSLocalizedString("サブの場所を追加", comment: ""), systemImage: "plus")
                 }
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle(location.displayName)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if canEdit {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button { showingEdit = true } label: {
-                            Label(NSLocalizedString("場所を編集（名前・種類・親）", comment: ""), systemImage: "pencil")
-                        }
-                        Button(role: .destructive) { confirmingDelete = true } label: {
-                            Label(NSLocalizedString("この場所を削除", comment: ""), systemImage: "trash")
-                        }
-                    } label: { Image(systemName: "ellipsis.circle") }
+                Button { showingBulkMove = true } label: {
+                    Label(NSLocalizedString("中身をまとめて移動", comment: ""), systemImage: "arrow.left.arrow.right")
                 }
+                .accessibilityIdentifier("bulkMoveButton")
             }
         }
-        .sheet(isPresented: $showingEdit) {
-            if let project = location.project {
-                LocationFormView(project: project, editing: location)
-            }
-        }
-        .alert(NSLocalizedString("場所を削除しますか？", comment: ""), isPresented: $confirmingDelete) {
-            Button(NSLocalizedString("削除", comment: ""), role: .destructive) { deleteLocation() }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
-        } message: {
-            Text(String(format: NSLocalizedString("「%@」とそのサブの場所を削除します。中の製品・個体は削除されず「場所なし」になります。貼っていたQRラベルは空に戻り、再利用できます。", comment: ""), location.displayName))
-        }
-        .alert(NSLocalizedString("QRの割り当てを解除しますか？", comment: ""),
-               isPresented: Binding(get: { unassigningLabel != nil },
-                                    set: { if !$0 { unassigningLabel = nil } }),
-               presenting: unassigningLabel) { alias in
-            Button(NSLocalizedString("解除する", comment: "")) { unassign(alias); unassigningLabel = nil }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { unassigningLabel = nil }
-        } message: { alias in
-            Text(String(format: NSLocalizedString("%@ は空のQRに戻り、スキャンして別の品物・場所に割り当て直せます。", comment: ""), alias.code))
-        }
-        .alert(NSLocalizedString("QRを無効化しますか？", comment: ""),
-               isPresented: Binding(get: { retiringLabel != nil },
-                                    set: { if !$0 { retiringLabel = nil } }),
-               presenting: retiringLabel) { alias in
-            Button(NSLocalizedString("無効化する", comment: ""), role: .destructive) { retire(alias); retiringLabel = nil }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { retiringLabel = nil }
-        } message: { alias in
-            Text(String(format: NSLocalizedString("%@ は読み取っても使えなくなります（元に戻せません）。", comment: ""), alias.code))
-        }
-        .sheet(isPresented: $showingAddChild) {
-            if let project = location.project {
-                LocationFormView(project: project, defaultParent: location)
-            }
-        }
-        .sheet(isPresented: $showingBulkMove) {
-            if let project = location.project {
-                LocationPickerSheet(project: project, excluding: location) { destination in
-                    bulkMove(to: destination)
-                }
-            }
-        }
-        .alert(item: Binding(get: { moveResult.map { PresentableError(message: $0) } },
-                             set: { _ in moveResult = nil })) { presentable in
-            Alert(title: Text(NSLocalizedString("移動完了", comment: "")), message: Text(presentable.message),
-                  dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
-        }
-        .errorAlert($error)
     }
 
     private func unitRow(_ unit: StockUnit) -> some View {
