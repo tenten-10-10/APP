@@ -406,6 +406,15 @@ struct ProjectDetailView: View {
         let name = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
         newFolderName = ""
         guard !name.isEmpty else { return }
+        // Reject a same-name top-level folder rather than create an
+        // indistinguishable duplicate (a repeated 作成 tap / sync race was
+        // producing two identical rows).
+        if project.folderArray.contains(where: {
+            $0.parent == nil && $0.displayName.caseInsensitiveCompare(name) == .orderedSame
+        }) {
+            error = PresentableError(AppError.underlying(String(format: NSLocalizedString("「%@」という名前のフォルダは既にあります。", comment: ""), name)))
+            return
+        }
         let projectID = project.objectID
         let result = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: projectID) as? Project else { return }

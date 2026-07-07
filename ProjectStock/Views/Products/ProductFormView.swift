@@ -128,7 +128,7 @@ struct ProductFormView: View {
                         MultilineTextField(text: $note, placeholder: NSLocalizedString("メモ（任意）", comment: ""))
                             .frame(minHeight: 60)
                     } label: {
-                        Text(NSLocalizedString("詳細設定（任意）", comment: ""))
+                        Text(NSLocalizedString("写真・社内コード・メモ", comment: ""))
                     }
                 }
             }
@@ -178,6 +178,10 @@ struct ProductFormView: View {
         folderID = editing.folder?.objectID
         locationID = editing.defaultLocation?.objectID
         if let data = editing.photoThumbnail { photo = UIImage(data: data) }
+        // Editing an existing product: open the details so 写真 (and SKU / メモ)
+        // are visible right away. Adding a photo after the fact was impossible
+        // to find while it sat inside a collapsed group.
+        showDetails = true
     }
 
     private func checkSKU() {
@@ -189,10 +193,19 @@ struct ProductFormView: View {
     }
 
     /// Create a folder in this project from the form and select it immediately.
+    /// If a top-level folder with the same name already exists, select THAT one
+    /// instead of inserting a duplicate — typing the same name means the same
+    /// folder, not a new indistinguishable one.
     private func createFolderInline() {
         let name = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
         newFolderName = ""
         guard !name.isEmpty else { return }
+        if let existing = project.folderArray.first(where: {
+            $0.parent == nil && $0.displayName.caseInsensitiveCompare(name) == .orderedSame
+        }) {
+            folderID = existing.objectID
+            return
+        }
         let projectID = project.objectID
         var newID: NSManagedObjectID?
         let result = container.performWrite { ctx in
@@ -209,10 +222,18 @@ struct ProductFormView: View {
     }
 
     /// Create a location in this project from the form and select it immediately.
+    /// Reuses an existing top-level location of the same name rather than
+    /// creating a duplicate.
     private func createLocationInline() {
         let name = newLocationName.trimmingCharacters(in: .whitespacesAndNewlines)
         newLocationName = ""
         guard !name.isEmpty else { return }
+        if let existing = project.locationArray.first(where: {
+            $0.parent == nil && $0.displayName.caseInsensitiveCompare(name) == .orderedSame
+        }) {
+            locationID = existing.objectID
+            return
+        }
         let projectID = project.objectID
         var newID: NSManagedObjectID?
         let result = container.performWrite { ctx in

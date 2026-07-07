@@ -88,6 +88,18 @@ struct LocationFormView: View {
         let projectID = project.objectID
         let editingID = editing?.objectID
 
+        // Block a same-name sibling (same parent) so we never end up with two
+        // indistinguishable locations at the same level.
+        let isDuplicate = project.locationArray.contains {
+            $0.objectID != editingID
+                && $0.parent?.objectID == chosenParent
+                && $0.displayName.caseInsensitiveCompare(trimmed) == .orderedSame
+        }
+        if isDuplicate {
+            error = PresentableError(AppError.underlying(String(format: NSLocalizedString("同じ場所の中に「%@」という名前の場所は既にあります。", comment: ""), trimmed)))
+            return
+        }
+
         let result = container.performWrite { ctx in
             guard let p = try ctx.existingObject(with: projectID) as? Project else { return }
             let parent = chosenParent.flatMap { try? ctx.existingObject(with: $0) as? Location }

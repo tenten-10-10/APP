@@ -454,6 +454,9 @@
 "新しい場所を作成" = "Create new location";
 "ここから新しいフォルダや場所を作って、すぐに選べます。" = "Create a new folder or location here and select it right away.";
 "詳細設定（任意）" = "Advanced (optional)";
+"写真・社内コード・メモ" = "Photo, code & notes";
+"「%@」という名前のフォルダは既にあります。" = "A folder named \"%@\" already exists.";
+"同じ場所の中に「%@」という名前の場所は既にあります。" = "A location named \"%@\" already exists in the same place.";
 "新しいフォルダ" = "New Folder";
 "新しい場所" = "New Location";
 "場所の名前" = "Location name";
