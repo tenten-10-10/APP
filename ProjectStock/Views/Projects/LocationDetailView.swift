@@ -88,9 +88,11 @@ struct LocationDetailView: View {
             }
     }
 
-    @ToolbarContentBuilder private var toolbarMenu: some ToolbarContent {
-        if canEdit {
-            ToolbarItem(placement: .navigationBarTrailing) {
+    // NOTE: `if` directly inside a ToolbarContentBuilder needs iOS 16
+    // (`buildIf`); on iOS 15 the condition must live INSIDE the item's view.
+    private var toolbarMenu: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            if canEdit {
                 Menu {
                     Button { showingEdit = true } label: {
                         Label(NSLocalizedString("場所を編集（名前・種類・親）", comment: ""), systemImage: "pencil")

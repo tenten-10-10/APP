@@ -190,8 +190,9 @@ struct LotDetailView: View {
         .navigationTitle(lot.lotNumberDisplay)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if canEdit {
-                ToolbarItem(placement: .navigationBarTrailing) {
+            // iOS 15: `if` はToolbarContentBuilder直下に置けないため item 内で分岐
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if canEdit {
                     Menu {
                         Button { showingEdit = true } label: {
                             Label(NSLocalizedString("ロット番号・期限を編集", comment: ""), systemImage: "pencil")

@@ -52,8 +52,9 @@ struct FolderDetailView: View {
         .navigationTitle(folder.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if canEdit {
-                ToolbarItem(placement: .navigationBarTrailing) {
+            // iOS 15: `if` はToolbarContentBuilder直下に置けないため item 内で分岐
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if canEdit {
                     Menu {
                         Button { renaming = true } label: {
                             Label(NSLocalizedString("名前を変更", comment: ""), systemImage: "pencil")
