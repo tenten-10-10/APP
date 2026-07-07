@@ -176,6 +176,61 @@ struct MailComposeView: UIViewControllerRepresentable {
     }
 }
 
+/// iOS 15-safe rename dialog: a compact sheet with one text field. Alert
+/// TextFields only render on iOS 16+, so every "名前を変更" flow (unit, folder,
+/// lot, …) presents this instead — same pattern everywhere.
+struct RenameSheet: View {
+    let title: String
+    var placeholder: String = ""
+    var initialText: String = ""
+    var footer: String? = nil
+    var onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section {
+                    TextField(placeholder, text: $text)
+                        .focused($focused)
+                        .submitLabel(.done)
+                        .onSubmit(save)
+                        .accessibilityIdentifier("renameField")
+                } footer: {
+                    if let footer { Text(footer) }
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(NSLocalizedString("保存", comment: "")) { save() }
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .onAppear {
+                text = initialText
+                // Focus after the sheet finishes presenting; setting it in the
+                // same runloop tick is silently ignored.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { focused = true }
+            }
+        }
+    }
+
+    private func save() {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        onSave(trimmed)
+        dismiss()
+    }
+}
+
 /// Identifiable error wrapper for `.alert(item:)`.
 struct PresentableError: Identifiable {
     let id = UUID()
