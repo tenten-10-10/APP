@@ -232,4 +232,38 @@ platform :ios do
     end
     UI.success("Expired #{targets.size} TestFlight build(s) on #{version} 🧹")
   end
+
+  # READ-ONLY. Print the current App Store review state (the editable version's
+  # state + its attached build's processing state). Touches nothing.
+  desc "Print the current App Store review status (read-only)"
+  lane :review_status do
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id:    ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      filepath:  ENV.fetch("ASC_KEY_PATH")
+    )
+
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    UI.user_error!("App #{APP_ID} not found on App Store Connect") if app.nil?
+
+    live = app.get_live_app_store_version(platform: "IOS")
+    UI.message("LIVE on App Store: #{live&.version_string || '—'}")
+
+    edit = app.get_edit_app_store_version(platform: "IOS")
+    if edit.nil?
+      UI.important("REVIEW_STATE: none (no editable/in-review version)")
+      next
+    end
+
+    build = begin
+      edit.build
+    rescue StandardError
+      nil
+    end
+
+    UI.success("REVIEW_VERSION: #{edit.version_string}")
+    UI.success("REVIEW_STATE: #{edit.app_store_state}")
+    UI.success("REVIEW_BUILD: #{build&.version || '—'} (processing=#{build&.processing_state || '—'})")
+    UI.message("CREATED: #{edit.created_date}") if edit.respond_to?(:created_date)
+  end
 end
