@@ -201,7 +201,8 @@ struct InventoryService {
     func updateLoan(for unit: StockUnit, borrower: String?, dueAt: Date?) -> Bool {
         guard let loan = currentLoan(for: unit) else { return false }
         let trimmed = borrower?.trimmingCharacters(in: .whitespacesAndNewlines)
-        loan.event.borrower = (trimmed?.isEmpty ?? true) ? nil : trimmed
+        // `borrower` is a read-only wrapper; the stored attribute is borrowerName.
+        loan.event.borrowerName = (trimmed?.isEmpty ?? true) ? nil : trimmed
         loan.event.dueAt = dueAt
         unit.touch()
         return true
