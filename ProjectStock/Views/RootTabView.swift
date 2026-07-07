@@ -7,6 +7,7 @@ struct RootTabView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showOnboarding = false
     @State private var deepLinkOutcome: ScanOutcomeBox?
+    @State private var shareFeedback: CloudSharingService.AcceptFeedback?
 
     var body: some View {
         TabView {
@@ -51,6 +52,21 @@ struct RootTabView: View {
         }
         .onOpenURL { url in
             handleUniversalLink(url)
+        }
+        // Tell the recipient whether joining a shared project worked — the
+        // acceptance used to be completely silent, so a failure was
+        // indistinguishable from "the link did nothing".
+        .onReceive(container.sharing.$acceptFeedback) { feedback in
+            shareFeedback = feedback
+        }
+        .alert(item: $shareFeedback) { feedback in
+            Alert(title: Text(feedback.success
+                              ? NSLocalizedString("共有に参加しました", comment: "")
+                              : NSLocalizedString("共有に参加できませんでした", comment: "")),
+                  message: Text(feedback.message),
+                  dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))) {
+                      container.sharing.acceptFeedback = nil
+                  })
         }
         .onAppear {
             if !settings.hasCompletedOnboarding && !AppConfig.isUITesting {

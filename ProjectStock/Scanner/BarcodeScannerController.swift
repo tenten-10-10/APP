@@ -41,6 +41,7 @@ final class BarcodeScannerController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        resetDebounce() // returning to the screen must allow re-scanning the same code
         if !pausedByUI { start() }
     }
 
@@ -143,7 +144,16 @@ final class BarcodeScannerController: UIViewController {
     func setPaused(_ paused: Bool) {
         guard paused != pausedByUI else { return }
         pausedByUI = paused
-        if paused { stop() } else { start() }
+        if paused {
+            stop()
+        } else {
+            // Re-arm the duplicate suppressor on resume: "fire once" means once
+            // per presentation, not once per session. Without this, closing the
+            // result sheet left the SAME QR permanently unscannable until a
+            // different code was read first.
+            resetDebounce()
+            start()
+        }
     }
 
     func resetDebounce() {

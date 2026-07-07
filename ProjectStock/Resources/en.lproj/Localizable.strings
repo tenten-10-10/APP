@@ -636,3 +636,19 @@
 "次回起動で同期を再試行" = "Retry sync on next launch";
 "クラッシュからの復帰" = "Crash recovery";
 "「停止した理由」の文面を開発者に送っていただけると、原因を特定できます。" = "Send the “Reason it stopped” text to the developer so we can pinpoint the cause.";
+
+/* 1.2.52: share-invite dead-end fixes (link joining, paste-to-join, acceptance feedback) */
+"在庫アプリ「タナミル」でプロジェクト『%@』に招待します。\n\n① アプリ未インストールの方は、まずこちらから入手してください：\n%@\n\n② インストール後、この招待リンクを開いて参加してください：\n%@\n\n③ リンクを開いてもサインイン画面から進めないとき（LINEなど）は、②のリンクを長押しでコピーし、タナミルの「プロジェクト」画面右上の「…」→「招待リンクから参加」に貼り付けてください。" = "You’re invited to the project “%@” in the Tanamiru inventory app.\n\n1) Don’t have the app yet? Get it here first:\n%@\n\n2) After installing, open this invite link to join:\n%@\n\n3) If the link only shows an Apple sign-in page (e.g. in LINE), long-press and copy link 2, then paste it in Tanamiru under Projects → “…” → “Join from invite link”.";
+"招待リンクを参加可能にできませんでした（%@）。もう一度お試しください。" = "Couldn’t make the invite link joinable (%@). Please try again.";
+"招待リンクを確認できませんでした。リンクが正しいかご確認ください。" = "Couldn’t verify the invite link. Please check that the link is correct.";
+"招待リンクから参加" = "Join from invite link";
+"招待リンク" = "Invite link";
+"コピーしたリンクを貼り付け" = "Paste copied link";
+"受け取った招待リンク（icloud.com/share/…）を貼り付けてください。招待メッセージごと貼り付けても大丈夫です。LINEなどでリンクを開いてもサインイン画面から進めないときは、リンクを長押しでコピーして、ここから参加できます。" = "Paste the invite link you received (icloud.com/share/…). Pasting the whole invite message also works. If opening the link only shows an Apple sign-in page (e.g. in LINE), long-press to copy the link and join from here.";
+"参加する" = "Join";
+"参加しています…" = "Joining…";
+"参加しました。共有プロジェクトは、同期が終わると「プロジェクト」一覧に表示されます。" = "Joined! The shared project will appear in your Projects list once syncing finishes.";
+"共有プロジェクトに参加しました。同期が終わると「プロジェクト」一覧に表示されます。" = "You joined the shared project. It will appear in your Projects list once syncing finishes.";
+"共有への参加に失敗しました（%@）。招待リンクをコピーして、プロジェクト画面の「招待リンクから参加」からもう一度お試しください。" = "Couldn’t join the share (%@). Copy the invite link and try again from Projects → “Join from invite link”.";
+"共有に参加しました" = "Joined the share";
+"共有に参加できませんでした" = "Couldn’t join the share";

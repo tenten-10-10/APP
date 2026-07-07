@@ -162,6 +162,12 @@ struct ProjectShareSection: View {
     /// Build a ready-to-send invitation that includes BOTH the App Store link
     /// (so a colleague without the app installs it first) and the CloudKit join
     /// link, then present the share sheet. Only available once a share exists.
+    ///
+    /// Before composing, the share is promoted to link-joinable
+    /// (`publicPermission = .readWrite`): the raw URL goes out through LINE /
+    /// mail, so a recipient's Apple ID is never a pre-invited participant —
+    /// with an invite-only share the link led to an Apple sign-in page and
+    /// then a dead end.
     private func sendInvite() {
         guard let share = container.sharing.existingShare(for: project) else {
             error = PresentableError(AppError.shareCreationFailed(
@@ -176,10 +182,19 @@ struct ProjectShareSection: View {
                 NSLocalizedString("招待リンクを準備中です。数秒待ってからもう一度お試しください。", comment: "")))
             return
         }
-        let message = String(
-            format: NSLocalizedString("在庫アプリ「タナミル」でプロジェクト『%@』に招待します。\n\n① アプリ未インストールの方は、まずこちらから入手してください：\n%@\n\n② インストール後、この招待リンクを開いて参加してください：\n%@", comment: ""),
-            project.displayName, AppConfig.appStoreURL, url.absoluteString)
-        inviteSheet = InviteText(text: message)
+        container.sharing.ensureLinkJoinable(share) { result in
+            switch result {
+            case .failure(let err):
+                error = PresentableError(AppError.shareCreationFailed(String(
+                    format: NSLocalizedString("招待リンクを参加可能にできませんでした（%@）。もう一度お試しください。", comment: ""),
+                    err.localizedDescription)))
+            case .success:
+                let message = String(
+                    format: NSLocalizedString("在庫アプリ「タナミル」でプロジェクト『%@』に招待します。\n\n① アプリ未インストールの方は、まずこちらから入手してください：\n%@\n\n② インストール後、この招待リンクを開いて参加してください：\n%@\n\n③ リンクを開いてもサインイン画面から進めないとき（LINEなど）は、②のリンクを長押しでコピーし、タナミルの「プロジェクト」画面右上の「…」→「招待リンクから参加」に貼り付けてください。", comment: ""),
+                    project.displayName, AppConfig.appStoreURL, url.absoluteString)
+                inviteSheet = InviteText(text: message)
+            }
+        }
     }
 }
 

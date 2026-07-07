@@ -66,7 +66,10 @@ enum CloudSharePresenter {
         // `delegate` is weak — keep the coordinator alive exactly as long as the
         // controller by hanging it off the controller as an associated object.
         objc_setAssociatedObject(controller, &Coordinator.associationKey, coordinator, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        controller.availablePermissions = [.allowReadWrite, .allowReadOnly, .allowPrivate]
+        // .allowPublic is required: without it every share is invite-only, and
+        // the custom 「招待リンクを送る」 message hands out a URL that nobody
+        // can actually join with (Apple sign-in page → dead end).
+        controller.availablePermissions = [.allowPublic, .allowPrivate, .allowReadWrite, .allowReadOnly]
 
         // iPad requires a popover anchor or it traps.
         if let popover = controller.popoverPresentationController {

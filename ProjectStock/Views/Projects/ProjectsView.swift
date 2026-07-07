@@ -25,6 +25,7 @@ struct ProjectsView: View {
     /// appear and when the set of projects changes, so the list badge stays live.
     @State private var sharePermissions: [NSManagedObjectID: SharePermission] = [:]
     @State private var showingCreate = false
+    @State private var showingJoinShare = false
     @State private var createdProject: Project?
     @State private var editingProject: Project?
     @State private var deletingProject: Project?
@@ -44,6 +45,9 @@ struct ProjectsView: View {
             .toolbar { toolbarContent }
             .sheet(isPresented: $showingCreate) {
                 ProjectFormView(onCreated: { createdProject = $0 })
+            }
+            .sheet(isPresented: $showingJoinShare) {
+                JoinShareSheet()
             }
             .sheet(item: $editingProject) { project in
                 ProjectFormView(project: project)
@@ -219,6 +223,13 @@ struct ProjectsView: View {
                 Menu {
                     Toggle(isOn: $showArchived) {
                         Label(NSLocalizedString("アーカイブを表示", comment: ""), systemImage: "archivebox")
+                    }
+                    // LINEなどのアプリ内ブラウザで招待リンクが開けなかった人の
+                    // 受け皿。リンクを貼り付けて共有に参加する。
+                    Button {
+                        showingJoinShare = true
+                    } label: {
+                        Label(NSLocalizedString("招待リンクから参加", comment: ""), systemImage: "person.badge.plus")
                     }
                     Button {
                         createSample()

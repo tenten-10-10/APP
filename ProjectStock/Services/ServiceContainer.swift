@@ -78,11 +78,24 @@ final class ServiceContainer: ObservableObject {
         writeHook = { [unowned self] work in self.performWrite(author: "webborrow", work) }
         notifyHook = { [unowned self] in self.refreshLoanNotifications() }
 
-        // Accept incoming CloudKit share invitations into the shared store.
+        // Accept incoming CloudKit share invitations into the shared store,
+        // and surface the outcome — a silent failure here used to look exactly
+        // like "the link did nothing" to the recipient.
         NotificationCenter.default.publisher(for: .projectStockDidReceiveShareMetadata)
             .compactMap { $0.userInfo?[ShareAcceptanceKeys.metadata] as? CKShare.Metadata }
             .sink { [weak self] metadata in
-                self?.sharing.acceptShare(metadata: metadata) { _ in }
+                self?.sharing.acceptShare(metadata: metadata) { result in
+                    switch result {
+                    case .success:
+                        self?.sharing.acceptFeedback = .init(
+                            success: true,
+                            message: NSLocalizedString("共有プロジェクトに参加しました。同期が終わると「プロジェクト」一覧に表示されます。", comment: ""))
+                    case .failure(let error):
+                        self?.sharing.acceptFeedback = .init(
+                            success: false,
+                            message: String(format: NSLocalizedString("共有への参加に失敗しました（%@）。招待リンクをコピーして、プロジェクト画面の「招待リンクから参加」からもう一度お試しください。", comment: ""), error.localizedDescription))
+                    }
+                }
             }
             .store(in: &cancellables)
     }

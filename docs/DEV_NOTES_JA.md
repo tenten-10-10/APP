@@ -279,6 +279,27 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
   手動リセットが必要な最悪UXになる（保留アップロードが1回失敗→以降
   成功でも表示が残る）。
 
+### 9.6 招待リンクの行き止まり（1.2.52で修正）★
+- **症状**: 招待リンクを受け取った人がリンクを開くと「Appleアカウントに
+  サインイン」だけ出て、参加が成立しない（所有者側にも参加者が現れない）。
+- **真因は2つの合わせ技**:
+  1. `UICloudSharingController.availablePermissions` に **`.allowPublic` が
+     無く、共有が常に招待制（invite-only）**。それなのに独自の
+     「招待リンクを送る」は `share.url` を生のままLINE/メールで配るため、
+     受信者のApple IDは参加者に登録されておらず、サインインしても弾かれる。
+     → 生リンクを配る運用なら **`share.publicPermission = .readWrite` に
+     昇格して `persistUpdatedShare` してから送る**（ensureLinkJoinable）。
+  2. **LINE等のアプリ内ブラウザは icloud.com 共有リンクをアプリに
+     ハンドオフしない**（`userDidAcceptCloudKitShareWith` が呼ばれない）。
+     → ブラウザ経由に依存しない回収動線として「**招待リンクから参加**」
+     （リンク貼り付け → `CKFetchShareMetadataOperation` →
+     `acceptShareInvitations`）をプロジェクト画面の「…」に用意する。
+     招待文にも③としてこの手順を明記。
+- 受諾処理の結果は必ずUIに出す（`acceptFeedback`）。握りつぶすと
+  「リンクが何もしない」と区別がつかない。
+- 貼り付け解釈は `CloudSharingService.extractShareURL`：メッセージ全文
+  貼り付けOK・未エンコードの日本語フラグメントは#前のトークンに落とす。
+
 ## 10. 運用インフラ（1.2.11: リモート設定・バックアップ・ローカルストア）
 
 ### 10.1 リモート設定 (RemoteConfig)

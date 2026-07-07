@@ -175,6 +175,18 @@ final class CloudSharingService: ObservableObject {
 
     // MARK: - Invitation acceptance (spec §10)
 
+    /// Result of the most recent automatic invitation acceptance, published so
+    /// the UI can tell the recipient what happened. Before 1.2.52 the result
+    /// was silently discarded — a failed acceptance looked identical to
+    /// "nothing happened at all".
+    @Published var acceptFeedback: AcceptFeedback?
+
+    struct AcceptFeedback: Identifiable, Equatable {
+        let id = UUID()
+        let success: Bool
+        let message: String
+    }
+
     /// Accept an incoming share invitation into the SHARED store.
     func acceptShare(metadata: CKShare.Metadata, completion: @escaping (Result<Void, Error>) -> Void) {
         guard persistence.cloudKitEnabled, let sharedStore = persistence.sharedStore else {
@@ -187,5 +199,84 @@ final class CloudSharingService: ObservableObject {
                 else { completion(.success(())) }
             }
         }
+    }
+
+    // MARK: - Link-joinable invites & manual join (1.2.52)
+
+    /// Promote a share to "anyone with the link can join (and edit)" BEFORE its
+    /// raw URL is sent through LINE / mail. The custom invite message promises
+    /// exactly that; with the previous invite-only default, recipients opening
+    /// the link were asked to sign in to their Apple Account and then hit a
+    /// dead end, because their Apple ID was never an invited participant.
+    /// Completion runs on the main thread.
+    func ensureLinkJoinable(_ share: CKShare, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard share.publicPermission == .none else {
+            completion(.success(())); return
+        }
+        guard let store = persistence.privateStore else {
+            completion(.failure(AppError.shareCreationFailed(NSLocalizedString("共有ストアが利用できません。", comment: ""))))
+            return
+        }
+        share.publicPermission = .readWrite
+        persistence.container.persistUpdatedShare(share, in: store) { _, error in
+            DispatchQueue.main.async {
+                if let error { completion(.failure(error)) } else { completion(.success(())) }
+            }
+        }
+    }
+
+    /// Accept an invitation from a pasted share URL. This is the recovery path
+    /// when the link was opened in an in-app browser (LINE など) that cannot
+    /// hand the invitation to the app: the user copies the link and joins here.
+    /// Completion runs on the main thread.
+    func joinShare(from url: URL, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard persistence.cloudKitEnabled else {
+            completion(.failure(AppError.shareCreationFailed(NSLocalizedString("このビルドでは共有を利用できません。", comment: ""))))
+            return
+        }
+        let operation = CKFetchShareMetadataOperation(shareURLs: [url])
+        var fetched: Result<CKShare.Metadata, Error>?
+        operation.perShareMetadataResultBlock = { _, result in fetched = result }
+        operation.fetchShareMetadataResultBlock = { [weak self] overall in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                switch fetched {
+                case .success(let metadata):
+                    self.acceptShare(metadata: metadata, completion: completion)
+                case .failure(let error):
+                    completion(.failure(error))
+                case nil:
+                    if case .failure(let error) = overall {
+                        completion(.failure(error))
+                    } else {
+                        completion(.failure(AppError.shareCreationFailed(
+                            NSLocalizedString("招待リンクを確認できませんでした。リンクが正しいかご確認ください。", comment: ""))))
+                    }
+                }
+            }
+        }
+        operation.qualityOfService = .userInitiated
+        ckContainer.add(operation)
+    }
+
+    /// Pull the iCloud share URL out of arbitrary pasted text (users often copy
+    /// the whole invite message, not just the link).
+    static func extractShareURL(from text: String) -> URL? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let candidate: String
+        if let range = trimmed.range(of: #"https://www\.icloud\.com/share/[^\s]+"#, options: .regularExpression) {
+            candidate = String(trimmed[range])
+        } else if trimmed.lowercased().hasPrefix("https://"), trimmed.contains("icloud.com") {
+            candidate = trimmed
+        } else {
+            return nil
+        }
+        if let url = URL(string: candidate), url.host?.hasSuffix("icloud.com") == true { return url }
+        // A hand-copied fragment (#プロジェクト名) may be un-encoded and break
+        // URL(string:); the share token before '#' is all the server needs.
+        if let base = candidate.split(separator: "#").first,
+           let url = URL(string: String(base)), url.host?.hasSuffix("icloud.com") == true { return url }
+        return nil
     }
 }

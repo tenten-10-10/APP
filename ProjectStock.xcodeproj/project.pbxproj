@@ -167,6 +167,8 @@
 		};
 		2AFF65F7EAD7D1CAC3AC8666 /* Project+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 1754A21C6C88927645C10913 /* Project+CoreDataClass.swift */; };
 		2BAF8741F0662FB1CA70B590 /* ProjectService.swift in Build */ = {isa = PBXBuildFile; fileRef = 6C6711A660BBD9B293907778 /* ProjectService.swift */; };
+		2E52EADFB6377A4C6C3D5AC8 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "CLAUDE.md"; sourceTree = "<group>"; };
+		2FB3775C881EE33B378CB9F0 /* SharingLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharingLinkTests.swift"; sourceTree = "<group>"; };
 		301338420154EFB84093E3EE /* DeviceIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceIdentity.swift"; sourceTree = "<group>"; };
 		324AFBF9D1CAC788A2735F87 /* Folder+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Folder+CoreDataClass.swift"; sourceTree = "<group>"; };
 		32565E9133007D3EE7DA0122 /* ProjectStockApp.swift in Build */ = {isa = PBXBuildFile; fileRef = FF2678239DCB14A96EAE3F69 /* ProjectStockApp.swift */; };
@@ -290,6 +292,7 @@
 				C370886168D0AF67289661F5 /* PersistenceAndRoutingTests.swift */,
 				AA6BA31B3A78BCD5DF5AE338 /* PublicCodeGeneratorTests.swift */,
 				4BD23E98C5CB3245CFAFA51E /* QRRenderingTests.swift */,
+				2FB3775C881EE33B378CB9F0 /* SharingLinkTests.swift */,
 				5E657EFE9BD2CD27B246EBC2 /* TestSupport.swift */,
 			);
 			path = "ProjectStockTests";
@@ -319,6 +322,7 @@
 				EB9AE6161C7E904957F6FC14 /* in Sources */,
 				F7BC71521D3A80CFFE77F637 /* in Sources */,
 				4F12A09D5F2B80578227B814 /* in Sources */,
+				58A2617539E383947D796266 /* in Sources */,
 				5E3436B3EF604009ED3B99FE /* in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -331,6 +335,7 @@
 		4E4D7B5F4B6592BF354451F7 /* CI_SETUP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "CI_SETUP.md"; sourceTree = "<group>"; };
 		4EAAD2C8E59A0A960E4D3E35 /* EventViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EventViews.swift"; sourceTree = "<group>"; };
 		4F12A09D5F2B80578227B814 /* QRRenderingTests.swift in Build */ = {isa = PBXBuildFile; fileRef = 4BD23E98C5CB3245CFAFA51E /* QRRenderingTests.swift */; };
+		4F359A2B36D9A9D1E3F477E8 /* JoinShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "JoinShareSheet.swift"; sourceTree = "<group>"; };
 		4F6E1630A9D88DA85A6CAA72 /* DomainEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DomainEnums.swift"; sourceTree = "<group>"; };
 		4F7CB326149A68C0E71775AA /* ViewModels */ = {
 			isa = PBXGroup;
@@ -389,6 +394,7 @@
 			sourceTree = "<group>";
 		};
 		589EDCB99A93C603592817C1 /* StockUnit+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StockUnit+CoreDataClass.swift"; sourceTree = "<group>"; };
+		58A2617539E383947D796266 /* SharingLinkTests.swift in Build */ = {isa = PBXBuildFile; fileRef = 2FB3775C881EE33B378CB9F0 /* SharingLinkTests.swift */; };
 		591C707EFD2E3A4206606D07 /* HomeView.swift in Build */ = {isa = PBXBuildFile; fileRef = C90D27C779893F6E8923207E /* HomeView.swift */; };
 		594EED101777AAF04A268E6E /* Haptics.swift in Build */ = {isa = PBXBuildFile; fileRef = BA2CA92378F434FC0B44F37E /* Haptics.swift */; };
 		5ABF8D3A27C87DFD881993B0 /* Product+CoreDataClass.swift in Build */ = {isa = PBXBuildFile; fileRef = 1BB270D5DCB07FE4ED7F4CDB /* Product+CoreDataClass.swift */; };
@@ -442,6 +448,7 @@
 			isa = PBXGroup;
 			children = (
 				9D3D5F40C7DF85464D82831D /* FolderDetailView.swift */,
+				4F359A2B36D9A9D1E3F477E8 /* JoinShareSheet.swift */,
 				784695695899E04F16A44566 /* LocationDetailView.swift */,
 				207889D659156760DDFA56E4 /* LocationFormView.swift */,
 				E1CB06BAE8BBBACE102B4BFC /* ProjectDetailView.swift */,
@@ -513,7 +520,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.51;
+				MARKETING_VERSION = 1.2.52;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -686,6 +693,7 @@
 				76A02939E567ECD31C7CA5F4 /* APP_STORE_CHECKLIST.md */,
 				DEA36C0A5C8E11E294C56C48 /* ARCHITECTURE.md */,
 				4E4D7B5F4B6592BF354451F7 /* CI_SETUP.md */,
+				2E52EADFB6377A4C6C3D5AC8 /* CLAUDE.md */,
 				C17796EEE71FBD023FA4645B /* CLOUDKIT_SETUP.md */,
 				D0AF020FA16FA78B165A35EB /* Config.xcconfig.example */,
 				AA835F5C292BFE90045E60EF /* PRIVACY_POLICY_JA.md */,
@@ -800,7 +808,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.51;
+				MARKETING_VERSION = 1.2.52;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -930,6 +938,7 @@
 				CC7DA07507417302ED109CB5 /* in Sources */,
 				FAE1D4EEE246C0B65A91A691 /* in Sources */,
 				F1FC13EFE12BA85049D6C49B /* in Sources */,
+				FC2CD9B1446C04DD3F0262A3 /* in Sources */,
 				08E6B8231488C22B928BD72D /* in Sources */,
 				D6C9E62686840913BD81724A /* in Sources */,
 				12FE5139392AFB0391C8A620 /* in Sources */,
@@ -961,7 +970,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.51;
+				MARKETING_VERSION = 1.2.52;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -997,7 +1006,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.51;
+				MARKETING_VERSION = 1.2.52;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -1025,7 +1034,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.51;
+				MARKETING_VERSION = 1.2.52;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1068,6 +1077,7 @@
 		F8E25F2F821F1D5ED351D4F7 /* QRTypes.swift in Build */ = {isa = PBXBuildFile; fileRef = A0A15E3D84EB83A5A84D44F3 /* QRTypes.swift */; };
 		F92304794AEBD33195E199A6 /* ScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotUITests.swift"; sourceTree = "<group>"; };
 		FAE1D4EEE246C0B65A91A691 /* ProductFormView.swift in Build */ = {isa = PBXBuildFile; fileRef = A7A2194A0F6DA68E91E0FA2E /* ProductFormView.swift */; };
+		FC2CD9B1446C04DD3F0262A3 /* JoinShareSheet.swift in Build */ = {isa = PBXBuildFile; fileRef = 4F359A2B36D9A9D1E3F477E8 /* JoinShareSheet.swift */; };
 		FE1FBFA40F164EC01E7913F8 /* InventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryService.swift"; sourceTree = "<group>"; };
 		FE670B5A992BF50BB2E08E71 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -1087,7 +1097,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.51;
+				MARKETING_VERSION = 1.2.52;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
