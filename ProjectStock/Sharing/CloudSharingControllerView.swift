@@ -124,9 +124,16 @@ enum CloudSharePresenter {
         func cloudSharingControllerDidSaveShare(_ csc: UICloudSharingController) {
             if let share = csc.share, let store = persistence.privateStore {
                 persistence.container.persistUpdatedShare(share, in: store) { [weak self] _, error in
-                    if let error = error {
-                        self?.syncMonitor.logShareEvent(NSLocalizedString("共有の保存後処理に失敗", comment: ""), error: error)
-                        self?.onError(error)
+                    // This completion runs on a Core Data background queue.
+                    // logShareEvent / onError feed @Published / @State — both
+                    // MUST be touched on the main thread (a 1.2.51 field crash
+                    // hit exactly this path when switching the share to
+                    // 「リンクを知っている全員」).
+                    DispatchQueue.main.async {
+                        if let error = error {
+                            self?.syncMonitor.logShareEvent(NSLocalizedString("共有の保存後処理に失敗", comment: ""), error: error)
+                            self?.onError(error)
+                        }
                     }
                 }
             }

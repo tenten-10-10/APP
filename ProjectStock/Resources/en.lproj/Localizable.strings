@@ -654,3 +654,7 @@
 "共有に参加できませんでした" = "Couldn’t join the share";
 "アプリの入手先と参加リンクをまとめて送信します。リンクを知っている人が参加できます。" = "Sends the App Store link and the join link in one message. Anyone with the link can join.";
 "共有の詳細設定（メンバー・権限）" = "Sharing details (members & permissions)";
+"この招待リンクは「招待した人のみ」の設定で作られています。送った人にタナミルを最新版に更新してもらい、「招待リンクを送る」からリンクを送り直してもらってください。" = "This invite link was created as “invited people only”. Ask the sender to update Tanamiru to the latest version and re-send the link via “Send invite link”.";
+"ネットワークに接続できません。電波の良い場所でもう一度お試しください。" = "No network connection. Please try again with a better connection.";
+"この招待リンクは使えなくなっています（共有が停止された可能性があります）。送った人に新しいリンクをもらってください。" = "This invite link is no longer valid (sharing may have been stopped). Ask the sender for a new link.";
+"iCloudにサインインしていないため参加できません。設定アプリでiCloudにサインインしてから、もう一度お試しください。" = "Can’t join because you’re not signed in to iCloud. Sign in from the Settings app and try again.";

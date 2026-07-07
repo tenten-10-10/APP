@@ -105,6 +105,15 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
 
 ## 4. 実装の落とし穴（Swift/並行処理）★
 
+- **@Published の変更は必ずメインスレッドで**。CloudKit/CoreDataの
+  完了ハンドラ（`persistUpdatedShare`・`CKFetchShareMetadataOperation`等）は
+  **バックグラウンドキューで呼ばれる**。そこから @Published/@State を直接
+  触ると SwiftUI の AttributeGraph 更新がバックグラウンドで走り
+  EXC_BREAKPOINT で即死（1.2.51実機クラッシュ: CloudKitSyncMonitor.log が
+  logShareEvent 経由でCoreDataキューから呼ばれた）。対策は**受け側で
+  funnel**する: log() 等の入口で `Thread.isMainThread` を見て
+  `DispatchQueue.main.async` へ。呼び出し側の1箇所を直すだけだと
+  次の呼び出し元でまた死ぬ。
 - **`@MainActor` な `ObservableObject` からバックグラウンドCore Data
   書き込みをする時**：書き込みクロージャが `@MainActor` に推論されると、
   background queue上で実行された瞬間に破綻する。

@@ -244,6 +244,18 @@ final class CloudKitSyncMonitor: ObservableObject {
     }
 
     private func log(_ entry: SyncLogEntry) {
+        // MUST hop to main: `logShareEvent` is called from CloudKit/CoreData
+        // completion queues (e.g. persistUpdatedShare), and mutating a
+        // @Published array off the main thread crashes SwiftUI's render graph
+        // (EXC_BREAKPOINT in AttributeGraph — proven by a 1.2.51 field crash).
+        if Thread.isMainThread {
+            applyLog(entry)
+        } else {
+            DispatchQueue.main.async { self.applyLog(entry) }
+        }
+    }
+
+    private func applyLog(_ entry: SyncLogEntry) {
         recentEvents.insert(entry, at: 0)
         if recentEvents.count > 50 { recentEvents.removeLast(recentEvents.count - 50) }
         logger.log("CloudKit \(entry.typeDescription, privacy: .public): \(entry.succeeded ? "ok" : "fail", privacy: .public)")

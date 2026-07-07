@@ -242,12 +242,14 @@ final class CloudSharingService: ObservableObject {
                 guard let self else { return }
                 switch fetched {
                 case .success(let metadata):
-                    self.acceptShare(metadata: metadata, completion: completion)
+                    self.acceptShare(metadata: metadata) { result in
+                        completion(result.mapError { Self.friendlyJoinError($0) })
+                    }
                 case .failure(let error):
-                    completion(.failure(error))
+                    completion(.failure(Self.friendlyJoinError(error)))
                 case nil:
                     if case .failure(let error) = overall {
-                        completion(.failure(error))
+                        completion(.failure(Self.friendlyJoinError(error)))
                     } else {
                         completion(.failure(AppError.shareCreationFailed(
                             NSLocalizedString("招待リンクを確認できませんでした。リンクが正しいかご確認ください。", comment: ""))))
@@ -257,6 +259,30 @@ final class CloudSharingService: ObservableObject {
         }
         operation.qualityOfService = .userInitiated
         ckContainer.add(operation)
+    }
+
+    /// Map raw CloudKit join failures to actionable guidance. The big one is
+    /// backwards compatibility: links created by ≤1.2.1 are invite-only, so a
+    /// pasted link fails verification for anyone who wasn't explicitly added —
+    /// the fix is a re-sent link from an updated app, and the message says so.
+    static func friendlyJoinError(_ error: Error) -> Error {
+        guard let ck = error as? CKError else { return error }
+        switch ck.code {
+        case .participantMayNeedVerification, .permissionFailure:
+            return AppError.shareCreationFailed(NSLocalizedString(
+                "この招待リンクは「招待した人のみ」の設定で作られています。送った人にタナミルを最新版に更新してもらい、「招待リンクを送る」からリンクを送り直してもらってください。", comment: ""))
+        case .networkUnavailable, .networkFailure:
+            return AppError.shareCreationFailed(NSLocalizedString(
+                "ネットワークに接続できません。電波の良い場所でもう一度お試しください。", comment: ""))
+        case .unknownItem:
+            return AppError.shareCreationFailed(NSLocalizedString(
+                "この招待リンクは使えなくなっています（共有が停止された可能性があります）。送った人に新しいリンクをもらってください。", comment: ""))
+        case .notAuthenticated:
+            return AppError.shareCreationFailed(NSLocalizedString(
+                "iCloudにサインインしていないため参加できません。設定アプリでiCloudにサインインしてから、もう一度お試しください。", comment: ""))
+        default:
+            return error
+        }
     }
 
     /// Pull the iCloud share URL out of arbitrary pasted text (users often copy
