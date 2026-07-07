@@ -304,6 +304,14 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
      （リンク貼り付け → `CKFetchShareMetadataOperation` →
      `acceptShareInvitations`）をプロジェクト画面の「…」に用意する。
      招待文にも③としてこの手順を明記。
+- **第3の罠（実機で確定）: 未承諾のメール招待参加者が残っていると
+  publicPermissionの保存をサーバーが拒否**する:
+  `CKInternalErrorDomain #2043 "Unclaimed one time link participant can
+  only be user"`（外側は#2055/#12でラップされ、イベントerrorからは
+  fullDiagnosticDumpでしか見えない）。対策: 昇格保存が失敗し
+  `acceptanceStatus == .pending` の参加者が居る場合は、それらを
+  `removeParticipant` してから**1回だけ再保存**（未承諾＝未参加なので
+  公開リンクで参加し直せる。実害なし）。
 - 受諾処理の結果は必ずUIに出す（`acceptFeedback`）。握りつぶすと
   「リンクが何もしない」と区別がつかない。
 - 貼り付け解釈は `CloudSharingService.extractShareURL`：メッセージ全文

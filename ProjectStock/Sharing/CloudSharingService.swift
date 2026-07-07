@@ -218,9 +218,26 @@ final class CloudSharingService: ObservableObject {
             return
         }
         share.publicPermission = .readWrite
-        persistence.container.persistUpdatedShare(share, in: store) { _, error in
+        persistence.container.persistUpdatedShare(share, in: store) { [weak self] _, error in
             DispatchQueue.main.async {
-                if let error { completion(.failure(error)) } else { completion(.success(())) }
+                guard let self else { return }
+                guard let error else { completion(.success(())); return }
+                // The server refuses to make a share public while UNCLAIMED
+                // email-invite participants are attached — a real-device
+                // failure: CKInternalErrorDomain #2043 "Unclaimed one time
+                // link participant can only be user". Those pending entries
+                // are relics of invite-only sharing (≤1.2.1); the people
+                // behind them never joined and can join via the new public
+                // link anyway — so drop them and retry ONCE.
+                let pending = share.participants.filter { $0.role != .owner && $0.acceptanceStatus == .pending }
+                guard !pending.isEmpty else { completion(.failure(error)); return }
+                pending.forEach { share.removeParticipant($0) }
+                share.publicPermission = .readWrite
+                self.persistence.container.persistUpdatedShare(share, in: store) { _, retryError in
+                    DispatchQueue.main.async {
+                        if let retryError { completion(.failure(retryError)) } else { completion(.success(())) }
+                    }
+                }
             }
         }
     }
