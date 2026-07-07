@@ -1,0 +1,58 @@
+name: Expire TestFlight Build
+
+# 手動実行のみ（Actions → "Run workflow"）。
+# 指定したバージョン（例: 1.3.0）の TestFlight ビルドを expire して、
+# テスターから見えなくします。App Store の審査には一切影響しません。
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Marketing version to expire on TestFlight (e.g. 1.3.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: expire-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  expire:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Write App Store Connect API key (.p8)
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Write fastlane/.env
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TANAMIRU_TEAM_ID: ${{ secrets.TANAMIRU_TEAM_ID }}
+        run: |
+          cat > fastlane/.env <<EOF
+          ASC_KEY_ID=${ASC_KEY_ID}
+          ASC_ISSUER_ID=${ASC_ISSUER_ID}
+          ASC_KEY_PATH=${HOME}/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          TANAMIRU_TEAM_ID=${TANAMIRU_TEAM_ID}
+          EOF
+
+      - name: Install Ruby dependencies
+        run: |
+          rm -f Gemfile.lock
+          bundle install
+
+      - name: Expire TestFlight build
+        run: bundle exec fastlane expire_train version:"${{ inputs.version }}"

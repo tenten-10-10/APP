@@ -184,4 +184,52 @@ platform :ios do
     capture_screenshots # reads fastlane/Snapfile
     UI.success("Captured raw screenshots 📸 — frame/caption locally, then upload via release")
   end
+
+  # Expire every TestFlight build on a given version "train" (e.g. 1.3.0) so
+  # testers stop seeing it. This is a TestFlight-only operation — it does NOT
+  # touch the App Store review pipeline. Use it to pull an abandoned pre-release
+  # build off TestFlight while a different version is being reviewed.
+  #
+  #   bundle exec fastlane expire_train version:1.3.0
+  desc "Expire all TestFlight builds for a version train (version:X.Y.Z)"
+  lane :expire_train do |options|
+    version = options[:version].to_s.strip
+    UI.user_error!("Pass version:X.Y.Z (the marketing version to expire on TestFlight)") if version.empty?
+
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id:    ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      filepath:  ENV.fetch("ASC_KEY_PATH")
+    )
+
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    UI.user_error!("App #{APP_ID} not found on App Store Connect") if app.nil?
+
+    builds = Spaceship::ConnectAPI::Build.all(
+      app_id:   app.id,
+      includes: "preReleaseVersion",
+      limit:    200,
+      sort:     "-uploadedDate"
+    )
+
+    targets = builds.select do |b|
+      train = b.pre_release_version&.version
+      train == version && !b.expired
+    end
+
+    if targets.empty?
+      UI.important("No active TestFlight builds found on #{version} — nothing to expire.")
+      next
+    end
+
+    targets.each do |b|
+      if b.respond_to?(:expire!)
+        b.expire!
+      else
+        Spaceship::ConnectAPI.patch_builds(build_id: b.id, attributes: { expired: true })
+      end
+      UI.success("Expired TestFlight build #{version} (#{b.version})")
+    end
+    UI.success("Expired #{targets.size} TestFlight build(s) on #{version} 🧹")
+  end
 end
