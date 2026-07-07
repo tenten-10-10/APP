@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreData
 
 /// Presents the outcome of a scan (spec §8) with the relevant quick actions.
 struct ScanResultSheet: View {
