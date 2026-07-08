@@ -677,3 +677,4 @@
 "iCloudにサインインしていないため招待できません。設定アプリでiCloudにサインインしてから、もう一度お試しください。" = "Can’t invite because you’re not signed in to iCloud. Sign in from the Settings app and try again.";
 "「%@」を招待できませんでした（%@）。メールアドレスがApple IDのものか確認してください。" = "Couldn’t invite “%@” (%@). Make sure the email belongs to an Apple ID.";
 "在庫アプリ「タナミル」の『%@』に招待します" = "You're invited to “%@” in the Tanamiru inventory app";
+"案内には、参加手順・iCloudの設定方法・参加用のQRコードがまとまっています。パソコンで開いた人もQRをスマホで読み取れば参加できます。" = "The guidance includes join steps, iCloud setup, and a QR code for joining. Someone reading it on a PC can scan the QR with a phone to join.";

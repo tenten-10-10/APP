@@ -1,5 +1,34 @@
 import SwiftUI
 import CoreData
+import CoreImage.CIFilterBuiltins
+import UIKit
+
+/// Makes a scannable QR PNG (on a white quiet-zone) of an arbitrary URL, so the
+/// invite email carries a code the recipient can scan with a phone even when
+/// they read the mail on a PC. Encodes the raw URL (not a タナミル code) so the
+/// phone Camera opens it directly.
+enum InviteQR {
+    static func write(_ string: String) -> URL? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(string.utf8)
+        filter.correctionLevel = "M"
+        guard let output = filter.outputImage else { return nil }
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: 12, y: 12))
+        let ctx = CIContext()
+        guard let cg = ctx.createCGImage(scaled, from: scaled.extent) else { return nil }
+        let code = UIImage(cgImage: cg)
+        let pad = scaled.extent.width * 0.1
+        let canvas = CGSize(width: scaled.extent.width + pad * 2, height: scaled.extent.height + pad * 2)
+        let img = UIGraphicsImageRenderer(size: canvas).image { c in
+            UIColor.white.setFill()
+            c.fill(CGRect(origin: .zero, size: canvas))
+            code.draw(in: CGRect(x: pad, y: pad, width: scaled.extent.width, height: scaled.extent.height))
+        }
+        guard let data = img.pngData() else { return nil }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("tanamiru-invite-qr.png")
+        do { try data.write(to: url); return url } catch { return nil }
+    }
+}
 
 /// メールアドレス（相手のApple ID）で1人を確実に招待する動線（1.2.53）。
 /// Appleの標準の招待制なので、招待したApple IDでiCloudにサインインして
@@ -13,6 +42,7 @@ struct EmailInviteSheet: View {
     @State private var email = ""
     @State private var working = false
     @State private var inviteURL: URL?
+    @State private var qrFileURL: URL?
     @State private var showMail = false
     @State private var showShare = false
     @State private var error: PresentableError?
@@ -63,7 +93,7 @@ struct EmailInviteSheet: View {
                             Label(NSLocalizedString("他のアプリで案内を送る（LINEなど）", comment: ""), systemImage: "square.and.arrow.up")
                         }
                     } footer: {
-                        Text(NSLocalizedString("案内には、参加手順とiCloudの設定方法をまとめてあります。そのまま送ってください。", comment: ""))
+                        Text(NSLocalizedString("案内には、参加手順・iCloudの設定方法・参加用のQRコードがまとまっています。パソコンで開いた人もQRをスマホで読み取れば参加できます。", comment: ""))
                     }
                 }
             }
@@ -77,10 +107,10 @@ struct EmailInviteSheet: View {
             }
             .sheet(isPresented: $showMail) {
                 MailComposeView(subject: mailSubject, body: guidance,
-                                recipients: [trimmed]) { dismiss() }
+                                recipients: [trimmed], attachmentURL: qrFileURL) { dismiss() }
             }
             .sheet(isPresented: $showShare) {
-                ShareSheet(items: [guidance])
+                ShareSheet(items: [guidance] + (qrFileURL.map { [$0] } ?? []))
             }
             .errorAlert($error)
         }
@@ -93,6 +123,7 @@ struct EmailInviteSheet: View {
             switch result {
             case .success(let url):
                 inviteURL = url
+                qrFileURL = InviteQR.write(url.absoluteString)
                 Haptics.success()
             case .failure(let err):
                 error = PresentableError(AppError.shareCreationFailed(err.localizedDescription))
@@ -126,6 +157,8 @@ struct EmailInviteSheet: View {
 【手順3】この招待リンクを開く
 %@
 ・Safari か メッセージ/メール で開くと、タナミルが開いて参加できます
+・このメールをパソコンで見ている場合は、添付の【QRコード】をスマホの
+　カメラで読み取ると、スマホでこのリンクを開けます
 ・もしリンクを開いてもうまくいかないときは、リンクを長押しでコピーして、
 　タナミルの「プロジェクト」画面 → 右上「…」→「招待リンクから参加」に
 　貼り付けてください
