@@ -19,7 +19,7 @@ struct JoinShareSheet: View {
         NavigationView {
             Form {
                 Section {
-                    TextField("https://www.icloud.com/share/…", text: $link)
+                    TextField("https://t.l0l0.app/join…", text: $link)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)

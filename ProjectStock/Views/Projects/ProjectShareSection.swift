@@ -16,6 +16,9 @@ struct ProjectShareSection: View {
     @State private var inviteSheet: InviteText?
     @State private var showingEmailInvite = false
     @State private var showingPaywall = false
+    // Link invite creates a CKShare server-side (2–4s). Guard against re-taps and
+    // show progress — the email/join sheets already do this; this path didn't.
+    @State private var preparingInvite = false
 
     var body: some View {
         Section {
@@ -57,12 +60,24 @@ struct ProjectShareSection: View {
                         // Participation at a glance — without this the owner has
                         // no way to tell whether anyone actually joined.
                         if let share = container.sharing.existingShare(for: project) {
+                            // Count only ACCEPTED participants as "sharing with":
+                            // a pending (invited-but-not-joined) Apple ID used to
+                            // inflate the number, so an owner couldn't tell who had
+                            // actually joined.
                             let others = share.participants.filter { $0.role != .owner }
-                            Label(others.isEmpty
-                                    ? NSLocalizedString("まだ参加者はいません。招待リンクを送りましょう。", comment: "")
-                                    : String(format: NSLocalizedString("現在 %d 人と共有中", comment: ""), others.count),
-                                  systemImage: "person.2")
-                                .font(.footnote).foregroundColor(.secondary)
+                            let joined = others.filter { $0.acceptanceStatus == .accepted }
+                            let pending = others.count - joined.count
+                            VStack(alignment: .leading, spacing: 2) {
+                                Label(joined.isEmpty
+                                        ? NSLocalizedString("まだ参加者はいません。招待リンクを送りましょう。", comment: "")
+                                        : String(format: NSLocalizedString("現在 %d 人が参加中", comment: ""), joined.count),
+                                      systemImage: "person.2")
+                                    .font(.footnote).foregroundColor(.secondary)
+                                if pending > 0 {
+                                    Text(String(format: NSLocalizedString("招待中（未参加）%d 人", comment: ""), pending))
+                                        .font(.caption2).foregroundColor(.secondary)
+                                }
+                            }
                         }
                     }
 
@@ -109,18 +124,30 @@ struct ProjectShareSection: View {
                         Button {
                             sendInvite()
                         } label: {
-                            Label(NSLocalizedString("リンクで招待（誰でも参加可）", comment: ""), systemImage: "link")
+                            HStack {
+                                if preparingInvite { ProgressView().padding(.trailing, 4) }
+                                Label(NSLocalizedString("リンクで招待（誰でも参加可）", comment: ""), systemImage: "link")
+                            }
                         }
+                        .disabled(preparingInvite)
                         .accessibilityIdentifier("sendInviteButton")
                         .sheet(item: $inviteSheet) { ShareSheet(items: [$0.text]) }
+                        Text(NSLocalizedString("このリンクを知っている人は誰でも参加でき、在庫を編集できます。信頼できる相手にだけ送ってください。", comment: ""))
+                            .font(.caption2).foregroundColor(.secondary)
 
-                        Button {
-                            startShare()
-                        } label: {
-                            Label(permission == .owner ? NSLocalizedString("共有設定・メンバー管理", comment: "") : NSLocalizedString("共有の詳細設定（メンバー・権限）", comment: ""),
-                                  systemImage: "person.crop.circle.badge.plus")
+                        // Full member/permission management (owner only). Hidden
+                        // before a share exists so a not-yet-shared project shows
+                        // just the two invite actions, not a third entry point
+                        // promising "member management" with no members.
+                        if permission == .owner {
+                            Button {
+                                startShare()
+                            } label: {
+                                Label(NSLocalizedString("共有設定・メンバー管理", comment: ""),
+                                      systemImage: "person.crop.circle.badge.plus")
+                            }
+                            .accessibilityIdentifier("shareProjectButton")
                         }
-                        .accessibilityIdentifier("shareProjectButton")
                     }
                 }
             }
@@ -176,6 +203,7 @@ struct ProjectShareSection: View {
     /// with an invite-only share the link led to an Apple sign-in page and
     /// then a dead end.
     private func sendInvite() {
+        preparingInvite = true
         if let share = container.sharing.existingShare(for: project) {
             promoteAndCompose(share)
         } else {
@@ -200,11 +228,13 @@ struct ProjectShareSection: View {
             // The share exists but its URL hasn't come back from the server yet
             // (happens right after creating the share). Telling the user to
             // "start sharing" here would gaslight them — they just did.
+            preparingInvite = false
             error = PresentableError(AppError.shareCreationFailed(
                 NSLocalizedString("招待リンクを準備中です。数秒待ってからもう一度お試しください。", comment: "")))
             return
         }
         container.sharing.ensureLinkJoinable(share) { result in
+            preparingInvite = false
             switch result {
             case .failure(let err):
                 error = PresentableError(AppError.shareCreationFailed(String(

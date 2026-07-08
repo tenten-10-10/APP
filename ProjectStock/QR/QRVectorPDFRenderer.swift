@@ -15,8 +15,8 @@ public struct QRVectorPDFRenderer {
         case contextFailed
         public var errorDescription: String? {
             switch self {
-            case .consumerFailed: return "PDFデータの作成に失敗しました。"
-            case .contextFailed:  return "PDF描画コンテキストを作成できませんでした。"
+            case .consumerFailed: return NSLocalizedString("PDFデータの作成に失敗しました。", comment: "")
+            case .contextFailed:  return NSLocalizedString("PDF描画コンテキストを作成できませんでした。", comment: "")
             }
         }
     }

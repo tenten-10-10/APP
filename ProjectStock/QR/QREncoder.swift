@@ -15,10 +15,10 @@ public enum QREncoderError: LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .filterUnavailable: return "QR生成フィルタを初期化できませんでした。"
-        case .renderFailed:      return "QR画像の生成に失敗しました。"
-        case .emptyMatrix:       return "QRモジュールを読み取れませんでした。"
-        case .malformedMatrix:   return "生成されたQRが正方形ではありません。"
+        case .filterUnavailable: return NSLocalizedString("QR生成フィルタを初期化できませんでした。", comment: "")
+        case .renderFailed:      return NSLocalizedString("QR画像の生成に失敗しました。", comment: "")
+        case .emptyMatrix:       return NSLocalizedString("QRモジュールを読み取れませんでした。", comment: "")
+        case .malformedMatrix:   return NSLocalizedString("生成されたQRが正方形ではありません。", comment: "")
         }
     }
 }

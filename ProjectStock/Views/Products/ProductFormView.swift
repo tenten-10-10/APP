@@ -75,7 +75,16 @@ struct ProductFormView: View {
                 } header: {
                     Text(NSLocalizedString("管理方法", comment: ""))
                 } footer: {
-                    Text(NSLocalizedString("最低在庫を設定すると、在庫（個体・ロットは合計数）がそれを下回ったときに「要補充」と表示されます。", comment: ""))
+                    VStack(alignment: .leading, spacing: 4) {
+                        // The tracking mode drives the whole item lifecycle and
+                        // can't be changed once events exist — explain it at the
+                        // point of choice instead of leaving it a bare picker.
+                        if !isEditing {
+                            Text(trackingMode.explanation)
+                            Text(NSLocalizedString("管理方法は作成後は変更できません。", comment: ""))
+                        }
+                        Text(NSLocalizedString("最低在庫を設定すると、在庫（個体・ロットは合計数）がそれを下回ったときに「要補充」と表示されます。", comment: ""))
+                    }
                 }
 
                 Section {

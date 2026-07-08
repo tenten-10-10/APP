@@ -55,6 +55,7 @@ struct ScanResultSheet: View {
 private struct KnownTargetView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var alias: CodeAlias
     @State private var amount = "1"
     @State private var showingMove = false
@@ -83,6 +84,17 @@ private struct KnownTargetView: View {
                             Label(NSLocalizedString("今の操作を取り消す", comment: ""), systemImage: "arrow.uturn.backward")
                                 .font(.footnote.weight(.semibold))
                                 .foregroundColor(.orange)
+                        }
+                    }
+                    // Scanning is a rapid loop; after a successful action put the
+                    // "back to the camera" action right where the finger already
+                    // is, instead of forcing a reach for the top-left 閉じる.
+                    if !feedbackIsError {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Label(NSLocalizedString("閉じて次をスキャン", comment: ""), systemImage: "qrcode.viewfinder")
+                                .font(.footnote.weight(.semibold))
                         }
                     }
                 }

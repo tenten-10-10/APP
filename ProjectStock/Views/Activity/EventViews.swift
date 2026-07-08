@@ -32,6 +32,15 @@ struct EventRow: View {
                 if let route = routeString {
                     Text(route).font(.caption2).foregroundColor(.secondary).lineLimit(1)
                 }
+                // Borrower is the whole point of a checkout row — surfacing it
+                // here saves a trip to the loans screen to see "who has it".
+                if event.eventType == .checkout, let who = event.borrower {
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.crop.circle").accessibilityHidden(true)
+                        Text(who).lineLimit(1)
+                    }
+                    .font(.caption2).foregroundColor(.secondary)
+                }
                 HStack(spacing: 6) {
                     Text(event.actorName)
                     Text("·")

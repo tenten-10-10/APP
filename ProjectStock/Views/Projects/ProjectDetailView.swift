@@ -155,6 +155,7 @@ struct ProjectDetailView: View {
                     Label(NSLocalizedString("読み取り専用", comment: ""), systemImage: "eye")
                 }
             } label: { Image(systemName: "ellipsis.circle") }
+                .accessibilityLabel(Text(NSLocalizedString("その他の操作", comment: "")))
         }
     }
 

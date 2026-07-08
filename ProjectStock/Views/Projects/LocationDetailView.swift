@@ -101,6 +101,7 @@ struct LocationDetailView: View {
                         Label(NSLocalizedString("この場所を削除", comment: ""), systemImage: "trash")
                     }
                 } label: { Image(systemName: "ellipsis.circle") }
+                    .accessibilityLabel(Text(NSLocalizedString("その他の操作", comment: "")))
             }
         }
     }

@@ -59,13 +59,16 @@ struct HomeView: View {
     /// root; observed so a fetched お知らせ appears without relaunching.
     @EnvironmentObject private var remoteConfig: RemoteConfig
 
+    /// Injected by RootTabView to select the Scan tab, instead of pushing a
+    /// second ScanTabView onto Home's own navigation stack.
+    var onSwitchToScan: () -> Void = {}
+
     @State private var showSearch = false
     // Pre-print (blank QR) flow driven from the Home hero.
     @State private var prePrintProject: Project?
     @State private var showCreateProjectForPrePrint = false
     @State private var pendingPrePrintProject: Project?
     @State private var showProjectPicker = false
-    @State private var goScan = false
     @AppStorage("hideFirstRunGuide") private var hideSetupGuide = false
 
     // MARK: - Derived
@@ -132,7 +135,10 @@ struct HomeView: View {
                 lowStockSection
                 overdueLoansSection
                 expiringLotsSection
-            } else {
+            } else if totalProductCount > 0 {
+                // Only reassure "all good" once there's actually inventory to be
+                // good about — a brand-new empty account should see the
+                // getting-started hero, not a green all-clear.
                 allGoodSection
             }
         }
@@ -148,7 +154,6 @@ struct HomeView: View {
                 .accessibilityLabel(Text(NSLocalizedString("検索", comment: "")))
             }
         }
-        .background(navigationLinks)
         .sheet(isPresented: $showSearch) {
             SearchView()
         }
@@ -204,9 +209,9 @@ struct HomeView: View {
         Section {
             if showGuide {
                 VStack(alignment: .leading, spacing: 12) {
-                    guideStep(index: 1, title: NSLocalizedString("プロジェクトを作る", comment: ""), done: hasProject)
-                    guideStep(index: 2, title: NSLocalizedString("空のQRラベルを印刷して貼る", comment: ""), done: hasBlankLabel)
-                    guideStep(index: 3, title: NSLocalizedString("スキャンして「これは○○」と登録", comment: ""), done: hasProduct)
+                    guideStep(index: 1, title: NSLocalizedString("プロジェクトを作る", comment: ""), done: hasProject) { showCreateProjectForPrePrint = true }
+                    guideStep(index: 2, title: NSLocalizedString("空のQRラベルを印刷して貼る", comment: ""), done: hasBlankLabel) { startPrePrint() }
+                    guideStep(index: 3, title: NSLocalizedString("スキャンして「これは○○」と登録", comment: ""), done: hasProduct) { onSwitchToScan() }
                 }
                 .padding(.vertical, 2)
             }
@@ -221,7 +226,7 @@ struct HomeView: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .accessibilityIdentifier("printBlankQRButton")
 
-                Button { goScan = true } label: {
+                Button { onSwitchToScan() } label: {
                     heroButtonLabel(systemImage: "qrcode.viewfinder",
                                     title: NSLocalizedString("スキャンして登録", comment: ""),
                                     subtitle: NSLocalizedString("貼ったQRを読み取って「これは○○」と登録", comment: ""),
@@ -233,7 +238,12 @@ struct HomeView: View {
             .padding(.vertical, 4)
         } header: {
             HStack {
-                Label(NSLocalizedString("最初の品物を登録する", comment: ""), systemImage: "sparkles")
+                // Returning users (setup complete) shouldn't keep seeing
+                // "register your FIRST item" — switch to a neutral heading.
+                Label(showGuide
+                        ? NSLocalizedString("最初の品物を登録する", comment: "")
+                        : NSLocalizedString("QRで登録・印刷", comment: ""),
+                      systemImage: "sparkles")
                 Spacer()
                 if showGuide {
                     Button(NSLocalizedString("閉じる", comment: "")) { hideSetupGuide = true }
@@ -247,17 +257,23 @@ struct HomeView: View {
         }
     }
 
-    private func guideStep(index: Int, title: String, done: Bool) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: done ? "checkmark.circle.fill" : "\(index).circle")
-                .font(.title3)
-                .foregroundColor(done ? .green : Brand.primary)
-            Text(title)
-                .strikethrough(done)
-                .foregroundColor(done ? .secondary : .primary)
-            Spacer()
+    private func guideStep(index: Int, title: String, done: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: done ? "checkmark.circle.fill" : "\(index).circle")
+                    .font(.title3)
+                    .foregroundColor(done ? .green : Brand.primary)
+                Text(title)
+                    .strikethrough(done)
+                    .foregroundColor(done ? .secondary : .primary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption).foregroundColor(.secondary)
+            }
+            .font(.subheadline)
+            .contentShape(Rectangle())
         }
-        .font(.subheadline)
+        .buttonStyle(.plain)
     }
 
     private func heroButtonLabel(systemImage: String, title: String, subtitle: String, tint: Color) -> some View {
@@ -275,14 +291,6 @@ struct HomeView: View {
         }
         .foregroundColor(tint)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// Hidden link so a button tap can push the scanner.
-    @ViewBuilder private var navigationLinks: some View {
-        NavigationLink(isActive: $goScan) {
-            ScanTabView()
-        } label: { EmptyView() }
-        .opacity(0)
     }
 
     // MARK: - Web borrow inbox entry

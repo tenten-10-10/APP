@@ -4,42 +4,55 @@ import SwiftUI
 struct RootTabView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var webBorrow: WebBorrowInbox
     @Environment(\.scenePhase) private var scenePhase
     @State private var showOnboarding = false
     @State private var deepLinkOutcome: ScanOutcomeBox?
     @State private var shareFeedback: CloudSharingService.AcceptFeedback?
+    @State private var selection: Tab = .home
+
+    private enum Tab: Hashable { case home, projects, scan, activity, settings }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selection) {
             NavigationView {
-                HomeView()
+                // Switching the Home scan hero to select the Scan tab (rather
+                // than pushing a second ScanTabView inside Home) avoids two
+                // live scanner surfaces for one action.
+                HomeView(onSwitchToScan: { selection = .scan })
             }
             .navigationViewStyle(.stack)
             .tabItem { Label(NSLocalizedString("ホーム", comment: ""), systemImage: "house") }
+            .badge(webBorrow.pendingCount)
+            .tag(Tab.home)
 
             NavigationView {
                 ProjectsView()
             }
             .navigationViewStyle(.stack)
             .tabItem { Label(NSLocalizedString("プロジェクト", comment: ""), systemImage: "folder") }
+            .tag(Tab.projects)
 
             NavigationView {
                 ScanTabView()
             }
             .navigationViewStyle(.stack)
             .tabItem { Label(NSLocalizedString("スキャン", comment: ""), systemImage: "qrcode.viewfinder") }
+            .tag(Tab.scan)
 
             NavigationView {
                 ActivityView()
             }
             .navigationViewStyle(.stack)
             .tabItem { Label(NSLocalizedString("活動", comment: ""), systemImage: "clock.arrow.circlepath") }
+            .tag(Tab.activity)
 
             NavigationView {
                 SettingsView()
             }
             .navigationViewStyle(.stack)
             .tabItem { Label(NSLocalizedString("設定", comment: ""), systemImage: "gearshape") }
+            .tag(Tab.settings)
         }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView(isPresented: $showOnboarding)

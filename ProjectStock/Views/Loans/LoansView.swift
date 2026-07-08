@@ -90,6 +90,7 @@ struct LoansView: View {
                 Text(loan.unit.displaySerial).font(.headline).lineLimit(1)
                 Spacer()
                 if loan.isOverdue { OverdueChip() }
+                else if loan.isDueSoon { DueSoonChip() }
             }
             if let product = loan.unit.product {
                 Text(product.displayName).font(.caption).foregroundColor(.secondary).lineLimit(1)
@@ -103,7 +104,7 @@ struct LoansView: View {
                 if let due = loan.dueAt {
                     Text("·")
                     Text(String(format: NSLocalizedString("期限: %@", comment: ""), DateFormatters.dateTime.string(from: due)))
-                        .foregroundColor(loan.isOverdue ? .red : .secondary)
+                        .foregroundColor(loan.isOverdue ? .red : (loan.isDueSoon ? .orange : .secondary))
                     if loan.isOverdue, let days = overdueDays(due), days > 0 {
                         Text(String(format: NSLocalizedString("%d日超過", comment: ""), days))
                             .foregroundColor(.red).fontWeight(.semibold)
@@ -192,6 +193,19 @@ struct OverdueChip: View {
             .background(Capsule().fill(Color.red.opacity(0.15)))
             .foregroundColor(.red)
             .accessibilityLabel(Text(NSLocalizedString("期限超過", comment: "")))
+    }
+}
+
+/// Small orange "due soon" pill — flags loans due within ~48h so they can be
+/// triaged before they turn into overdue ones.
+struct DueSoonChip: View {
+    var body: some View {
+        Text(NSLocalizedString("まもなく期限", comment: ""))
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(Capsule().fill(Color.orange.opacity(0.15)))
+            .foregroundColor(.orange)
+            .accessibilityLabel(Text(NSLocalizedString("まもなく期限", comment: "")))
     }
 }
 

@@ -17,6 +17,14 @@ struct Loan: Identifiable {
         return dueAt < Date()
     }
 
+    /// Due within the next 48 hours (and not already overdue). Lets the loans
+    /// list flag "today / soon" items for triage instead of only turning red
+    /// once the deadline has already passed.
+    var isDueSoon: Bool {
+        guard let dueAt, !isOverdue else { return false }
+        return dueAt < Date().addingTimeInterval(48 * 60 * 60)
+    }
+
     var borrowerDisplay: String {
         borrower ?? NSLocalizedString("借り手未記入", comment: "")
     }

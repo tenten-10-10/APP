@@ -143,7 +143,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("deleteDemoDataButton")
                 }
                 Button { confirmingExport = true } label: {
-                    Label(NSLocalizedString("データを書き出す (JSON)", comment: ""), systemImage: "square.and.arrow.up")
+                    Label(NSLocalizedString("データを書き出す（外部保存用・JSON）", comment: ""), systemImage: "square.and.arrow.up")
                 }
                 NavigationLink {
                     BackupListView()
@@ -184,7 +184,7 @@ struct SettingsView: View {
             Button(NSLocalizedString("書き出す", comment: "")) { exportData() }
             Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) {}
         } message: {
-            Text(NSLocalizedString("すべてのプロジェクトの在庫データをJSONファイルに書き出します。", comment: ""))
+            Text(NSLocalizedString("すべてのプロジェクトの在庫データをJSONファイルに書き出します。このファイルはアプリに戻して読み込むことはできません。復元には「バックアップ」をお使いください。", comment: ""))
         }
         .sheet(item: $shareItem) { item in ShareSheet(items: [item.url]) }
         .fullScreenCover(isPresented: $showTutorial) {

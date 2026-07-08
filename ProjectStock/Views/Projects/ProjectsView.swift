@@ -239,12 +239,14 @@ struct ProjectsView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+                .accessibilityLabel(Text(NSLocalizedString("その他の操作", comment: "")))
                 Button {
                     showingCreate = true
                 } label: {
                     Image(systemName: "plus")
                 }
                 .accessibilityIdentifier("createProjectButton")
+                .accessibilityLabel(Text(NSLocalizedString("プロジェクトを追加", comment: "")))
             }
     }
 

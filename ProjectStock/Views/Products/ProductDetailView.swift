@@ -160,8 +160,10 @@ struct ProductDetailView: View {
                     }
                 } label: { Image(systemName: "ellipsis.circle") }
                     .accessibilityIdentifier("productMenuButton")
+                    .accessibilityLabel(Text(NSLocalizedString("その他の操作", comment: "")))
                 Button { showingEdit = true } label: { Image(systemName: "pencil") }
                     .accessibilityIdentifier("editProductButton")
+                    .accessibilityLabel(Text(NSLocalizedString("編集", comment: "")))
             }
         }
     }

@@ -63,6 +63,7 @@ struct FolderDetailView: View {
                             Label(NSLocalizedString("フォルダを削除", comment: ""), systemImage: "trash")
                         }
                     } label: { Image(systemName: "ellipsis.circle") }
+                        .accessibilityLabel(Text(NSLocalizedString("その他の操作", comment: "")))
                 }
             }
         }

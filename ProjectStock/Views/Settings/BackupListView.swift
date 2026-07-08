@@ -43,7 +43,7 @@ struct BackupListView: View {
                                     .font(.caption2).foregroundColor(.secondary)
                             }
                             Spacer()
-                            Image(systemName: "chevron.up.chevron.down")
+                            Image(systemName: "chevron.forward")
                                 .font(.caption).foregroundColor(.secondary)
                         }
                     }

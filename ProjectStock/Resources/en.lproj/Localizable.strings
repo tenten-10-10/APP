@@ -678,3 +678,25 @@
 "「%@」を招待できませんでした（%@）。メールアドレスがApple IDのものか確認してください。" = "Couldn’t invite “%@” (%@). Make sure the email belongs to an Apple ID.";
 "在庫アプリ「タナミル」の『%@』に招待します" = "You're invited to “%@” in the Tanamiru inventory app";
 "案内には、参加手順・iCloudの設定方法・参加用のQRコードがまとまっています。パソコンで開いた人もQRをスマホで読み取れば参加できます。" = "The guidance includes join steps, iCloud setup, and a QR code for joining. Someone reading it on a PC can scan the QR with a phone to join.";
+
+/* Added for 1.2.57 UX improvements */
+"現在 %d 人が参加中" = "Shared with %d people";
+"招待中（未参加）%d 人" = "Invited (not yet joined): %d";
+"このリンクを知っている人は誰でも参加でき、在庫を編集できます。信頼できる相手にだけ送ってください。" = "Anyone with this link can join and edit your inventory. Only send it to people you trust.";
+"まもなく期限" = "Due soon";
+"QRで登録・印刷" = "Register & print with QR";
+"閉じて次をスキャン" = "Close and scan the next";
+"管理方法は作成後は変更できません。" = "The tracking method can't be changed after the item is created.";
+"その他の操作" = "More actions";
+"プロジェクトを追加" = "Add project";
+"QR生成フィルタを初期化できませんでした。" = "Couldn't initialize the QR generator.";
+"QR画像の生成に失敗しました。" = "Failed to generate the QR image.";
+"QRモジュールを読み取れませんでした。" = "Couldn't read the QR modules.";
+"生成されたQRが正方形ではありません。" = "The generated QR is not square.";
+"描画コンテキストを作成できませんでした。" = "Couldn't create the drawing context.";
+"画像を生成できませんでした。" = "Couldn't generate the image.";
+"PNGへの書き出しに失敗しました。" = "Failed to export to PNG.";
+"PDFデータの作成に失敗しました。" = "Failed to create the PDF data.";
+"PDF描画コンテキストを作成できませんでした。" = "Couldn't create the PDF drawing context.";
+"データを書き出す（外部保存用・JSON）" = "Export data (for external storage · JSON)";
+"すべてのプロジェクトの在庫データをJSONファイルに書き出します。このファイルはアプリに戻して読み込むことはできません。復元には「バックアップ」をお使いください。" = "Exports every project's inventory data to a JSON file. This file can't be imported back into the app — use “Backup” to restore.";

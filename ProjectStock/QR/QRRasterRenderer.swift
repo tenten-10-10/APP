@@ -53,9 +53,9 @@ public struct QRRasterRenderer {
         case encodeFailed
         public var errorDescription: String? {
             switch self {
-            case .contextFailed: return "描画コンテキストを作成できませんでした。"
-            case .imageFailed:   return "画像を生成できませんでした。"
-            case .encodeFailed:  return "PNGへの書き出しに失敗しました。"
+            case .contextFailed: return NSLocalizedString("描画コンテキストを作成できませんでした。", comment: "")
+            case .imageFailed:   return NSLocalizedString("画像を生成できませんでした。", comment: "")
+            case .encodeFailed:  return NSLocalizedString("PNGへの書き出しに失敗しました。", comment: "")
             }
         }
     }
