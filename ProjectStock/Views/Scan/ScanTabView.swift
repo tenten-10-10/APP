@@ -21,7 +21,29 @@ struct ScanTabView: View {
     @State private var pcSucceeded = false
     @State private var pcBusy = false
 
+    // The body is split into layered computed properties, and every inline
+    // Binding(get:set:) / alert builder is hoisted into its own typed member.
+    // iOS 15's type-checker times out on one long modifier chain that mixes
+    // sheet + three alerts + a confirmationDialog with inferred closure types
+    // (DEV_NOTES §4). Layering gives each stage its own small inference scope.
     var body: some View {
+        scannerScaffold
+            .sheet(item: $outcome) { box in ScanResultSheet(outcome: box.outcome) }
+            .alert(item: foreignAlertBinding, content: foreignAlertContent)
+            // The join-result alert lives on a SEPARATE (background) view node, so
+            // it never contends with the "対象外" alert above — iOS 15 can silently
+            // drop one of two alerts attached to the same view.
+            .background(joinAlertLayer)
+            .confirmationDialog(NSLocalizedString("このパソコンのログインを許可しますか？", comment: ""),
+                                isPresented: pcDialogBinding,
+                                titleVisibility: .visible,
+                                actions: pcDialogActions,
+                                message: pcDialogMessage)
+            .background(pcAlertLayer)
+    }
+
+    /// Base scanner surface plus navigation chrome — no presentations.
+    private var scannerScaffold: some View {
         ZStack {
             switch permission.status {
             case .authorized:
@@ -52,52 +74,68 @@ struct ScanTabView: View {
             }
         }
         .onAppear { permission.refresh() }
-        .sheet(item: $outcome) { box in
-            ScanResultSheet(outcome: box.outcome)
-        }
-        .alert(item: Binding(get: { foreignValue.map { PresentableError(message: $0) } },
-                             set: { _ in foreignValue = nil })) { presentable in
-            Alert(title: Text(NSLocalizedString("対象外のQR", comment: "")),
-                  message: Text(NSLocalizedString("このQRはタナミルのコードではありません。", comment: "")),
-                  primaryButton: .default(Text(NSLocalizedString("コピー", comment: ""))) {
-                      UIPasteboard.general.string = presentable.message
-                  },
-                  secondaryButton: .cancel(Text(NSLocalizedString("閉じる", comment: ""))))
-        }
-        // The join-result alert lives on a SEPARATE (background) view node, so it
-        // never contends with the "対象外" alert above — iOS 15 can silently drop
-        // one of two alerts attached to the same view.
-        .background(
-            Color.clear
-                .alert(item: Binding(get: { joinMessage.map { PresentableError(message: $0) } },
-                                     set: { _ in joinMessage = nil })) { presentable in
-                    Alert(title: Text(joinSucceeded
-                                      ? NSLocalizedString("共有に参加しました", comment: "")
-                                      : NSLocalizedString("共有に参加できませんでした", comment: "")),
-                          message: Text(presentable.message),
-                          dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
-                }
-        )
-        .confirmationDialog(NSLocalizedString("このパソコンのログインを許可しますか？", comment: ""),
-                            isPresented: Binding(get: { pcPairCode != nil },
-                                                 set: { if !$0 { pcPairCode = nil } }),
-                            titleVisibility: .visible) {
-            Button(NSLocalizedString("許可する", comment: "")) { authorizePC() }
-            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { pcPairCode = nil }
-        } message: {
-            Text(NSLocalizedString("許可すると、このパソコンから在庫を閲覧できるようになります（閲覧のみ・書き換えはできません）。", comment: ""))
-        }
-        .background(
-            Color.clear
-                .alert(item: Binding(get: { pcMessage.map { PresentableError(message: $0) } },
-                                     set: { _ in pcMessage = nil })) { presentable in
-                    Alert(title: Text(pcSucceeded
-                                      ? NSLocalizedString("パソコンと連携しました", comment: "")
-                                      : NSLocalizedString("連携に失敗しました", comment: "")),
-                          message: Text(presentable.message),
-                          dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
-                }
-        )
+    }
+
+    // MARK: Presentation helpers (hoisted out of the body to cut type-check cost)
+
+    private var foreignAlertBinding: Binding<PresentableError?> {
+        Binding(get: { foreignValue.map { PresentableError(message: $0) } },
+                set: { _ in foreignValue = nil })
+    }
+
+    private func foreignAlertContent(_ presentable: PresentableError) -> Alert {
+        Alert(title: Text(NSLocalizedString("対象外のQR", comment: "")),
+              message: Text(NSLocalizedString("このQRはタナミルのコードではありません。", comment: "")),
+              primaryButton: .default(Text(NSLocalizedString("コピー", comment: ""))) {
+                  UIPasteboard.general.string = presentable.message
+              },
+              secondaryButton: .cancel(Text(NSLocalizedString("閉じる", comment: ""))))
+    }
+
+    private var joinAlertBinding: Binding<PresentableError?> {
+        Binding(get: { joinMessage.map { PresentableError(message: $0) } },
+                set: { _ in joinMessage = nil })
+    }
+
+    private var joinAlertLayer: some View {
+        Color.clear
+            .alert(item: joinAlertBinding) { presentable in
+                Alert(title: Text(joinSucceeded
+                                  ? NSLocalizedString("共有に参加しました", comment: "")
+                                  : NSLocalizedString("共有に参加できませんでした", comment: "")),
+                      message: Text(presentable.message),
+                      dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+            }
+    }
+
+    private var pcDialogBinding: Binding<Bool> {
+        Binding(get: { pcPairCode != nil },
+                set: { if !$0 { pcPairCode = nil } })
+    }
+
+    @ViewBuilder private func pcDialogActions() -> some View {
+        Button(NSLocalizedString("許可する", comment: "")) { authorizePC() }
+        Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { pcPairCode = nil }
+    }
+
+    private func pcDialogMessage() -> some View {
+        Text(NSLocalizedString("許可すると、このパソコンから在庫を閲覧できるようになります（閲覧のみ・書き換えはできません）。", comment: ""))
+    }
+
+    private var pcAlertBinding: Binding<PresentableError?> {
+        Binding(get: { pcMessage.map { PresentableError(message: $0) } },
+                set: { _ in pcMessage = nil })
+    }
+
+    private var pcAlertLayer: some View {
+        Color.clear
+            .alert(item: pcAlertBinding) { presentable in
+                Alert(title: Text(pcSucceeded
+                                  ? NSLocalizedString("パソコンと連携しました", comment: "")
+                                  : NSLocalizedString("連携に失敗しました", comment: "")),
+                      message: Text(presentable.message),
+                      dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+            }
     }
 
     private func authorizePC() {
