@@ -59,14 +59,20 @@ struct ScanTabView: View {
                   },
                   secondaryButton: .cancel(Text(NSLocalizedString("閉じる", comment: ""))))
         }
-        .alert(item: Binding(get: { joinMessage.map { PresentableError(message: $0) } },
-                             set: { _ in joinMessage = nil })) { presentable in
-            Alert(title: Text(joinSucceeded
-                              ? NSLocalizedString("共有に参加しました", comment: "")
-                              : NSLocalizedString("共有に参加できませんでした", comment: "")),
-                  message: Text(presentable.message),
-                  dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
-        }
+        // The join-result alert lives on a SEPARATE (background) view node, so it
+        // never contends with the "対象外" alert above — iOS 15 can silently drop
+        // one of two alerts attached to the same view.
+        .background(
+            Color.clear
+                .alert(item: Binding(get: { joinMessage.map { PresentableError(message: $0) } },
+                                     set: { _ in joinMessage = nil })) { presentable in
+                    Alert(title: Text(joinSucceeded
+                                      ? NSLocalizedString("共有に参加しました", comment: "")
+                                      : NSLocalizedString("共有に参加できませんでした", comment: "")),
+                          message: Text(presentable.message),
+                          dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+                }
+        )
     }
 
     /// A result is on screen — the camera must not keep scanning behind it.
