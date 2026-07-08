@@ -157,6 +157,7 @@ struct ShareableFile: Identifiable {
 struct MailComposeView: UIViewControllerRepresentable {
     let subject: String
     let body: String
+    var recipients: [String] = []
     var attachmentURL: URL? = nil
     var onFinish: () -> Void = {}
 
@@ -167,6 +168,7 @@ struct MailComposeView: UIViewControllerRepresentable {
         vc.mailComposeDelegate = context.coordinator
         vc.setSubject(subject)
         vc.setMessageBody(body, isHTML: false)
+        if !recipients.isEmpty { vc.setToRecipients(recipients) }
         if let url = attachmentURL, let data = try? Data(contentsOf: url) {
             vc.addAttachmentData(data, mimeType: Self.mimeType(for: url), fileName: url.lastPathComponent)
         }

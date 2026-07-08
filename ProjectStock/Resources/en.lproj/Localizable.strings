@@ -658,3 +658,22 @@
 "ネットワークに接続できません。電波の良い場所でもう一度お試しください。" = "No network connection. Please try again with a better connection.";
 "この招待リンクは使えなくなっています（共有が停止された可能性があります）。送った人に新しいリンクをもらってください。" = "This invite link is no longer valid (sharing may have been stopped). Ask the sender for a new link.";
 "iCloudにサインインしていないため参加できません。設定アプリでiCloudにサインインしてから、もう一度お試しください。" = "Can’t join because you’re not signed in to iCloud. Sign in from the Settings app and try again.";
+
+/* 1.2.53: reliable invite by Apple ID email */
+"メールで招待" = "Invite by Email";
+"メールアドレスで招待（おすすめ）" = "Invite by email address (recommended)";
+"相手のApple ID（メール）を指定して招待します。案内メールにiCloudの設定手順まで入るので、初めての人でも確実です。" = "Invite a specific Apple ID (email). The guidance email includes iCloud setup steps, so it works even for first-timers.";
+"リンクで招待（誰でも参加可）" = "Invite by link (anyone can join)";
+"相手のメールアドレス" = "Recipient's email";
+"相手が iPhone の iCloud に使っているメールアドレス（Apple ID）を入力してください。ここに入力したアドレスでサインインしている人だけが参加できます。" = "Enter the email (Apple ID) the person uses for iCloud on their iPhone. Only someone signed in with that address can join.";
+"招待を作成しています…" = "Creating invite…";
+"この人を招待" = "Invite this person";
+"招待を作成しました。案内を送りましょう。" = "Invite created. Now send the guidance.";
+"メールで案内を送る" = "Send guidance by email";
+"他のアプリで案内を送る（LINEなど）" = "Send guidance via another app (LINE, etc.)";
+"案内には、参加手順とiCloudの設定方法をまとめてあります。そのまま送ってください。" = "The guidance includes the join steps and iCloud setup. Just send it as is.";
+"メールアドレスを正しく入力してください。" = "Please enter a valid email address.";
+"招待に失敗しました。もう一度お試しください。" = "Couldn’t create the invite. Please try again.";
+"iCloudにサインインしていないため招待できません。設定アプリでiCloudにサインインしてから、もう一度お試しください。" = "Can’t invite because you’re not signed in to iCloud. Sign in from the Settings app and try again.";
+"「%@」を招待できませんでした（%@）。メールアドレスがApple IDのものか確認してください。" = "Couldn’t invite “%@” (%@). Make sure the email belongs to an Apple ID.";
+"在庫アプリ「タナミル」の『%@』に招待します" = "You're invited to “%@” in the Tanamiru inventory app";

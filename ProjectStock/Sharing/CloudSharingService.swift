@@ -302,6 +302,105 @@ final class CloudSharingService: ObservableObject {
         }
     }
 
+    // MARK: - Invite a specific Apple ID by email (1.2.53 — reliable path)
+
+    /// Invite ONE person to a project by their Apple ID email. This is the
+    /// deterministic, Apple-native path: we add that email as a named
+    /// participant, so once they sign in to iCloud with that Apple ID they can
+    /// join regardless of how they open the link (Safari / メッセージ / even a
+    /// pasted link) — no "リンクを知っている全員" public flag needed. Creates the
+    /// share if none exists yet. Completion (main thread) returns the share URL.
+    func inviteByEmail(project: Project, email: String,
+                       completion: @escaping (Result<URL, Error>) -> Void) {
+        let cleaned = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned.contains("@"), cleaned.count >= 3 else {
+            completion(.failure(AppError.shareCreationFailed(NSLocalizedString("メールアドレスを正しく入力してください。", comment: ""))))
+            return
+        }
+        prepareShare(for: project) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .failure(let err):
+                completion(.failure(err))
+            case .success(.existing(let share, _)), .success(.created(let share, _)):
+                self.addParticipant(email: cleaned, to: share, completion: completion)
+            }
+        }
+    }
+
+    private func addParticipant(email: String, to share: CKShare,
+                                completion: @escaping (Result<URL, Error>) -> Void) {
+        guard let store = persistence.privateStore else {
+            completion(.failure(AppError.shareCreationFailed(NSLocalizedString("共有ストアが利用できません。", comment: ""))))
+            return
+        }
+        // Already invited? Don't add twice — just hand back the link.
+        if share.participants.contains(where: {
+            $0.userIdentity.lookupInfo?.emailAddress?.caseInsensitiveCompare(email) == .orderedSame
+        }), let url = share.url {
+            completion(.success(url)); return
+        }
+
+        let lookup = CKUserIdentity.LookupInfo(emailAddress: email)
+        let op = CKFetchShareParticipantsOperation(userIdentityLookupInfos: [lookup])
+        var participant: CKShare.Participant?
+        var lookupError: Error?
+        op.perShareParticipantResultBlock = { _, result in
+            switch result {
+            case .success(let p): participant = p
+            case .failure(let e): lookupError = e
+            }
+        }
+        op.fetchShareParticipantsResultBlock = { [weak self] overall in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard let participant else {
+                    let err = lookupError ?? { if case .failure(let e) = overall { return e } else { return nil } }()
+                    completion(.failure(Self.friendlyInviteError(err, email: email)))
+                    return
+                }
+                // A person who doesn't have an iCloud account for this email yet
+                // is still invited — they'll be able to accept once they set up
+                // iCloud with it (our email spells out the setup steps).
+                participant.permission = .readWrite
+                share.addParticipant(participant)
+                self.persistence.container.persistUpdatedShare(share, in: store) { updated, saveError in
+                    DispatchQueue.main.async {
+                        if let saveError {
+                            completion(.failure(Self.friendlyInviteError(saveError, email: email)))
+                        } else if let url = (updated ?? share).url {
+                            completion(.success(url))
+                        } else {
+                            completion(.failure(AppError.shareCreationFailed(
+                                NSLocalizedString("招待リンクを準備中です。数秒待ってからもう一度お試しください。", comment: ""))))
+                        }
+                    }
+                }
+            }
+        }
+        op.qualityOfService = .userInitiated
+        ckContainer.add(op)
+    }
+
+    static func friendlyInviteError(_ error: Error?, email: String) -> Error {
+        guard let error else {
+            return AppError.shareCreationFailed(NSLocalizedString("招待に失敗しました。もう一度お試しください。", comment: ""))
+        }
+        guard let ck = error as? CKError else { return error }
+        switch ck.code {
+        case .networkUnavailable, .networkFailure:
+            return AppError.shareCreationFailed(NSLocalizedString(
+                "ネットワークに接続できません。電波の良い場所でもう一度お試しください。", comment: ""))
+        case .notAuthenticated:
+            return AppError.shareCreationFailed(NSLocalizedString(
+                "iCloudにサインインしていないため招待できません。設定アプリでiCloudにサインインしてから、もう一度お試しください。", comment: ""))
+        default:
+            return AppError.shareCreationFailed(String(format: NSLocalizedString(
+                "「%@」を招待できませんでした（%@）。メールアドレスがApple IDのものか確認してください。", comment: ""),
+                email, ck.localizedDescription))
+        }
+    }
+
     /// Pull the iCloud share URL out of arbitrary pasted text (users often copy
     /// the whole invite message, not just the link).
     static func extractShareURL(from text: String) -> URL? {

@@ -14,6 +14,7 @@ struct ProjectShareSection: View {
 
     @State private var error: PresentableError?
     @State private var inviteSheet: InviteText?
+    @State private var showingEmailInvite = false
     @State private var showingPaywall = false
 
     var body: some View {
@@ -88,22 +89,30 @@ struct ProjectShareSection: View {
                         Text(NSLocalizedString("共有には「タナミル チーム」への登録が必要です（2週間無料）。招待コードをお持ちの方も、ここから引き換えできます。参加する側は無料です。", comment: ""))
                             .font(.caption2).foregroundColor(.secondary)
                     } else {
-                        // The friendly invite (App Store link + join link in one
-                        // message) is the PRIMARY action for non-technical users —
-                        // for NOT-YET-shared projects too: one tap creates the
-                        // share, makes it link-joinable, and composes the message.
-                        // Apple's management sheet is secondary.
+                        // PRIMARY: invite one person by their Apple ID email.
+                        // This is the reliable Apple-native path — the invited
+                        // Apple ID can join no matter how they open the link,
+                        // and the guidance email includes the iCloud setup steps.
                         Button {
-                            sendInvite()
+                            showingEmailInvite = true
                         } label: {
-                            Label(NSLocalizedString("招待リンクを送る", comment: ""), systemImage: "envelope")
+                            Label(NSLocalizedString("メールアドレスで招待（おすすめ）", comment: ""), systemImage: "envelope.badge.person.crop")
                                 .font(.body.weight(.semibold))
                                 .foregroundColor(Brand.primary)
                         }
+                        .accessibilityIdentifier("emailInviteButton")
+                        .sheet(isPresented: $showingEmailInvite) { EmailInviteSheet(project: project) }
+                        Text(NSLocalizedString("相手のApple ID（メール）を指定して招待します。案内メールにiCloudの設定手順まで入るので、初めての人でも確実です。", comment: ""))
+                            .font(.caption2).foregroundColor(.secondary)
+
+                        // SECONDARY: a link anyone signed into iCloud can join.
+                        Button {
+                            sendInvite()
+                        } label: {
+                            Label(NSLocalizedString("リンクで招待（誰でも参加可）", comment: ""), systemImage: "link")
+                        }
                         .accessibilityIdentifier("sendInviteButton")
                         .sheet(item: $inviteSheet) { ShareSheet(items: [$0.text]) }
-                        Text(NSLocalizedString("アプリの入手先と参加リンクをまとめて送信します。リンクを知っている人が参加できます。", comment: ""))
-                            .font(.caption2).foregroundColor(.secondary)
 
                         Button {
                             startShare()
