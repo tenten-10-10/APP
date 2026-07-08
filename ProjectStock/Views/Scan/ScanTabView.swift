@@ -15,6 +15,11 @@ struct ScanTabView: View {
     @State private var joining = false
     @State private var joinMessage: String?
     @State private var joinSucceeded = false
+    // A scanned PC login QR (t.l0l0.app/pair?c=…) asks to authorize a PC session.
+    @State private var pcPairCode: String?
+    @State private var pcMessage: String?
+    @State private var pcSucceeded = false
+    @State private var pcBusy = false
 
     var body: some View {
         ZStack {
@@ -73,10 +78,52 @@ struct ScanTabView: View {
                           dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
                 }
         )
+        .confirmationDialog(NSLocalizedString("このパソコンのログインを許可しますか？", comment: ""),
+                            isPresented: Binding(get: { pcPairCode != nil },
+                                                 set: { if !$0 { pcPairCode = nil } }),
+                            titleVisibility: .visible) {
+            Button(NSLocalizedString("許可する", comment: "")) { authorizePC() }
+            Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { pcPairCode = nil }
+        } message: {
+            Text(NSLocalizedString("許可すると、このパソコンから在庫を閲覧できるようになります（閲覧のみ・書き換えはできません）。", comment: ""))
+        }
+        .background(
+            Color.clear
+                .alert(item: Binding(get: { pcMessage.map { PresentableError(message: $0) } },
+                                     set: { _ in pcMessage = nil })) { presentable in
+                    Alert(title: Text(pcSucceeded
+                                      ? NSLocalizedString("パソコンと連携しました", comment: "")
+                                      : NSLocalizedString("連携に失敗しました", comment: "")),
+                          message: Text(presentable.message),
+                          dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+                }
+        )
+    }
+
+    private func authorizePC() {
+        guard let code = pcPairCode else { return }
+        pcPairCode = nil
+        pcBusy = true
+        Task {
+            do {
+                try await PCWebService.shared.authorize(pairCode: code, container: container)
+                pcSucceeded = true
+                Haptics.success()
+                pcMessage = NSLocalizedString("このパソコンで在庫を閲覧できるようになりました。少し待つと最新の内容が表示されます。", comment: "")
+            } catch {
+                pcSucceeded = false
+                Haptics.warning()
+                pcMessage = error.localizedDescription
+            }
+            pcBusy = false
+        }
     }
 
     /// A result is on screen — the camera must not keep scanning behind it.
-    private var resultShowing: Bool { outcome != nil || foreignValue != nil || joining || joinMessage != nil }
+    private var resultShowing: Bool {
+        outcome != nil || foreignValue != nil || joining || joinMessage != nil
+            || pcPairCode != nil || pcMessage != nil || pcBusy
+    }
 
     private var scannerLayer: some View {
         ZStack {
@@ -137,6 +184,12 @@ struct ScanTabView: View {
         // Belt and braces: a frame already in flight when the session pauses
         // must not replace the result the user is looking at.
         guard !resultShowing else { return }
+        // A PC login QR (t.l0l0.app/pair?c=…): ask before authorizing that PC to
+        // view this account's inventory.
+        if let code = PCWebService.pairCode(from: raw) {
+            pcPairCode = code
+            return
+        }
         // An invite QR (t.l0l0.app/join?s=… or a raw icloud.com/share link) is a
         // share invitation, not an inventory code — so scanning it with タナミル's
         // OWN reader joins the shared project instead of showing "対象外".

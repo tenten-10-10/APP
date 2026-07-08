@@ -17,6 +17,8 @@ struct SettingsView: View {
     @State private var error: PresentableError?
     @State private var infoAlert: String?
     @AppStorage("hideFirstRunGuide") private var hideFirstRunGuide = false
+    @AppStorage("pcWebEnabled") private var pcWebEnabled = false
+    @State private var pcSyncing = false
 
     // Demo (お試し) projects, so the delete row only shows when there are any.
     // Entity-NAME-based request (see HomeView): the `sortDescriptors:` convenience
@@ -160,6 +162,24 @@ struct SettingsView: View {
                 }
             }
 
+            Section {
+                Toggle(NSLocalizedString("PC・Webで在庫を見る", comment: ""), isOn: $pcWebEnabled)
+                    .onChange(of: pcWebEnabled) { on in if on { syncPCWeb() } }
+                if pcWebEnabled {
+                    Button { syncPCWeb() } label: {
+                        HStack {
+                            if pcSyncing { ProgressView().padding(.trailing, 6) }
+                            Label(NSLocalizedString("今すぐ同期", comment: ""), systemImage: "arrow.triangle.2.circlepath")
+                        }
+                    }
+                    .disabled(pcSyncing)
+                }
+            } header: {
+                Text(NSLocalizedString("PC・Web（閲覧）", comment: ""))
+            } footer: {
+                Text(NSLocalizedString("パソコンのブラウザで tanamiru.l0l0.app/pc を開き、表示されたQRコードをこのアプリの「スキャン」で読み取ると、在庫をPCから閲覧できます（閲覧のみ・書き換えはできません）。オンにすると、この端末に見えている在庫（共有で参加中のものを含む）が同期されます。", comment: ""))
+            }
+
             Section(NSLocalizedString("情報", comment: "")) {
                 Button {
                     hideFirstRunGuide = false   // ホームの初回ガイドも復活させる
@@ -238,5 +258,14 @@ struct SettingsView: View {
             let url = try DataExportService().exportJSON(context: container.viewContext)
             shareItem = ShareableFile(url: url)
         } catch { self.error = PresentableError(error) }
+    }
+
+    /// Push the current inventory snapshot to the PC/Web viewer backend.
+    private func syncPCWeb() {
+        pcSyncing = true
+        Task {
+            try? await PCWebService.shared.pushSnapshot(container: container)
+            pcSyncing = false
+        }
     }
 }

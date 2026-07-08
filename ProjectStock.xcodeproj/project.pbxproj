@@ -362,6 +362,7 @@
 			sourceTree = "<group>";
 		};
 		52F1856AE29BFBFFB5B33F66 /* CloudKitSyncMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CloudKitSyncMonitor.swift"; sourceTree = "<group>"; };
+		53206CFB783AF1C13D674CD3 /* PCWebService.swift in Build */ = {isa = PBXBuildFile; fileRef = BB45249B605D9CA11FCE21D3 /* PCWebService.swift */; };
 		548173F6BAC801D43B72D723 /* Badges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Badges.swift"; sourceTree = "<group>"; };
 		55214170DC92FA6EF8FE5476 /* Scanner */ = {
 			isa = PBXGroup;
@@ -522,7 +523,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.59;
+				MARKETING_VERSION = 1.2.60;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -676,6 +677,7 @@
 				FE1FBFA40F164EC01E7913F8 /* InventoryService.swift */,
 				5F3E421052BB3AE7553F0210 /* Loans.swift */,
 				64B6AFA92DB57B78E0BB7852 /* NotificationService.swift */,
+				B9D432D3DBD1E9995EC1C9E3 /* PCWeb */,
 				6C6711A660BBD9B293907778 /* ProjectService.swift */,
 				235B1E95358DE378D5929FD0 /* PublicCodeGenerator.swift */,
 				36BA3702647F5C5F24E75F2D /* RemoteConfigService.swift */,
@@ -690,6 +692,14 @@
 		B53CBFDD304517E6686424E5 /* CheckoutSheet.swift in Build */ = {isa = PBXBuildFile; fileRef = 0FEFD5DC0C3AF231D99254FB /* CheckoutSheet.swift */; };
 		B69A98321A5E8B7CAE996BB1 /* InventoryService.swift in Build */ = {isa = PBXBuildFile; fileRef = FE1FBFA40F164EC01E7913F8 /* InventoryService.swift */; };
 		B8CF289CFABEF88FE89EFB97 /* ProjectFormView.swift in Build */ = {isa = PBXBuildFile; fileRef = 5AD5DB54B8B51DC6904C40C7 /* ProjectFormView.swift */; };
+		B9D432D3DBD1E9995EC1C9E3 /* PCWeb */ = {
+			isa = PBXGroup;
+			children = (
+				BB45249B605D9CA11FCE21D3 /* PCWebService.swift */,
+			);
+			path = "PCWeb";
+			sourceTree = "<group>";
+		};
 		BA08C61BD86092C1802A3EA1 /* Documentation */ = {
 			isa = PBXGroup;
 			children = (
@@ -719,6 +729,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BB45249B605D9CA11FCE21D3 /* PCWebService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PCWebService.swift"; sourceTree = "<group>"; };
 		BBDACD618A9857F367C783F6 /* CloudKitErrorMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CloudKitErrorMapper.swift"; sourceTree = "<group>"; };
 		BC3A8D288DA764CDF113F7D5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -811,7 +822,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.59;
+				MARKETING_VERSION = 1.2.60;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -909,6 +920,7 @@
 				B69A98321A5E8B7CAE996BB1 /* in Sources */,
 				A1D24936D4250D86F1A2C126 /* in Sources */,
 				27FBC10CCB64B00D2BE2E53D /* in Sources */,
+				53206CFB783AF1C13D674CD3 /* in Sources */,
 				2BAF8741F0662FB1CA70B590 /* in Sources */,
 				3E16714FB763223B416DE6C4 /* in Sources */,
 				44C90BC7BAFBB88C666E88D8 /* in Sources */,
@@ -974,7 +986,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.59;
+				MARKETING_VERSION = 1.2.60;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -1010,7 +1022,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.59;
+				MARKETING_VERSION = 1.2.60;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -1038,7 +1050,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.59;
+				MARKETING_VERSION = 1.2.60;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1101,7 +1113,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.59;
+				MARKETING_VERSION = 1.2.60;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tenten.tanamiru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

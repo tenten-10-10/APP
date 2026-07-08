@@ -10,6 +10,7 @@ struct RootTabView: View {
     @State private var deepLinkOutcome: ScanOutcomeBox?
     @State private var shareFeedback: CloudSharingService.AcceptFeedback?
     @State private var selection: Tab = .home
+    @AppStorage("pcWebEnabled") private var pcWebEnabled = false
 
     private enum Tab: Hashable { case home, projects, scan, activity, settings }
 
@@ -90,6 +91,10 @@ struct RootTabView: View {
             // Re-check the web borrow inbox whenever the app comes to the front.
             if phase == .active && !AppConfig.isRunningTests {
                 Task { await container.webBorrow.refresh() }
+                // Keep the PC/Web viewer's read-only mirror fresh.
+                if pcWebEnabled {
+                    Task { try? await PCWebService.shared.pushSnapshot(container: container) }
+                }
             }
         }
     }
