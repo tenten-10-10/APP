@@ -401,6 +401,21 @@ final class CloudSharingService: ObservableObject {
         }
     }
 
+    /// Wrap an iCloud share URL in our own Universal Link
+    /// (`https://t.l0l0.app/join?s=…`). Sending / QR-encoding THIS instead of
+    /// the raw icloud.com link means opening it always routes into タナミル
+    /// (associated domain `applinks:t.l0l0.app`, path `/*`) and accepts the
+    /// share in-app — it can never converge on the icloud.com web sign-in page.
+    /// Falls back to the raw URL if components can't be built.
+    static func joinWrapperURL(for shareURL: URL) -> URL {
+        var comps = URLComponents()
+        comps.scheme = "https"
+        comps.host = AppConfig.linkHost
+        comps.path = "/join"
+        comps.queryItems = [URLQueryItem(name: "s", value: shareURL.absoluteString)]
+        return comps.url ?? shareURL
+    }
+
     /// Pull the iCloud share URL out of arbitrary pasted text (users often copy
     /// the whole invite message, not just the link).
     static func extractShareURL(from text: String) -> URL? {

@@ -39,4 +39,24 @@ final class SharingLinkTests: XCTestCase {
         XCTAssertNil(CloudSharingService.extractShareURL(from: "ただのテキスト"))
         XCTAssertNil(CloudSharingService.extractShareURL(from: ""))
     }
+
+    // 1.2.55: 招待を自前ドメイン t.l0l0.app/join?s=… に包み、QR/リンクを開いても
+    // 必ずアプリの参加処理に入る（icloud.comのログインに収束しない）。
+    func testJoinWrapperRoundTrip() {
+        let share = URL(string: "https://www.icloud.com/share/0abcDEF123ghi")!
+        let wrapper = CloudSharingService.joinWrapperURL(for: share)
+        XCTAssertEqual(wrapper.host, "t.l0l0.app")
+        XCTAssertEqual(wrapper.path, "/join")
+
+        let back = RootTabView.shareURL(fromJoinLink: wrapper)
+        XCTAssertEqual(back?.absoluteString, share.absoluteString,
+                       "wrapperを解いて元のicloud共有URLに戻る")
+    }
+
+    func testJoinLinkRejectsNonJoinAndForeignHosts() {
+        // 借用リンク（/<code>）は招待として拾わない
+        XCTAssertNil(RootTabView.shareURL(fromJoinLink: URL(string: "https://t.l0l0.app/TNM-0001")!))
+        // 別ホストのjoinも拾わない
+        XCTAssertNil(RootTabView.shareURL(fromJoinLink: URL(string: "https://example.com/join?s=https://www.icloud.com/share/x")!))
+    }
 }

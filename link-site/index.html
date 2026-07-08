@@ -79,58 +79,72 @@
     var SB_URL = "https://lwxpbgbqldhnvcxnyehe.supabase.co";
     var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3eHBiZ2JxbGRobnZjeG55ZWhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzI0MzksImV4cCI6MjA5MjMwODQzOX0.K0sSR_AZ8OeVTAB11pFL3qMohX769xSyes3-_SFNi5Y";
 
-    var code = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ""));
+    var path = location.pathname.replace(/^\/+|\/+$/g, "");
+    var code = decodeURIComponent(path);
     var f = document.getElementById("f");
     var msg = document.getElementById("msg");
     var btn = document.getElementById("btn");
 
-    if (!code || code.indexOf(".") >= 0) {
+    // Share-invite fallback: `/join` renders here ONLY when the app isn't
+    // installed (with タナミル installed, the Universal Link opens the app and
+    // this page never shows). Guide them to install — NEVER redirect to
+    // icloud.com, so the invite can't dead-end on the iCloud web sign-in.
+    if (path.toLowerCase().indexOf("join") === 0) {
+      document.querySelector("h1").textContent = "共有プロジェクトへの招待";
+      document.querySelector("p.lead").innerHTML =
+        "参加するには iPhone に「タナミル」アプリが必要です。<br>下から入手し、<b>招待メールのリンク（またはQRコード）を iPhone でもう一度開いて</b>ください。";
       f.style.display = "none";
-      msg.textContent = "このリンクからは借用フォームを開けません。QRコードをもう一度読み取ってください。";
-    }
+      msg.innerHTML =
+        '<a href="https://apps.apple.com/app/id6784470155" style="display:inline-block;margin-top:4px;background:#4c5a2e;color:#fff;padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;">App Store でタナミルを入手</a>';
+    } else {
+      if (!code || code.indexOf(".") >= 0) {
+        f.style.display = "none";
+        msg.textContent = "このリンクからは借用フォームを開けません。QRコードをもう一度読み取ってください。";
+      }
 
-    f.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      btn.disabled = true;
-      msg.className = "";
-      msg.textContent = "送信中…";
-      var d = Object.fromEntries(new FormData(f).entries());
-      var body = {
-        code: code,
-        borrower_name: (d.borrower_name || "").trim(),
-        destination: (d.destination || "").trim() || null,
-        borrow_from: d.borrow_from || null,
-        borrow_until: d.borrow_until || null,
-        note: (d.note || "").trim() || null,
-        status: "pending"
-      };
-      try {
-        var r = await fetch(SB_URL + "/rest/v1/tanamiru_borrow_requests", {
-          method: "POST",
-          headers: {
-            "apikey": SB_KEY,
-            "Authorization": "Bearer " + SB_KEY,
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal"
-          },
-          body: JSON.stringify(body)
-        });
-        if (r.ok) {
-          f.style.display = "none";
-          msg.className = "ok";
-          msg.textContent = "✅ 借用リクエストを送信しました。担当者に反映されます。ありがとうございました。";
-        } else {
-          var t = await r.text();
+      f.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        btn.disabled = true;
+        msg.className = "";
+        msg.textContent = "送信中…";
+        var d = Object.fromEntries(new FormData(f).entries());
+        var body = {
+          code: code,
+          borrower_name: (d.borrower_name || "").trim(),
+          destination: (d.destination || "").trim() || null,
+          borrow_from: d.borrow_from || null,
+          borrow_until: d.borrow_until || null,
+          note: (d.note || "").trim() || null,
+          status: "pending"
+        };
+        try {
+          var r = await fetch(SB_URL + "/rest/v1/tanamiru_borrow_requests", {
+            method: "POST",
+            headers: {
+              "apikey": SB_KEY,
+              "Authorization": "Bearer " + SB_KEY,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify(body)
+          });
+          if (r.ok) {
+            f.style.display = "none";
+            msg.className = "ok";
+            msg.textContent = "✅ 借用リクエストを送信しました。担当者に反映されます。ありがとうございました。";
+          } else {
+            var t = await r.text();
+            msg.className = "err";
+            msg.textContent = "送信に失敗しました。時間をおいて再度お試しください。(" + r.status + ")";
+            btn.disabled = false;
+          }
+        } catch (err) {
           msg.className = "err";
-          msg.textContent = "送信に失敗しました。時間をおいて再度お試しください。(" + r.status + ")";
+          msg.textContent = "通信エラーが発生しました。電波の良い場所で再度お試しください。";
           btn.disabled = false;
         }
-      } catch (err) {
-        msg.className = "err";
-        msg.textContent = "通信エラーが発生しました。電波の良い場所で再度お試しください。";
-        btn.disabled = false;
-      }
-    });
+      });
+    }
   </script>
 </body>
 </html>

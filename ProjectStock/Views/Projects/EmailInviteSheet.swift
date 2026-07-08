@@ -123,7 +123,10 @@ struct EmailInviteSheet: View {
             switch result {
             case .success(let url):
                 inviteURL = url
-                qrFileURL = InviteQR.write(url.absoluteString)
+                // Encode OUR wrapper link (t.l0l0.app/join) in the QR — scanning
+                // it opens タナミル and joins in-app, never the icloud.com
+                // web sign-in page.
+                qrFileURL = InviteQR.write(CloudSharingService.joinWrapperURL(for: url).absoluteString)
                 Haptics.success()
             case .failure(let err):
                 error = PresentableError(AppError.shareCreationFailed(err.localizedDescription))
@@ -154,18 +157,22 @@ struct EmailInviteSheet: View {
 　（同じアドレスでないと参加できません）
 ・パスワードを入れてサインインを完了する
 
-【手順3】この招待リンクを開く
+【手順3】この招待リンクを開く（iPhoneで）
 %@
-・Safari か メッセージ/メール で開くと、タナミルが開いて参加できます
+・タップすると、タナミルが開いて参加できます
 ・このメールをパソコンで見ている場合は、添付の【QRコード】をスマホの
-　カメラで読み取ると、スマホでこのリンクを開けます
-・もしリンクを開いてもうまくいかないときは、リンクを長押しでコピーして、
-　タナミルの「プロジェクト」画面 → 右上「…」→「招待リンクから参加」に
-　貼り付けてください
+　カメラで読み取ってください（同じくタナミルが開きます）
+
+【うまくいかないとき】
+・下のリンクを長押しでコピーして、タナミルの「プロジェクト」画面 →
+　右上「…」→「招待リンクから参加」に貼り付けてください：
+%@
 
 ―――――――――――――
 参加できると、共有プロジェクトが「プロジェクト」一覧に表示されます
 （表示まで少し時間がかかることがあります）。
-""", comment: ""), project.displayName, AppConfig.appStoreURL, trimmed, inviteURL?.absoluteString ?? "")
+""", comment: ""), project.displayName, AppConfig.appStoreURL, trimmed,
+     inviteURL.map { CloudSharingService.joinWrapperURL(for: $0).absoluteString } ?? "",
+     inviteURL?.absoluteString ?? "")
     }
 }

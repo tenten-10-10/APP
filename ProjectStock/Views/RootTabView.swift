@@ -86,6 +86,26 @@ struct RootTabView: View {
     /// scanner, then its result sheet (with the borrow/checkout actions) opens.
     private func handleUniversalLink(_ url: URL?) {
         guard let url else { return }
+        // Share-invite deep link: `t.l0l0.app/join?s=<icloud share url>`.
+        // Routing the invite through OUR associated domain (not the raw
+        // icloud.com link) guarantees the QR / link opens THIS app and accepts
+        // the share in-place — it can never dead-end on the icloud.com web
+        // sign-in page.
+        if let shareURL = Self.shareURL(fromJoinLink: url) {
+            container.sharing.joinShare(from: shareURL) { result in
+                switch result {
+                case .success:
+                    container.sharing.acceptFeedback = .init(
+                        success: true,
+                        message: NSLocalizedString("共有プロジェクトに参加しました。同期が終わると「プロジェクト」一覧に表示されます。", comment: ""))
+                case .failure(let err):
+                    container.sharing.acceptFeedback = .init(
+                        success: false,
+                        message: String(format: NSLocalizedString("共有への参加に失敗しました（%@）。招待リンクをコピーして、プロジェクト画面の「招待リンクから参加」からもう一度お試しください。", comment: ""), err.localizedDescription))
+                }
+            }
+            return
+        }
         let result = container.scanRouter.route(rawValue: url.absoluteString, in: container.viewContext)
         switch result {
         case .known(let alias), .unassigned(let alias), .retired(let alias):
@@ -96,6 +116,16 @@ struct RootTabView: View {
         case .foreign:
             break // not one of our links — ignore
         }
+    }
+
+    /// Extract the wrapped iCloud share URL from a `t.l0l0.app/join?s=…` link.
+    static func shareURL(fromJoinLink url: URL) -> URL? {
+        guard let host = url.host?.lowercased(),
+              host == AppConfig.linkHost || host == "www.\(AppConfig.linkHost)",
+              url.path.hasPrefix("/join"),
+              let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let raw = comps.queryItems?.first(where: { $0.name == "s" })?.value else { return nil }
+        return CloudSharingService.extractShareURL(from: raw)
     }
 
     private func registerScan(_ alias: CodeAlias) {

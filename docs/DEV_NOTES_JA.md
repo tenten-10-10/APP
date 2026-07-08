@@ -314,6 +314,13 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
   公開リンクで参加し直せる。実害なし）。
 - 受諾処理の結果は必ずUIに出す（`acceptFeedback`）。握りつぶすと
   「リンクが何もしない」と区別がつかない。
+- **QR/リンクは自前ドメインに包む（1.2.55）**: 生の `icloud.com/share`
+  リンクをQR化・配布すると、カメラ/ブラウザで開いたとき **icloud.com の
+  Webサインインに収束して行き止まる**ことがある。対策: `t.l0l0.app/join?s=
+  <icloud共有URL>` に包んで配る（AASAは `/*`＝全パスがアプリを開く）。
+  アプリ側は `RootTabView.shareURL(fromJoinLink:)` で `s` を取り出して
+  `joinShare`。未導入時はlink-siteの `/join` がApp Store案内を出す（
+  icloudには絶対に飛ばさない）。QRは生URLではなくこのwrapperをエンコード。
 - 貼り付け解釈は `CloudSharingService.extractShareURL`：メッセージ全文
   貼り付けOK・未エンコードの日本語フラグメントは#前のトークンに落とす。
 
