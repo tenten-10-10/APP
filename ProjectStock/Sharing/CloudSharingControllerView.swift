@@ -41,6 +41,15 @@ enum CloudSharePresenter {
         let ckContainer = CKContainer(identifier: AppConfig.cloudKitContainerIdentifier)
         let controller: UICloudSharingController
         if let existingShare {
+            // Backfill an empty title so Apple's manage / stop-sharing screen
+            // shows the project name instead of "". Older shares (and shares
+            // whose title was set locally but never persisted) arrive titleless.
+            if (existingShare[CKShare.SystemFieldKey.title] as? String)?.isEmpty ?? true {
+                existingShare[CKShare.SystemFieldKey.title] = title as CKRecordValue
+                if let store = persistence.privateStore {
+                    persistence.container.persistUpdatedShare(existingShare, in: store) { _, _ in }
+                }
+            }
             controller = UICloudSharingController(share: existingShare, container: ckContainer)
         } else {
             controller = UICloudSharingController { _, completion in

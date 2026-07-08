@@ -168,6 +168,12 @@ final class CloudSharingService: ObservableObject {
                     return
                 }
                 share[CKShare.SystemFieldKey.title] = project.displayName as CKRecordValue
+                // container.share(...) already saved the share WITHOUT a title;
+                // setting it locally is lost unless written back — otherwise
+                // Apple's own sharing / stop-sharing UI shows an empty "" name.
+                if let store = self.persistence.privateStore {
+                    self.persistence.container.persistUpdatedShare(share, in: store) { _, _ in }
+                }
                 completion(.success(.created(share, container)))
             }
         }
@@ -258,7 +264,7 @@ final class CloudSharingService: ObservableObject {
             case .failure(let err):
                 completion(.failure(err))
             case .success(.existing(let share, _)), .success(.created(let share, _)):
-                self.makePublicClearingPending(share) { r in
+                self.makePublicClearingPending(share, title: project.displayName) { r in
                     switch r {
                     case .failure(let e):
                         completion(.failure(e))
@@ -280,10 +286,15 @@ final class CloudSharingService: ObservableObject {
     /// route that person to the icloud.com claim; removing them proactively
     /// (not only on the #2043 error) is what fixes the "one person can't join"
     /// case. Completion runs on the main thread.
-    private func makePublicClearingPending(_ share: CKShare, completion: @escaping (Result<Void, Error>) -> Void) {
+    private func makePublicClearingPending(_ share: CKShare, title: String, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let store = persistence.privateStore else {
             completion(.failure(AppError.shareCreationFailed(NSLocalizedString("共有ストアが利用できません。", comment: ""))))
             return
+        }
+        // Backfill the title while we're persisting anyway, so Apple's sharing UI
+        // never shows an empty "" project name.
+        if (share[CKShare.SystemFieldKey.title] as? String)?.isEmpty ?? true {
+            share[CKShare.SystemFieldKey.title] = title as CKRecordValue
         }
         let pending = share.participants.filter { $0.role != .owner && $0.acceptanceStatus == .pending }
         pending.forEach { share.removeParticipant($0) }
