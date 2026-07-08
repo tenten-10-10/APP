@@ -19,6 +19,7 @@ struct ProjectShareSection: View {
     // Link invite creates a CKShare server-side (2–4s). Guard against re-taps and
     // show progress — the email/join sheets already do this; this path didn't.
     @State private var preparingInvite = false
+    @State private var resettingPublic = false
 
     var body: some View {
         Section {
@@ -78,6 +79,24 @@ struct ProjectShareSection: View {
                                         .font(.caption2).foregroundColor(.secondary)
                                 }
                             }
+
+                            // Recovery: "one person can never join / always lands
+                            // on icloud.com". Converts the share to a public link
+                            // (drops the stuck invite-only slot) so they can join
+                            // with their own Apple ID. Also works for recipients
+                            // on an old app version that can't open the wrapper.
+                            Button {
+                                resetToPublic()
+                            } label: {
+                                HStack {
+                                    if resettingPublic { ProgressView().padding(.trailing, 4) }
+                                    Label(NSLocalizedString("うまく参加できない人がいるとき（全員リンク参加に切替）", comment: ""),
+                                          systemImage: "person.crop.circle.badge.exclamationmark")
+                                }
+                                .font(.footnote)
+                            }
+                            .disabled(resettingPublic)
+                            .accessibilityIdentifier("resetToPublicButton")
                         }
                     }
 
@@ -191,6 +210,36 @@ struct ProjectShareSection: View {
 
     private func refreshPermission() {
         permission = container.sharing.permission(for: project)
+    }
+
+    /// Fix "one person can never join / always lands on icloud.com": convert the
+    /// share to a public link and hand back a fresh invite with BOTH the wrapper
+    /// link (updated apps) and the raw iCloud link (old apps / paste-to-join).
+    private func resetToPublic() {
+        resettingPublic = true
+        container.sharing.resetToPublicLink(for: project) { result in
+            resettingPublic = false
+            switch result {
+            case .failure(let err):
+                error = PresentableError(AppError.shareCreationFailed(err.localizedDescription))
+            case .success(let url):
+                refreshPermission()
+                let wrapper = CloudSharingService.joinWrapperURL(for: url).absoluteString
+                let message = String(format: NSLocalizedString("""
+在庫アプリ「タナミル」でプロジェクト『%@』に招待します。リンクを知っている人は誰でも参加できます（個別の招待は解除しました）。
+
+【参加リンク】iPhoneでこのリンクを開いてください
+%@
+
+【うまく開けない・アプリが古い場合】下のリンクをコピーして、タナミルの「プロジェクト」画面 → 右上「…」→「招待リンクから参加」に貼り付けてください
+%@
+
+※どちらも、タナミルを入れたiPhoneなら参加できます。iCloudのサインイン画面で止まってしまう場合は、この新しいリンクで開き直してください。
+""", comment: ""), project.displayName, wrapper, url.absoluteString)
+                inviteSheet = InviteText(text: message)
+                Haptics.success()
+            }
+        }
     }
 
     /// Build a ready-to-send invitation that includes BOTH the App Store link

@@ -700,3 +700,25 @@
 "PDF描画コンテキストを作成できませんでした。" = "Couldn't create the PDF drawing context.";
 "データを書き出す（外部保存用・JSON）" = "Export data (for external storage · JSON)";
 "すべてのプロジェクトの在庫データをJSONファイルに書き出します。このファイルはアプリに戻して読み込むことはできません。復元には「バックアップ」をお使いください。" = "Exports every project's inventory data to a JSON file. This file can't be imported back into the app — use “Backup” to restore.";
+
+/* 1.2.58 share reset */
+"うまく参加できない人がいるとき（全員リンク参加に切替）" = "When someone can't join (switch to link-for-anyone)";
+"在庫アプリ「タナミル」でプロジェクト『%@』に招待します。リンクを知っている人は誰でも参加できます（個別の招待は解除しました）。
+
+【参加リンク】iPhoneでこのリンクを開いてください
+%@
+
+【うまく開けない・アプリが古い場合】下のリンクをコピーして、タナミルの「プロジェクト」画面 → 右上「…」→「招待リンクから参加」に貼り付けてください
+%@
+
+※どちらも、タナミルを入れたiPhoneなら参加できます。iCloudのサインイン画面で止まってしまう場合は、この新しいリンクで開き直してください。
+" = "You're invited to the project “%@” in the タナミル inventory app. Anyone with the link can join (individual invites have been cleared).
+
+[Join link] Open this link on your iPhone:
+%@
+
+[If it won't open / the app is old] Copy the link below and paste it into タナミル: Projects screen -> top-right \"...\" -> \"Join from an invite link\":
+%@
+
+Either link lets you join on an iPhone that has タナミル installed. If you get stuck on the iCloud sign-in screen, reopen using this new link.
+";

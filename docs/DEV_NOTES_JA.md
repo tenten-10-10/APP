@@ -333,6 +333,24 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
   必ずアプリ or App Store案内に入り、icloud.comには絶対に行かない。**
   生icloudリンクの貼り付けは後方互換で従来どおり受理（旧版が送った招待用）。
 
+- **「一人だけ参加できずicloud.comに落ちる」の真因と対処（1.2.58）★**:
+  「メールで招待」= `inviteByEmail`→`addParticipant` は相手を**named participant**
+  として追加するが、**`publicPermission` は設定しない**＝その共有はその
+  Apple ID 限定の**招待制**になる。相手の端末が別のApple IDでサインイン
+  している／以前の招待スロットが pending で残っていると、CloudKit が
+  「招待した本人としてサインインせよ」と要求し、**どのリンクでも
+  icloud.com のサインインに収束して行き止まる**。しかも相手が旧版
+  （例1.2.52、`/join` ラッパー未対応）だとラッパーリンクでは相手アプリが
+  開かない。対処（オーナー側だけで完結・相手の操作不要）:
+  `resetToPublicLink` = **pendingのnamed participantを全て除去 →
+  `publicPermission=.readWrite` に昇格 → persist**。これで相手は
+  **自分のApple IDで公開リンクから参加**でき、icloud収束が消える。
+  UIは共有セクションの「うまく参加できない人がいるとき（全員リンク参加に
+  切替）」。切替後の案内にはラッパーと**生icloudリンクの両方**を載せる
+  （旧版の相手は生リンクを「招待リンクから参加」に貼れば入れる）。
+  → 教訓: **個別（メール）招待はApple IDの一致が絶対条件。相性問題が出たら
+  named participantを捨てて公開リンク化するのが最も確実な逃げ道。**
+
 ## 10. 運用インフラ（1.2.11: リモート設定・バックアップ・ローカルストア）
 
 ### 10.1 リモート設定 (RemoteConfig)

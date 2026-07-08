@@ -242,6 +242,59 @@ final class CloudSharingService: ObservableObject {
         }
     }
 
+    /// Recovery for "one specific person can never join — every link dead-ends
+    /// on the icloud.com sign-in". Cause: the email-invite path adds them as a
+    /// NAMED participant, which makes the share invite-only for that Apple ID.
+    /// If their device is signed into a different Apple ID (or a pending invite
+    /// slot lingers from a previous share), CloudKit forces the icloud.com claim
+    /// and dead-ends. Converting the share to a pure PUBLIC link — dropping the
+    /// unaccepted named participants and setting publicPermission = .readWrite —
+    /// lets that person join via the link with THEIR OWN Apple ID, no claim.
+    /// Accepted participants are kept. Completion (main thread) returns the URL.
+    func resetToPublicLink(for project: Project, completion: @escaping (Result<URL, Error>) -> Void) {
+        prepareShare(for: project) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .failure(let err):
+                completion(.failure(err))
+            case .success(.existing(let share, _)), .success(.created(let share, _)):
+                self.makePublicClearingPending(share) { r in
+                    switch r {
+                    case .failure(let e):
+                        completion(.failure(e))
+                    case .success:
+                        if let url = share.url {
+                            completion(.success(url))
+                        } else {
+                            completion(.failure(AppError.shareCreationFailed(
+                                NSLocalizedString("招待リンクを準備中です。数秒待ってからもう一度お試しください。", comment: ""))))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Drop every unaccepted (pending) non-owner participant and make the share
+    /// public. Pending named slots are exactly what reserve one Apple ID and
+    /// route that person to the icloud.com claim; removing them proactively
+    /// (not only on the #2043 error) is what fixes the "one person can't join"
+    /// case. Completion runs on the main thread.
+    private func makePublicClearingPending(_ share: CKShare, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let store = persistence.privateStore else {
+            completion(.failure(AppError.shareCreationFailed(NSLocalizedString("共有ストアが利用できません。", comment: ""))))
+            return
+        }
+        let pending = share.participants.filter { $0.role != .owner && $0.acceptanceStatus == .pending }
+        pending.forEach { share.removeParticipant($0) }
+        share.publicPermission = .readWrite
+        persistence.container.persistUpdatedShare(share, in: store) { _, error in
+            DispatchQueue.main.async {
+                if let error { completion(.failure(error)) } else { completion(.success(())) }
+            }
+        }
+    }
+
     /// Accept an invitation from a pasted share URL. This is the recovery path
     /// when the link was opened in an in-app browser (LINE など) that cannot
     /// hand the invitation to the app: the user copies the link and joins here.
