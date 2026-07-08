@@ -164,15 +164,14 @@ struct EmailInviteSheet: View {
 　カメラで読み取ってください（同じくタナミルが開きます）
 
 【うまくいかないとき】
-・下のリンクを長押しでコピーして、タナミルの「プロジェクト」画面 →
-　右上「…」→「招待リンクから参加」に貼り付けてください：
-%@
+・上の招待リンクを長押しでコピーして、タナミルの「プロジェクト」画面 →
+　右上「…」→「招待リンクから参加」に貼り付けてください
+　（このリンクは、どこで開いても必ずタナミルに入るようになっています）
 
 ―――――――――――――
 参加できると、共有プロジェクトが「プロジェクト」一覧に表示されます
 （表示まで少し時間がかかることがあります）。
 """, comment: ""), project.displayName, AppConfig.appStoreURL, trimmed,
-     inviteURL.map { CloudSharingService.joinWrapperURL(for: $0).absoluteString } ?? "",
-     inviteURL?.absoluteString ?? "")
+     inviteURL.map { CloudSharingService.joinWrapperURL(for: $0).absoluteString } ?? "")
     }
 }

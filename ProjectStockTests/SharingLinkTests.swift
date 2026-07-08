@@ -59,4 +59,24 @@ final class SharingLinkTests: XCTestCase {
         // 別ホストのjoinも拾わない
         XCTAssertNil(RootTabView.shareURL(fromJoinLink: URL(string: "https://example.com/join?s=https://www.icloud.com/share/x")!))
     }
+
+    // 1.2.56: 招待メールにはもう生のicloud.comリンクを載せない。貼り付け参加でも
+    // ラッパー（t.l0l0.app/join?s=…）を受理し、中のicloud共有URLに復元する。
+    func testExtractUnwrapsWrapperLink() {
+        let share = URL(string: "https://www.icloud.com/share/0abcDEF123ghi")!
+        let wrapper = CloudSharingService.joinWrapperURL(for: share)
+        // リンク単体
+        XCTAssertEqual(CloudSharingService.extractShareURL(from: wrapper.absoluteString)?.absoluteString,
+                       share.absoluteString)
+        // 招待メッセージ全文に紛れていても拾って復元する
+        let message = "招待リンク：\n\(wrapper.absoluteString)\nよろしくお願いします"
+        XCTAssertEqual(CloudSharingService.extractShareURL(from: message)?.absoluteString,
+                       share.absoluteString)
+    }
+
+    func testExtractStillHandlesRawIcloudForBackwardCompat() {
+        // 旧バージョンが送った生のicloudリンクを貼られても従来どおり参加できる。
+        let url = CloudSharingService.extractShareURL(from: "https://www.icloud.com/share/0legacy999")
+        XCTAssertEqual(url?.absoluteString, "https://www.icloud.com/share/0legacy999")
+    }
 }

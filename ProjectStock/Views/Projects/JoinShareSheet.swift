@@ -32,7 +32,7 @@ struct JoinShareSheet: View {
                 } header: {
                     Text(NSLocalizedString("招待リンク", comment: ""))
                 } footer: {
-                    Text(NSLocalizedString("受け取った招待リンク（icloud.com/share/…）を貼り付けてください。招待メッセージごと貼り付けても大丈夫です。LINEなどでリンクを開いてもサインイン画面から進めないときは、リンクを長押しでコピーして、ここから参加できます。", comment: ""))
+                    Text(NSLocalizedString("受け取った招待リンク（t.l0l0.app/join… または icloud.com/share…）を貼り付けてください。招待メッセージごと貼り付けても大丈夫です。LINEなどでリンクを開いてもサインイン画面から進めないときは、リンクを長押しでコピーして、ここから参加できます。", comment: ""))
                 }
 
                 Section {

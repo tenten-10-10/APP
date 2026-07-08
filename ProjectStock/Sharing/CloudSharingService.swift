@@ -421,6 +421,19 @@ final class CloudSharingService: ObservableObject {
     static func extractShareURL(from text: String) -> URL? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
+
+        // Our own wrapper link (t.l0l0.app/join?s=…) may be pasted instead of the
+        // raw icloud link. Unwrap it so both work — this lets the invite expose
+        // ONLY the wrapper (which always routes into タナミル or the install page),
+        // never a bare icloud.com URL that could dead-end on the web sign-in.
+        if let range = trimmed.range(of: #"https://[^\s]+/join\?[^\s]+"#, options: .regularExpression),
+           let comps = URLComponents(string: String(trimmed[range])),
+           comps.host == AppConfig.linkHost,
+           let inner = comps.queryItems?.first(where: { $0.name == "s" })?.value,
+           let innerURL = URL(string: inner), innerURL.host?.hasSuffix("icloud.com") == true {
+            return innerURL
+        }
+
         let candidate: String
         if let range = trimmed.range(of: #"https://www\.icloud\.com/share/[^\s]+"#, options: .regularExpression) {
             candidate = String(trimmed[range])
