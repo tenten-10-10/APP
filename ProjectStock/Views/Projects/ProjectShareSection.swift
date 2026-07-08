@@ -150,7 +150,9 @@ struct ProjectShareSection: View {
                         }
                         .disabled(preparingInvite)
                         .accessibilityIdentifier("sendInviteButton")
-                        .sheet(item: $inviteSheet) { ShareSheet(items: [$0.text]) }
+                        .sheet(item: $inviteSheet) { invite in
+                            ShareSheet(items: [invite.text] + (invite.qrURL.map { [$0] } ?? []))
+                        }
                         Text(NSLocalizedString("このリンクを知っている人は誰でも参加でき、在庫を編集できます。信頼できる相手にだけ送ってください。", comment: ""))
                             .font(.caption2).foregroundColor(.secondary)
 
@@ -236,7 +238,7 @@ struct ProjectShareSection: View {
 
 ※どちらも、タナミルを入れたiPhoneなら参加できます。iCloudのサインイン画面で止まってしまう場合は、この新しいリンクで開き直してください。
 """, comment: ""), project.displayName, wrapper, url.absoluteString)
-                inviteSheet = InviteText(text: message)
+                inviteSheet = InviteText(text: message, qrURL: InviteQR.write(wrapper))
                 Haptics.success()
             }
         }
@@ -290,17 +292,24 @@ struct ProjectShareSection: View {
                     format: NSLocalizedString("招待リンクを参加可能にできませんでした（%@）。もう一度お試しください。", comment: ""),
                     err.localizedDescription)))
             case .success:
+                // Send the wrapper link (opens the app / install page, never the
+                // icloud.com sign-in) and attach a QR of it, so a recipient who
+                // reads the invite on a PC can scan it with a phone.
+                let wrapper = CloudSharingService.joinWrapperURL(for: url).absoluteString
                 let message = String(
-                    format: NSLocalizedString("在庫アプリ「タナミル」でプロジェクト『%@』に招待します。\n\n① アプリ未インストールの方は、まずこちらから入手してください：\n%@\n\n② インストール後、この招待リンクを開いて参加してください：\n%@\n\n③ リンクを開いてもサインイン画面から進めないとき（LINEなど）は、②のリンクを長押しでコピーし、タナミルの「プロジェクト」画面右上の「…」→「招待リンクから参加」に貼り付けてください。", comment: ""),
-                    project.displayName, AppConfig.appStoreURL, url.absoluteString)
-                inviteSheet = InviteText(text: message)
+                    format: NSLocalizedString("在庫アプリ「タナミル」でプロジェクト『%@』に招待します。\n\n① アプリ未インストールの方は、まずこちらから入手してください：\n%@\n\n② インストール後、この招待リンクを開くか、添付のQRコードをスマホのカメラで読み取って参加してください：\n%@\n\n③ リンクを開いてもサインイン画面から進めないとき（LINEなど）は、②のリンクを長押しでコピーし、タナミルの「プロジェクト」画面右上の「…」→「招待リンクから参加」に貼り付けてください。", comment: ""),
+                    project.displayName, AppConfig.appStoreURL, wrapper)
+                inviteSheet = InviteText(text: message, qrURL: InviteQR.write(wrapper))
             }
         }
     }
 }
 
 /// Identifiable wrapper so an invitation message can drive `.sheet(item:)`.
+/// `qrURL` is an optional QR image to share alongside the text, so a recipient
+/// reading the invite on a PC can scan it with a phone.
 struct InviteText: Identifiable {
     let id = UUID()
     let text: String
+    var qrURL: URL? = nil
 }

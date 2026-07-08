@@ -10,6 +10,11 @@ struct ScanTabView: View {
     @State private var zoom: CGFloat = 1
     @State private var outcome: ScanOutcomeBox?
     @State private var foreignValue: String?
+    // A scanned invite QR (share link) is handled in place, not routed as an
+    // inventory code.
+    @State private var joining = false
+    @State private var joinMessage: String?
+    @State private var joinSucceeded = false
 
     var body: some View {
         ZStack {
@@ -54,10 +59,18 @@ struct ScanTabView: View {
                   },
                   secondaryButton: .cancel(Text(NSLocalizedString("閉じる", comment: ""))))
         }
+        .alert(item: Binding(get: { joinMessage.map { PresentableError(message: $0) } },
+                             set: { _ in joinMessage = nil })) { presentable in
+            Alert(title: Text(joinSucceeded
+                              ? NSLocalizedString("共有に参加しました", comment: "")
+                              : NSLocalizedString("共有に参加できませんでした", comment: "")),
+                  message: Text(presentable.message),
+                  dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+        }
     }
 
     /// A result is on screen — the camera must not keep scanning behind it.
-    private var resultShowing: Bool { outcome != nil || foreignValue != nil }
+    private var resultShowing: Bool { outcome != nil || foreignValue != nil || joining || joinMessage != nil }
 
     private var scannerLayer: some View {
         ZStack {
@@ -118,6 +131,26 @@ struct ScanTabView: View {
         // Belt and braces: a frame already in flight when the session pauses
         // must not replace the result the user is looking at.
         guard !resultShowing else { return }
+        // An invite QR (t.l0l0.app/join?s=… or a raw icloud.com/share link) is a
+        // share invitation, not an inventory code — so scanning it with タナミル's
+        // OWN reader joins the shared project instead of showing "対象外".
+        if let shareURL = joinShareURL(from: raw) {
+            joining = true
+            container.sharing.joinShare(from: shareURL) { result in
+                joining = false
+                switch result {
+                case .success:
+                    joinSucceeded = true
+                    Haptics.success()
+                    joinMessage = NSLocalizedString("共有プロジェクトに参加しました。同期が終わると「プロジェクト」一覧に表示されます。", comment: "")
+                case .failure(let err):
+                    joinSucceeded = false
+                    Haptics.warning()
+                    joinMessage = err.localizedDescription
+                }
+            }
+            return
+        }
         let result = container.scanRouter.route(rawValue: raw, in: container.viewContext)
         switch result {
         case .known(let alias), .unassigned(let alias), .retired(let alias):
@@ -131,6 +164,18 @@ struct ScanTabView: View {
             Haptics.warning()
             foreignValue = value
         }
+    }
+
+    /// If the scanned string is a share invitation — our own wrapper link
+    /// (`t.l0l0.app/join?s=…`) or a raw `icloud.com/share/…` link — return the
+    /// iCloud share URL to accept. Inventory codes (`t.l0l0.app/<code>`) return
+    /// nil and route normally.
+    private func joinShareURL(from raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: trimmed), let inner = RootTabView.shareURL(fromJoinLink: url) {
+            return inner
+        }
+        return CloudSharingService.extractShareURL(from: trimmed)
     }
 
     private func registerScan(_ alias: CodeAlias) {
