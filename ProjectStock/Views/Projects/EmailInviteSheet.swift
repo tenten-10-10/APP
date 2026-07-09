@@ -110,7 +110,9 @@ struct EmailInviteSheet: View {
                                 recipients: [trimmed], attachmentURL: qrFileURL) { dismiss() }
             }
             .sheet(isPresented: $showShare) {
-                ShareSheet(items: [guidance] + (qrFileURL.map { [$0] } ?? []))
+                // LINE などのチャットには短い lineGuidance を送る（メール経路は
+                // 丁寧な長文 guidance のまま）。QR画像も一緒に添付する。
+                ShareSheet(items: [lineGuidance] + (qrFileURL.map { [$0] } ?? []))
             }
             .errorAlert($error)
         }
@@ -173,5 +175,28 @@ struct EmailInviteSheet: View {
 （表示まで少し時間がかかることがあります）。
 """, comment: ""), project.displayName, AppConfig.appStoreURL, trimmed,
      inviteURL.map { CloudSharingService.joinWrapperURL(for: $0).absoluteString } ?? "")
+    }
+
+    /// LINE などのチャット向けの短い案内文。メール版(guidance)は手順を細かく
+    /// 刻んだ長文だが、チャットでは長すぎて読まれない。要点だけに絞り、口調も
+    /// やわらかくする。LINEの内蔵ブラウザはリンクを開くと icloud.com のサイン
+    /// イン画面で行き止まりになりやすいので、「コピーして招待リンクから参加」の
+    /// 逃げ道を先頭寄りに置くのがポイント。
+    private var lineGuidance: String {
+        String(format: NSLocalizedString("""
+在庫アプリ「タナミル」の『%@』に招待します🙌
+
+▼参加リンク（iPhoneで開いてね）
+%@
+
+・タップするとタナミルが開いて参加できます
+・サインイン画面（icloud.com）が出て進めないときは、上のリンクを長押しでコピー →タナミルの「プロジェクト」画面 右上「…」→「招待リンクから参加」に貼り付け
+・パソコンの方は、いっしょに送ったQR画像をスマホのカメラで読み取ってね
+
+※アプリを入れていない方はこちら→ %@
+※参加には、このメッセージを受け取った端末のiCloud（Apple ID）でのサインインが必要です
+""", comment: ""), project.displayName,
+     inviteURL.map { CloudSharingService.joinWrapperURL(for: $0).absoluteString } ?? "",
+     AppConfig.appStoreURL)
     }
 }
