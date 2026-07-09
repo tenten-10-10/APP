@@ -92,6 +92,14 @@ final class CloudKitSyncMonitor: ObservableObject {
     /// recorded in the diagnostics log.
     private var consecutiveFailures = 0
     private let errorDisplayThreshold = 3
+    /// CloudKit fires import/export events in bursts — batched delta sync, one
+    /// per store (private + shared), plus it re-imports its own exports. Logging
+    /// every routine "完了" floods the diagnostics feed (dozens per minute) and
+    /// buries the entries that matter (errors, 共有 milestones). We therefore log
+    /// at most one routine success per `routineSuccessLogInterval`; the live sync
+    /// badge still updates every event, and failures are never throttled.
+    private var lastRoutineSuccessLoggedAt: Date?
+    private let routineSuccessLogInterval: TimeInterval = 30
 
     init(persistence: PersistenceController) {
         self.persistence = persistence
@@ -141,6 +149,9 @@ final class CloudKitSyncMonitor: ObservableObject {
                 .compactMap { $0 }
                 .joined(separator: "\n")
             log(SyncLogEntry(type: event.type, succeeded: false, message: logMessage))
+            // Let the next success log immediately so a recovery is visible even
+            // if it lands within the throttle window.
+            lastRoutineSuccessLoggedAt = nil
             consecutiveFailures += 1
             if isDefinitiveFailure(error) || consecutiveFailures >= errorDisplayThreshold {
                 syncState = .error(mapped)
@@ -151,7 +162,14 @@ final class CloudKitSyncMonitor: ObservableObject {
             }
             mapAccountError(error)
         } else if !isStart {
-            log(SyncLogEntry(type: event.type, succeeded: true, message: NSLocalizedString("完了", comment: "")))
+            // Throttle routine successes so a sync burst collapses to ~1 log line
+            // instead of dozens. Only the log entry is throttled — the state
+            // release + recompute below still run for every completed event.
+            let now = Date()
+            if lastRoutineSuccessLoggedAt.map({ now.timeIntervalSince($0) >= routineSuccessLogInterval }) ?? true {
+                lastRoutineSuccessLoggedAt = now
+                log(SyncLogEntry(type: event.type, succeeded: true, message: NSLocalizedString("完了", comment: "")))
+            }
             consecutiveFailures = 0
             // A completed import/export means CloudKit is talking to the server
             // again — release a sticky error HERE, because recomputeState()
