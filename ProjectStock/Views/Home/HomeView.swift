@@ -37,12 +37,15 @@ struct HomeView: View {
         return r
     }(), animation: .default) private var lotUnits: FetchedResults<StockUnit>
 
+    // Loans are derived from the EVENT ledger (like the 活動 tab / LoansView), not
+    // a `statusRaw == checkedOut` unit fetch, so a desynced unit status can't hide
+    // a live loan. Predicate is on the event's own attribute (CloudKit-safe).
     @FetchRequest(fetchRequest: {
-        let r = StockUnit.fetchRequest()
-        r.sortDescriptors = [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: true)]
-        r.predicate = NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue)
+        let r = InventoryEvent.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \InventoryEvent.occurredAt, ascending: false)]
+        r.predicate = NSPredicate(format: "eventTypeRaw IN %@", InventoryService.statusEventTypeRaws)
         return r
-    }(), animation: .default) private var checkedOutUnits: FetchedResults<StockUnit>
+    }(), animation: .default) private var statusEvents: FetchedResults<InventoryEvent>
 
     // All QR labels. We deliberately DON'T filter by `project.isSample` in the
     // fetch predicate: a relationship-traversing predicate requires a SQL JOIN
@@ -77,12 +80,16 @@ struct HomeView: View {
         products.filter { $0.isLowStock }
     }
 
-    private var overdueLoans: [Loan] {
-        checkedOutUnits
-            .compactMap { container.inventory.currentLoan(for: $0) }
-            .filter { $0.isOverdue }
-            .sorted { ($0.dueAt ?? .distantPast) < ($1.dueAt ?? .distantPast) }
+    /// Active loans across everything visible, derived from the EVENT ledger
+    /// (same source as the 活動 tab) so a loan can't hide behind a desynced unit
+    /// status. See InventoryService.activeLoans(from:).
+    private var activeLoans: [Loan] {
+        container.inventory.activeLoans(from: Array(statusEvents))
     }
+    private var overdueLoans: [Loan] {
+        activeLoans.filter { $0.isOverdue }
+    }
+    private var totalOnLoanCount: Int { activeLoans.count }
 
     private var expiringLots: [StockUnit] {
         lotUnits.filter { $0.isExpired || $0.expiresSoon() }
@@ -344,10 +351,16 @@ struct HomeView: View {
                         label: NSLocalizedString("製品", comment: "")
                     )
                     divider
-                    metricCell(
-                        value: "\(totalLowStockCount)",
-                        label: NSLocalizedString("低在庫", comment: "")
-                    )
+                    // 貸出中: tap to open the loans list. Replaces 低在庫 here —
+                    // low stock is still surfaced in the alerts section below.
+                    NavigationLink(destination: LoansView()) {
+                        metricCell(
+                            value: "\(totalOnLoanCount)",
+                            label: NSLocalizedString("貸出中", comment: "")
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("onLoanMetric")
                     divider
                     NavigationLink(destination: LoansView()) {
                         metricCell(

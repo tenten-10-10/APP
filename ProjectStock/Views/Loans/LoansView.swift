@@ -7,15 +7,18 @@ struct LoansView: View {
     @EnvironmentObject private var container: ServiceContainer
     @EnvironmentObject private var settings: AppSettings
 
-    // Entity-NAME-based request (see HomeView): the `sortDescriptors:` convenience
-    // form resolves via NSManagedObject.entity(), which returns nil under CloudKit
-    // mirroring and crashes SwiftUI with "A fetch request must have an entity."
+    // Derive loans from the EVENT ledger (the same source the 活動 tab shows),
+    // NOT a `statusRaw == checkedOut` unit fetch: a checked-out unit whose cached
+    // status desynced — or whose unit↔events inverse didn't materialise on this
+    // device — was silently dropped, so a loan visible in 活動 went missing here.
+    // Predicate is on the event's OWN attribute (eventTypeRaw), which is safe
+    // under CloudKit multi-store; relationship-traversing predicates are not.
     @FetchRequest(fetchRequest: {
-        let r = StockUnit.fetchRequest()
-        r.sortDescriptors = [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: true)]
-        r.predicate = NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue)
+        let r = InventoryEvent.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \InventoryEvent.occurredAt, ascending: false)]
+        r.predicate = NSPredicate(format: "eventTypeRaw IN %@", InventoryService.statusEventTypeRaws)
         return r
-    }(), animation: .default) private var checkedOutUnits: FetchedResults<StockUnit>
+    }(), animation: .default) private var statusEvents: FetchedResults<InventoryEvent>
 
     @State private var error: PresentableError?
     /// Loan pending the return confirmation dialog. Returning rewrites the
@@ -25,7 +28,7 @@ struct LoansView: View {
     @State private var editingLoan: Loan?
 
     private var loans: [Loan] {
-        checkedOutUnits.compactMap { container.inventory.currentLoan(for: $0) }
+        container.inventory.activeLoans(from: Array(statusEvents))
     }
     private var overdue: [Loan] { loans.filter(\.isOverdue).sorted { ($0.dueAt ?? .distantPast) < ($1.dueAt ?? .distantPast) } }
     private var current: [Loan] {

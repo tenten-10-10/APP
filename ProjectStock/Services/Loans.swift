@@ -46,24 +46,48 @@ struct Loan: Identifiable {
 extension InventoryService {
 
     /// The loan currently in effect for a unit, or `nil` if it is not checked
-    /// out. The establishing event is the most recent, non-corrected checkout.
+    /// out. Derived purely from the unit's event ledger (the same source the
+    /// 活動 tab shows): the unit is on loan iff its latest non-corrected,
+    /// status-changing event is a checkout. This intentionally does NOT gate on
+    /// `unit.status` — a cached status that desynced (or an earlier two-step
+    /// lookup that disagreed with itself) must not make a live loan disappear.
     func currentLoan(for unit: StockUnit) -> Loan? {
-        guard resolvedStatus(for: unit) == .checkedOut else { return nil }
-        let checkout = unit.eventArray
-            .filter { $0.eventType == .checkout && $0.correctionArray.isEmpty }
-            .max(by: { $0.orderingKey < $1.orderingKey })
-        guard let event = checkout else { return nil }
-        return Loan(unit: unit, event: event, borrower: event.borrower,
-                    since: event.occurredAt ?? event.createdAt ?? Date(), dueAt: event.dueAt)
+        guard let checkout = openCheckout(among: unit.eventArray) else { return nil }
+        return loan(from: checkout, unit: unit)
     }
 
-    /// All active loans reachable in a context, ordered overdue/soonest-due
-    /// first, then by borrow time.
+    /// All active loans reachable in a context, ordered soonest-due first. Built
+    /// from the EVENT ledger (reaching each unit via `event.unit`) rather than a
+    /// `statusRaw == checkedOut` unit fetch, so a loan still lists even when the
+    /// unit↔events inverse relationship hasn't materialised on this device or the
+    /// unit's cached status desynced — the case where a loan shows in 活動 but was
+    /// missing from the loans list (the reported "紐付け" bug).
     func activeLoans(in context: NSManagedObjectContext) -> [Loan] {
-        let request = StockUnit.fetchRequest()
-        request.predicate = NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue)
-        let units = (try? context.fetch(request)) ?? []
-        return units.compactMap { currentLoan(for: $0) }.sorted { lhs, rhs in
+        let request = InventoryEvent.fetchRequest()
+        request.predicate = NSPredicate(format: "eventTypeRaw IN %@", Self.statusEventTypeRaws)
+        let events = (try? context.fetch(request)) ?? []
+        return activeLoans(from: events)
+    }
+
+    /// Compute the currently-open loans from a flat list of events. Used by the
+    /// views, which fetch events reactively (a `@FetchRequest`). Groups by unit,
+    /// keeps the latest non-corrected status-changing event per unit, and emits a
+    /// loan for every unit whose latest such event is a checkout.
+    func activeLoans(from events: [InventoryEvent]) -> [Loan] {
+        var latestByUnit: [NSManagedObjectID: InventoryEvent] = [:]
+        for event in events {
+            guard statusImplied(by: event.eventType) != nil,
+                  event.correctionArray.isEmpty,
+                  let unit = event.unit else { continue }
+            if let current = latestByUnit[unit.objectID],
+               !(current.orderingKey < event.orderingKey) { continue }
+            latestByUnit[unit.objectID] = event
+        }
+        return latestByUnit.values.compactMap { event -> Loan? in
+            guard event.eventType == .checkout, let unit = event.unit else { return nil }
+            return loan(from: event, unit: unit)
+        }
+        .sorted { lhs, rhs in
             switch (lhs.dueAt, rhs.dueAt) {
             case let (l?, r?): return l < r          // soonest due first
             case (_?, nil):    return true           // dated loans before undated
@@ -71,6 +95,27 @@ extension InventoryService {
             case (nil, nil):   return lhs.since < rhs.since
             }
         }
+    }
+
+    /// Event types that change a unit's status (the ledger's "status timeline").
+    static let statusEventTypeRaws: [String] = [
+        InventoryEventType.create, .receive, .returned, .checkout, .consume, .retire
+    ].map(\.rawValue)
+
+    /// The latest non-corrected status-changing event among `events`, but only if
+    /// it is a checkout (i.e. the unit is currently out) — else nil.
+    private func openCheckout(among events: [InventoryEvent]) -> InventoryEvent? {
+        let statusEvents = events.filter {
+            statusImplied(by: $0.eventType) != nil && $0.correctionArray.isEmpty
+        }
+        guard let latest = statusEvents.max(by: { $0.orderingKey < $1.orderingKey }),
+              latest.eventType == .checkout else { return nil }
+        return latest
+    }
+
+    private func loan(from checkout: InventoryEvent, unit: StockUnit) -> Loan {
+        Loan(unit: unit, event: checkout, borrower: checkout.borrower,
+             since: checkout.occurredAt ?? checkout.createdAt ?? Date(), dueAt: checkout.dueAt)
     }
 
     // MARK: - Expiry lots

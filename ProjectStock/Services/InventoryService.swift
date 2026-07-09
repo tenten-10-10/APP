@@ -393,7 +393,7 @@ struct InventoryService {
         return sameInstant && differentDevice && differentOutcome
     }
 
-    private func statusImplied(by type: InventoryEventType) -> UnitStatus? {
+    func statusImplied(by type: InventoryEventType) -> UnitStatus? {
         switch type {
         case .create, .receive, .returned: return .available
         case .checkout:                  return .checkedOut
