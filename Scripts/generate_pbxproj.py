@@ -357,7 +357,7 @@ PROJECT_COMMON = {
     "MTL_FAST_MATH": "YES",
     "SDKROOT": "iphoneos",
     "SWIFT_VERSION": "5.0",
-    "TARGETED_DEVICE_FAMILY": "\"1,2\"",
+    "TARGETED_DEVICE_FAMILY": "1",
     "ENABLE_BITCODE": "NO",
 }
 
@@ -398,7 +398,7 @@ APP_COMMON = {
     "PRODUCT_BUNDLE_IDENTIFIER": "com.tenten.tanamiru",
     "PRODUCT_NAME": "\"$(TARGET_NAME)\"",
     "SWIFT_EMIT_LOC_STRINGS": "YES",
-    "TARGETED_DEVICE_FAMILY": "\"1,2\"",
+    "TARGETED_DEVICE_FAMILY": "1",
 }
 
 # Debug keeps aps-environment=development (CloudKit Development);
@@ -419,7 +419,7 @@ TEST_COMMON = {
     "PRODUCT_BUNDLE_IDENTIFIER": "com.tenten.tanamiru.tests",
     "PRODUCT_NAME": "\"$(TARGET_NAME)\"",
     "SWIFT_VERSION": "5.0",
-    "TARGETED_DEVICE_FAMILY": "\"1,2\"",
+    "TARGETED_DEVICE_FAMILY": "1",
     "TEST_HOST": "\"$(BUILT_PRODUCTS_DIR)/ProjectStock.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ProjectStock\"",
 }
 
@@ -432,7 +432,7 @@ UITEST_COMMON = {
     "PRODUCT_BUNDLE_IDENTIFIER": "com.tenten.tanamiru.uitests",
     "PRODUCT_NAME": "\"$(TARGET_NAME)\"",
     "SWIFT_VERSION": "5.0",
-    "TARGETED_DEVICE_FAMILY": "\"1,2\"",
+    "TARGETED_DEVICE_FAMILY": "1",
     "TEST_TARGET_NAME": "ProjectStock",
 }
 
