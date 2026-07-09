@@ -355,12 +355,19 @@ struct ProductDetailView: View {
 
     @ViewBuilder private func unitRow(_ unit: StockUnit) -> some View {
         let loan = container.inventory.currentLoan(for: unit)
+        // 貸出中かどうかは「台帳（＝活動タブと同じ）」を正とする。個体の
+        // キャッシュ済み status は、真夜中(0:00)に記録された貸出より後の
+        // タイムスタンプを持つ初期登録に負けて .available に巻き戻ることが
+        // あり、そうなると貸出中の個体から返却ボタンが消えてしまう。台帳に
+        // 開いた貸出があれば status に関わらず「貸出中」として扱う。
+        let isOnLoan = loan != nil || unit.status == .checkedOut
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(unit.displaySerial)
                     HStack(spacing: 6) {
-                        Text(unit.status.localizedTitle).font(.caption2).foregroundColor(.secondary)
+                        Text(isOnLoan ? UnitStatus.checkedOut.localizedTitle : unit.status.localizedTitle)
+                            .font(.caption2).foregroundColor(.secondary)
                         if let borrower = loan?.borrower {
                             Text("· \(borrower)").font(.caption2).foregroundColor(.secondary).lineLimit(1)
                         }
@@ -400,14 +407,14 @@ struct ProductDetailView: View {
             }
             if canEdit {
                 HStack(spacing: 10) {
-                    if unit.status == .available {
-                        Button(NSLocalizedString("貸出", comment: "")) { checkoutUnit = unit }
-                            .buttonStyle(.bordered).controlSize(.small)
-                    } else if unit.status == .checkedOut {
+                    if isOnLoan {
                         Button(NSLocalizedString("返却", comment: "")) { unitAction(unit, .returned) }
                             .buttonStyle(.bordered).controlSize(.small)
+                    } else if unit.status == .available {
+                        Button(NSLocalizedString("貸出", comment: "")) { checkoutUnit = unit }
+                            .buttonStyle(.bordered).controlSize(.small)
                     }
-                    if unit.status != .checkedOut && deleteEnabled {
+                    if !isOnLoan && deleteEnabled {
                         Button(NSLocalizedString("削除", comment: "")) { requestDeleteUnit(unit) }
                             .buttonStyle(.bordered).controlSize(.small).tint(.red)
                             .accessibilityIdentifier("deleteUnitButton")
@@ -428,16 +435,16 @@ struct ProductDetailView: View {
                 Button { renamingUnit = unit } label: {
                     Label(NSLocalizedString("名前を変更", comment: ""), systemImage: "pencil")
                 }
-                if unit.status == .available {
-                    Button { checkoutUnit = unit } label: {
-                        Label(NSLocalizedString("貸出", comment: ""), systemImage: "person.badge.clock")
-                    }
-                } else if unit.status == .checkedOut {
+                if isOnLoan {
                     Button { unitAction(unit, .returned) } label: {
                         Label(NSLocalizedString("返却", comment: ""), systemImage: "arrow.uturn.left")
                     }
                     Button { editingLoanUnit = unit } label: {
                         Label(NSLocalizedString("期限・借り手を変更", comment: ""), systemImage: "calendar.badge.clock")
+                    }
+                } else if unit.status == .available {
+                    Button { checkoutUnit = unit } label: {
+                        Label(NSLocalizedString("貸出", comment: ""), systemImage: "person.badge.clock")
                     }
                 }
                 if unit.activeLabels.first != nil {
@@ -628,7 +635,7 @@ struct ProductDetailView: View {
     /// Deleting the product while units are out on loan would orphan the
     /// loans, so demand returns first.
     private func requestDeleteProduct() {
-        if product.unitArray.contains(where: { $0.status == .checkedOut }) {
+        if product.unitArray.contains(where: { $0.status == .checkedOut || container.inventory.currentLoan(for: $0) != nil }) {
             error = PresentableError(AppError.underlying(NSLocalizedString("貸出中の個体がある製品は削除できません。先に「返却」してから削除してください。", comment: "")))
         } else {
             confirmingProductDelete = true
@@ -651,7 +658,8 @@ struct ProductDetailView: View {
     /// Deleting a checked-out unit would orphan its loan, so demand a return
     /// first; everything else goes through the confirmation alert.
     private func requestDeleteUnit(_ unit: StockUnit) {
-        if unit.status == .checkedOut {
+        // status のキャッシュが巻き戻っていても台帳に開いた貸出があれば削除させない
+        if unit.status == .checkedOut || container.inventory.currentLoan(for: unit) != nil {
             error = PresentableError(AppError.underlying(NSLocalizedString("貸出中の個体は削除できません。先に「返却」してから削除してください。", comment: "")))
         } else {
             deletingUnit = unit

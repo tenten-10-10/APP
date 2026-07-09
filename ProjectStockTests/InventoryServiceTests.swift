@@ -140,6 +140,46 @@ final class InventoryServiceTests: XCTestCase {
         XCTAssertTrue(container.inventory.activeLoans(in: ctx).isEmpty)
     }
 
+    /// 実機で起きた不具合の回帰テスト: 貸出が真夜中(0:00)、初期登録が同日昼
+    /// (13:16)に記録されると、orderingKey では初期登録が「後」に来る。以前は
+    /// resolvedStatus がそれを拾って個体を .available に巻き戻し、製品詳細の
+    /// 個体一覧から貸出中の個体（と返却ボタン）が消えていた。台帳に開いた貸出
+    /// がある限り、初期登録のタイムスタンプが後でも貸出中として解決されるべき。
+    func testCheckoutBackdatedBeforeCreateStaysOnLoan() throws {
+        let container = TestSupport.makeContainer()
+        let ctx = container.viewContext
+        let project = TestSupport.makeProject(container)
+        let product = Product.make(in: ctx, name: "サンプル", project: project, trackingMode: .individual)
+        container.router.assignChild(product, toSameStoreAs: project, in: ctx)
+        let unit = StockUnit.make(in: ctx, serialNumber: "S4", product: product, project: project)
+        container.router.assignChild(unit, toSameStoreAs: project, in: ctx)
+
+        let midnight = Calendar.current.startOfDay(for: Date())
+        let afternoon = midnight.addingTimeInterval(13 * 3600 + 16 * 60)
+        // 貸出を先に（0:00）、初期登録を後に（13:16）記録する。registerUnit は
+        // unit.status を .available に上書きするので、この時点でキャッシュ済み
+        // status は貸出と食い違って .available になっている（＝実機の壊れた状態）。
+        container.inventory.checkout(unit: unit, actor: "麦倉", borrower: "加藤", occurredAt: midnight, in: ctx)
+        container.inventory.registerUnit(unit, location: nil, actor: "麦倉", occurredAt: afternoon, in: ctx)
+        try ctx.save()
+
+        XCTAssertNotNil(container.inventory.currentLoan(for: unit),
+                        "0:00の貸出が13:16の初期登録に隠されてはいけない")
+        XCTAssertEqual(container.inventory.resolvedStatus(for: unit), .checkedOut,
+                       "初期登録のタイムスタンプが後でも、台帳に開いた貸出があれば貸出中に解決される")
+        XCTAssertEqual(container.inventory.activeLoans(in: ctx).count, 1, "貸出一覧にも出る")
+
+        // 再解決でキャッシュ済み status も貸出中に治る（自己修復）。
+        container.inventory.applyResolvedStatus(to: unit)
+        XCTAssertEqual(unit.status, .checkedOut, "applyResolvedStatus でキャッシュも貸出中へ")
+
+        // 返却すれば台帳上も解決し、貸出が消える。
+        container.inventory.returnUnit(unit, to: nil, actor: "麦倉", in: ctx)
+        try ctx.save()
+        XCTAssertNil(container.inventory.currentLoan(for: unit), "返却後は貸出なし")
+        XCTAssertEqual(container.inventory.resolvedStatus(for: unit), .available)
+    }
+
     func testLotQuantityIsSumOfLedgerPerLotAndProduct() throws {
         let container = TestSupport.makeContainer()
         let ctx = container.viewContext

@@ -363,6 +363,13 @@ struct InventoryService {
     /// converge on the same answer. Events that have since been corrected
     /// (reversed) are ignored, so a corrected checkout/retire is undone.
     func resolvedStatus(for unit: StockUnit) -> UnitStatus {
+        // A live checkout wins first, using the SAME rule as the loans list
+        // (`openCheckout`): a checkout stays open unless a LATER
+        // return / retire / consume closed it. create / receive never close it.
+        // Without this, a checkout recorded at 00:00 loses the orderingKey race
+        // to a same-day 初期登録 (13:16), so `applyResolvedStatus` flipped a
+        // loaned unit back to 利用可能 — dropping its 返却 button entirely.
+        if openCheckout(among: unit.eventArray) != nil { return .checkedOut }
         let statusEvents = unit.eventArray.filter {
             statusImplied(by: $0.eventType) != nil && $0.correctionArray.isEmpty
         }

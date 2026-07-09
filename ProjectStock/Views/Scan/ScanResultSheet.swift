@@ -192,27 +192,33 @@ private struct KnownTargetView: View {
     }
 
     @ViewBuilder private func serialUnitActions(_ unit: StockUnit) -> some View {
+        // 貸出中かどうかは台帳（＝活動タブと同じ）を正とする。キャッシュ済み
+        // status は、真夜中の貸出より後のタイムスタンプを持つ初期登録に負けて
+        // .available に巻き戻ることがあり、そうなると返却ボタンが出なくなる。
+        let loan = container.inventory.currentLoan(for: unit)
+        let isOnLoan = loan != nil || unit.status == .checkedOut
         Section {
             if let product = unit.product {
                 NavigationLink(destination: ProductDetailView(product: product)) {
                     VStack(alignment: .leading) {
                         Text(unit.displaySerial).font(.headline)
-                        Text(unit.status.localizedTitle).foregroundColor(.secondary)
+                        Text(isOnLoan ? UnitStatus.checkedOut.localizedTitle : unit.status.localizedTitle)
+                            .foregroundColor(.secondary)
                     }
                 }
             }
         }
-        if let loan = container.inventory.currentLoan(for: unit) {
+        if let loan {
             Section(NSLocalizedString("貸出情報", comment: "")) {
                 LoanDetailRows(loan: loan)
             }
         }
         if container.sharing.canEdit(unit.project) {
             Section(NSLocalizedString("操作", comment: "")) {
-                if unit.status == .available {
-                    Button(NSLocalizedString("貸出", comment: "")) { showingCheckout = true }
-                } else if unit.status == .checkedOut {
+                if isOnLoan {
                     Button(NSLocalizedString("返却", comment: "")) { unitChange(unit, .returned) }
+                } else if unit.status == .available {
+                    Button(NSLocalizedString("貸出", comment: "")) { showingCheckout = true }
                 }
             }
         }

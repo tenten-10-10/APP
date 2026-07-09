@@ -111,7 +111,9 @@ extension InventoryService {
 
     /// The latest non-corrected status-changing event among `events`, but only if
     /// it is a checkout (i.e. the unit is currently out) — else nil.
-    private func openCheckout(among events: [InventoryEvent]) -> InventoryEvent? {
+    /// `internal` (not `private`) so `resolvedStatus` in InventoryService can
+    /// reuse the exact same "is this unit still out?" rule and never disagree.
+    func openCheckout(among events: [InventoryEvent]) -> InventoryEvent? {
         let live = events.filter { $0.correctionArray.isEmpty }
         // The establishing loan is the most recent checkout…
         guard let checkout = live
