@@ -163,24 +163,52 @@ struct ProjectDetailView: View {
         VStack(spacing: 0) {
             header
             if project.isSample { demoBanner }
-            Picker("", selection: $segment) {
+            // Animating the binding makes a segment TAP slide the pages too
+            // (not just a jump), matching the swipe transition below.
+            Picker("", selection: $segment.animation(.easeInOut(duration: 0.25))) {
                 ForEach(Segment.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)
             .padding(.bottom, 8)
 
-            List {
-                switch segment {
-                case .products:  productsSection
-                case .folders:   foldersSection
-                case .locations: locationsSection
-                case .activity:  EventListView(events: project.eventArray, onCorrect: canEdit ? correct : nil)
-                case .share:     ProjectShareSection(project: project, permission: $permission)
-                }
+            // Left/right swipe across the whole content moves between segments
+            // (製品 ⇄ フォルダ ⇄ 場所 ⇄ 活動 ⇄ 共有), synced with the segmented
+            // control above. The page swipe spans the full area — easy to reach
+            // with a thumb near the bottom — and takes priority over inner
+            // horizontal gestures, which is the requested behaviour. Delete is
+            // still reachable via long-press (context menu) when a row's own
+            // swipe loses to the page swipe.
+            TabView(selection: $segment) {
+                productsPage.tag(Segment.products)
+                foldersPage.tag(Segment.folders)
+                locationsPage.tag(Segment.locations)
+                activityPage.tag(Segment.activity)
+                sharePage.tag(Segment.share)
             }
-            .listStyle(.insetGrouped)
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
+    }
+
+    // Each segment is its own List page inside the paged TabView. Kept as
+    // separate computed properties so the TabView body stays cheap to
+    // type-check (the flat version already flirts with the solver's budget).
+    private var productsPage: some View {
+        List { productsSection }.listStyle(.insetGrouped)
+    }
+    private var foldersPage: some View {
+        List { foldersSection }.listStyle(.insetGrouped)
+    }
+    private var locationsPage: some View {
+        List { locationsSection }.listStyle(.insetGrouped)
+    }
+    private var activityPage: some View {
+        List { EventListView(events: project.eventArray, onCorrect: canEdit ? correct : nil) }
+            .listStyle(.insetGrouped)
+    }
+    private var sharePage: some View {
+        List { ProjectShareSection(project: project, permission: $permission) }
+            .listStyle(.insetGrouped)
     }
 
     // MARK: - Demo data banner
