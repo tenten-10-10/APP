@@ -35,15 +35,32 @@ struct WebBorrowRequest: Decodable, Identifiable, Equatable {
         return f
     }()
 
-    /// Loan start: the borrower's chosen "from" date (local midnight), or the
-    /// moment the request was created if they left it blank.
-    var startDate: Date {
-        if let from = borrowFrom, let d = Self.dayFormatter.date(from: from) { return d }
+    /// When the borrow request was submitted (the web form's `created_at`),
+    /// falling back to "now" if it can't be parsed. This carries a real
+    /// time-of-day, unlike the date-only `borrow_from`.
+    var appliedAt: Date {
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let d = iso.date(from: createdAt) { return d }
         iso.formatOptions = [.withInternetDateTime]
         return iso.date(from: createdAt) ?? Date()
+    }
+
+    /// Loan start. The web form only offers a DATE for "from", which parses to
+    /// local midnight — and a checkout recorded at 00:00 sorts *before* the
+    /// same-day 初期登録 events, which desyncs the unit's status and makes a
+    /// live loan vanish from the 個体 list ("貸出中なのに返却ボタンが出ない" bug).
+    /// So we stamp the borrower's chosen DAY with the application TIME-OF-DAY
+    /// (申請した時間). If they left "from" blank, use the full submission moment.
+    var startDate: Date {
+        let applied = appliedAt
+        guard let from = borrowFrom, let day = Self.dayFormatter.date(from: from) else {
+            return applied
+        }
+        let cal = Calendar.current
+        let t = cal.dateComponents([.hour, .minute, .second], from: applied)
+        return cal.date(bySettingHour: t.hour ?? 0, minute: t.minute ?? 0,
+                        second: t.second ?? 0, of: day) ?? applied
     }
 
     /// Loan due date: end of the borrower's chosen "until" day, or `nil`.

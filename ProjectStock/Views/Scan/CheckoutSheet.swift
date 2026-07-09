@@ -17,6 +17,13 @@ struct CheckoutSheet: View {
     @State private var note = ""
     @State private var error: PresentableError?
 
+    /// A return deadline is day-granular: the borrower must return it *by the
+    /// end of* the chosen day, so we stamp 23:59 rather than carry a stray
+    /// time-of-day (and never 00:00, which would read as "due first thing").
+    private func endOfDay(_ date: Date) -> Date {
+        Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: date) ?? date
+    }
+
     var body: some View {
         NavigationView {
             Form {
@@ -37,11 +44,11 @@ struct CheckoutSheet: View {
                     Toggle(NSLocalizedString("返却期限を設定", comment: ""), isOn: $hasDueDate.animation())
                     if hasDueDate {
                         DatePicker(NSLocalizedString("返却期限", comment: ""), selection: $dueDate,
-                                   displayedComponents: [.date, .hourAndMinute])
+                                   displayedComponents: [.date])
                     }
                 } footer: {
                     if hasDueDate {
-                        Text(NSLocalizedString("期限を過ぎると通知でお知らせします。", comment: ""))
+                        Text(NSLocalizedString("その日の終わり（23:59）を期限として、過ぎると通知でお知らせします。", comment: ""))
                     }
                 }
                 Section(NSLocalizedString("メモ", comment: "")) {
@@ -68,7 +75,7 @@ struct CheckoutSheet: View {
         let unitID = unit.objectID
         let actor = settings.effectiveOperatorName
         let trimmed = borrower.trimmingCharacters(in: .whitespacesAndNewlines)
-        let due: Date? = hasDueDate ? dueDate : nil
+        let due: Date? = hasDueDate ? endOfDay(dueDate) : nil
         let noteText = note
         let result = container.performWrite { ctx in
             guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }

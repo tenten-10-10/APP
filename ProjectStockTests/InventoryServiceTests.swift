@@ -276,4 +276,48 @@ final class InventoryServiceTests: XCTestCase {
         XCTAssertTrue(project.eventArray.contains { $0.eventType == .retire && ($0.note ?? "").contains("削除") },
                       "プロジェクトの履歴に削除の記録が残る")
     }
+
+    // MARK: - Web借用フォームの日付解釈（0:00で記録しないための回帰テスト）
+
+    private func webRequest(from: String?, until: String?,
+                            createdAt: String = "2026-07-09T13:16:30Z") -> WebBorrowRequest {
+        WebBorrowRequest(id: "r1", code: "ABC123", borrowerName: "佐藤",
+                         borrowFrom: from, borrowUntil: until, destination: nil,
+                         note: nil, status: "pending", createdAt: createdAt)
+    }
+
+    /// 借用開始日は「日付だけ」でも 0:00 にせず、申請時刻(created_at)の
+    /// 時分秒を引き継ぐ（0:00だと同日の初期登録より前に並び、貸出中の個体が
+    /// 一覧から消えるため）。日は borrow_from の日と一致する。
+    func testWebBorrowStartDateCarriesApplicationTimeNotMidnight() {
+        let req = webRequest(from: "2026-07-09", until: nil)
+        let cal = Calendar.current
+        XCTAssertEqual(cal.dateComponents([.hour, .minute, .second], from: req.startDate),
+                       cal.dateComponents([.hour, .minute, .second], from: req.appliedAt),
+                       "貸出開始の時刻は申請時刻を引き継ぐ")
+        let expectedDay = cal.date(from: DateComponents(year: 2026, month: 7, day: 9))!
+        XCTAssertTrue(cal.isDate(req.startDate, inSameDayAs: expectedDay),
+                      "貸出開始の日は borrow_from の日")
+        let hms = cal.dateComponents([.hour, .minute, .second], from: req.startDate)
+        XCTAssertFalse(hms.hour == 0 && hms.minute == 0 && hms.second == 0,
+                       "13:16の申請なので 0:00 にはならない")
+    }
+
+    /// borrow_from 空欄なら、申請日時（created_at そのもの）を使う。
+    func testWebBorrowStartDateFallsBackToApplicationMoment() {
+        let req = webRequest(from: nil, until: nil)
+        XCTAssertEqual(req.startDate.timeIntervalSinceReferenceDate,
+                       req.appliedAt.timeIntervalSinceReferenceDate, accuracy: 0.001,
+                       "開始日未入力なら申請日時をそのまま使う")
+    }
+
+    /// 返却期限は、日付が入っていればその日の 23:59:59。
+    func testWebBorrowDueDateIsEndOfChosenDay() throws {
+        let req = webRequest(from: "2026-07-09", until: "2026-07-15")
+        let due = try XCTUnwrap(req.dueDate)
+        let c = Calendar.current.dateComponents([.hour, .minute, .second], from: due)
+        XCTAssertEqual(c.hour, 23)
+        XCTAssertEqual(c.minute, 59)
+        XCTAssertEqual(c.second, 59)
+    }
 }

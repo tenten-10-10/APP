@@ -16,6 +16,11 @@ struct LoanEditSheet: View {
     @State private var due = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
     @State private var error: PresentableError?
 
+    /// 返却期限は日単位（その日の終わり=23:59まで）に統一する。
+    private func endOfDay(_ date: Date) -> Date {
+        Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: date) ?? date
+    }
+
     var body: some View {
         NavigationView {
             Form {
@@ -27,10 +32,10 @@ struct LoanEditSheet: View {
                     Toggle(NSLocalizedString("返却期限", comment: ""), isOn: $hasDue.animation())
                     if hasDue {
                         DatePicker(NSLocalizedString("期限", comment: ""), selection: $due,
-                                   displayedComponents: [.date, .hourAndMinute])
+                                   displayedComponents: [.date])
                     }
                 } footer: {
-                    Text(NSLocalizedString("期限を設定すると、期限を過ぎたときに通知でお知らせします。貸出日はそのまま保持されます。", comment: ""))
+                    Text(NSLocalizedString("その日の終わり（23:59）を期限とし、過ぎたときに通知でお知らせします。貸出日はそのまま保持されます。", comment: ""))
                 }
             }
             .navigationTitle(NSLocalizedString("貸出内容を変更", comment: ""))
@@ -61,7 +66,7 @@ struct LoanEditSheet: View {
     private func save() {
         let unitID = unit.objectID
         let name = borrower
-        let dueAt: Date? = hasDue ? due : nil
+        let dueAt: Date? = hasDue ? endOfDay(due) : nil
         let result = container.performWrite { ctx in
             guard let u = try ctx.existingObject(with: unitID) as? StockUnit else { return }
             guard container.inventory.updateLoan(for: u, borrower: name, dueAt: dueAt) else {
