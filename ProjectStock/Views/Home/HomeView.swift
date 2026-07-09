@@ -47,6 +47,15 @@ struct HomeView: View {
         return r
     }(), animation: .default) private var statusEvents: FetchedResults<InventoryEvent>
 
+    // Safety-net fetch (union'd with event-derived loans): units whose cached
+    // status says checked-out, in case the event→unit link didn't resolve.
+    @FetchRequest(fetchRequest: {
+        let r = StockUnit.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: true)]
+        r.predicate = NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue)
+        return r
+    }(), animation: .default) private var checkedOutUnits: FetchedResults<StockUnit>
+
     // All QR labels. We deliberately DON'T filter by `project.isSample` in the
     // fetch predicate: a relationship-traversing predicate requires a SQL JOIN
     // that CloudKit's mirrored multi-store (private + shared) coordinator can't
@@ -84,7 +93,8 @@ struct HomeView: View {
     /// (same source as the 活動 tab) so a loan can't hide behind a desynced unit
     /// status. See InventoryService.activeLoans(from:).
     private var activeLoans: [Loan] {
-        container.inventory.activeLoans(from: Array(statusEvents))
+        container.inventory.activeLoans(from: Array(statusEvents),
+                                        fallbackUnits: Array(checkedOutUnits))
     }
     private var overdueLoans: [Loan] {
         activeLoans.filter { $0.isOverdue }

@@ -66,28 +66,35 @@ extension InventoryService {
         let request = InventoryEvent.fetchRequest()
         request.predicate = NSPredicate(format: "eventTypeRaw IN %@", Self.statusEventTypeRaws)
         let events = (try? context.fetch(request)) ?? []
-        return activeLoans(from: events)
+        let unitReq = StockUnit.fetchRequest()
+        unitReq.predicate = NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue)
+        let units = (try? context.fetch(unitReq)) ?? []
+        return activeLoans(from: events, fallbackUnits: units)
     }
 
     /// Compute the currently-open loans from a flat list of events. Used by the
     /// views, which fetch events reactively (a `@FetchRequest`). Groups by unit,
     /// keeps the latest non-corrected status-changing event per unit, and emits a
     /// loan for every unit whose latest such event is a checkout.
-    func activeLoans(from events: [InventoryEvent]) -> [Loan] {
-        var latestByUnit: [NSManagedObjectID: InventoryEvent] = [:]
+    func activeLoans(from events: [InventoryEvent], fallbackUnits: [StockUnit] = []) -> [Loan] {
+        // Group every unit-bearing event by its unit, then decide per unit.
+        var byUnit: [NSManagedObjectID: [InventoryEvent]] = [:]
         for event in events {
-            guard statusImplied(by: event.eventType) != nil,
-                  event.correctionArray.isEmpty,
-                  let unit = event.unit else { continue }
-            if let current = latestByUnit[unit.objectID],
-               !(current.orderingKey < event.orderingKey) { continue }
-            latestByUnit[unit.objectID] = event
+            guard let unit = event.unit else { continue }
+            byUnit[unit.objectID, default: []].append(event)
         }
-        return latestByUnit.values.compactMap { event -> Loan? in
-            guard event.eventType == .checkout, let unit = event.unit else { return nil }
-            return loan(from: event, unit: unit)
+        var loansByUnit: [NSManagedObjectID: Loan] = [:]
+        for (uid, unitEvents) in byUnit {
+            if let checkout = openCheckout(among: unitEvents), let unit = checkout.unit {
+                loansByUnit[uid] = loan(from: checkout, unit: unit)
+            }
         }
-        .sorted { lhs, rhs in
+        // Safety net: a unit whose event→unit link didn't materialise on this
+        // device but whose own status/eventArray did (statusRaw == checkedOut).
+        for unit in fallbackUnits where loansByUnit[unit.objectID] == nil {
+            if let loan = currentLoan(for: unit) { loansByUnit[unit.objectID] = loan }
+        }
+        return loansByUnit.values.sorted { lhs, rhs in
             switch (lhs.dueAt, rhs.dueAt) {
             case let (l?, r?): return l < r          // soonest due first
             case (_?, nil):    return true           // dated loans before undated
@@ -105,12 +112,21 @@ extension InventoryService {
     /// The latest non-corrected status-changing event among `events`, but only if
     /// it is a checkout (i.e. the unit is currently out) — else nil.
     private func openCheckout(among events: [InventoryEvent]) -> InventoryEvent? {
-        let statusEvents = events.filter {
-            statusImplied(by: $0.eventType) != nil && $0.correctionArray.isEmpty
+        let live = events.filter { $0.correctionArray.isEmpty }
+        // The establishing loan is the most recent checkout…
+        guard let checkout = live
+            .filter({ $0.eventType == .checkout })
+            .max(by: { $0.orderingKey < $1.orderingKey }) else { return nil }
+        // …and the unit is still out unless a LATER return / retire / consume
+        // closed it. We deliberately do NOT treat create/receive as closers:
+        // those logically precede a checkout, but a tie or a backdated timestamp
+        // could otherwise rank one "after" the checkout and wrongly hide a live
+        // loan — the loan then shows in 活動 but vanishes from the loans list.
+        let closed = live.contains { e in
+            (e.eventType == .returned || e.eventType == .retire || e.eventType == .consume)
+                && checkout.orderingKey < e.orderingKey
         }
-        guard let latest = statusEvents.max(by: { $0.orderingKey < $1.orderingKey }),
-              latest.eventType == .checkout else { return nil }
-        return latest
+        return closed ? nil : checkout
     }
 
     private func loan(from checkout: InventoryEvent, unit: StockUnit) -> Loan {

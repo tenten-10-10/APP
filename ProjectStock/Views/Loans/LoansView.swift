@@ -20,6 +20,16 @@ struct LoansView: View {
         return r
     }(), animation: .default) private var statusEvents: FetchedResults<InventoryEvent>
 
+    // Safety-net fetch: units whose status says checked-out. Union'd with the
+    // event-derived loans so a loan shows whether the event→unit or the
+    // unit→events link is the one that resolved on this device.
+    @FetchRequest(fetchRequest: {
+        let r = StockUnit.fetchRequest()
+        r.sortDescriptors = [NSSortDescriptor(keyPath: \StockUnit.updatedAt, ascending: true)]
+        r.predicate = NSPredicate(format: "statusRaw == %@", UnitStatus.checkedOut.rawValue)
+        return r
+    }(), animation: .default) private var checkedOutUnits: FetchedResults<StockUnit>
+
     @State private var error: PresentableError?
     /// Loan pending the return confirmation dialog. Returning rewrites the
     /// ledger, so a mis-tap should not commit it silently.
@@ -28,7 +38,8 @@ struct LoansView: View {
     @State private var editingLoan: Loan?
 
     private var loans: [Loan] {
-        container.inventory.activeLoans(from: Array(statusEvents))
+        container.inventory.activeLoans(from: Array(statusEvents),
+                                        fallbackUnits: Array(checkedOutUnits))
     }
     private var overdue: [Loan] { loans.filter(\.isOverdue).sorted { ($0.dueAt ?? .distantPast) < ($1.dueAt ?? .distantPast) } }
     private var current: [Loan] {
