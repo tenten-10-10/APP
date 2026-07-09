@@ -139,7 +139,18 @@ struct ShareSheet: UIViewControllerRepresentable {
             if let url = item as? URL, url.isFileURL { return FileShareItemSource(url: url) }
             return item
         }
-        return UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        // iPad: an activity controller shown as a popover must have an anchor or
+        // it crashes. `.sheet` hosting normally ignores this, but set it
+        // defensively so sharing can never bring the app down on iPad.
+        if let popover = controller.popoverPresentationController {
+            popover.sourceView = controller.view
+            popover.sourceRect = CGRect(x: controller.view.bounds.midX,
+                                        y: controller.view.bounds.maxY,
+                                        width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        return controller
     }
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
