@@ -42,6 +42,7 @@ struct ProjectStockApp: App {
                 .environmentObject(settings)
                 .environmentObject(entitlements)
                 .environmentObject(RemoteConfig.shared)
+                .environmentObject(AppUpdateChecker.shared)
                 .environment(\.managedObjectContext, container.viewContext)
                 .task {
                     // Seed a populated demo project for App Store screenshot runs.
@@ -64,11 +65,14 @@ struct ProjectStockApp: App {
                         await RemoteConfig.shared.refresh(force: true)
                         // Pull any web borrow requests (and auto-apply if enabled).
                         await container.webBorrow.refresh()
+                        // See if a newer App Store version is out (Home banner).
+                        await AppUpdateChecker.shared.check()
                     }
                 }
                 .onChange(of: scenePhase) { phase in
                     if phase == .active && !AppConfig.isRunningTests {
                         Task { await RemoteConfig.shared.refresh() }
+                        Task { await AppUpdateChecker.shared.check() }
                     }
                 }
                 .task {

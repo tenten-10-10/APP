@@ -70,6 +70,8 @@ struct HomeView: View {
     /// Remote notices / kill-switches (app-config.json). Injected from the App
     /// root; observed so a fetched お知らせ appears without relaunching.
     @EnvironmentObject private var remoteConfig: RemoteConfig
+    /// App Store update check — drives the "アップデートがあります" banner.
+    @EnvironmentObject private var updateChecker: AppUpdateChecker
 
     /// Injected by RootTabView to select the Scan tab, instead of pushing a
     /// second ScanTabView onto Home's own navigation stack.
@@ -144,9 +146,12 @@ struct HomeView: View {
 
     var body: some View {
         List {
+            if let newVersion = updateChecker.availableVersion { updateBanner(newVersion) }
             if let notice = remoteConfig.notice { noticeSection(notice) }
             startHubSection
-            if webBorrow.pendingCount > 0 { webBorrowSection }
+            // Always show the borrow-inbox entry (calm when empty) so it's a
+            // known place on Home, and lights up as an alert when a request lands.
+            webBorrowSection
             summaryCard
             if hasAlerts {
                 lowStockSection
@@ -208,6 +213,35 @@ struct HomeView: View {
     /// first sample is registered, shows a 3-step getting-started checklist.
     /// 運営からのお知らせ（app-config.json の notice）。障害・メンテ情報を
     /// アプリ更新なしで全ユーザーに届けるための枠。
+    /// Persistent "update available" banner — stays until the user updates
+    /// (no dismiss), so a shipped fix actually reaches everyone.
+    private func updateBanner(_ version: String) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                Label(NSLocalizedString("アップデートがあります", comment: ""),
+                      systemImage: "arrow.down.circle.fill")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundColor(.white)
+                Text(String(format: NSLocalizedString("新しいバージョン %@ が公開されています。最新の状態でご利用ください。", comment: ""), version))
+                    .font(.footnote)
+                    .foregroundColor(.white.opacity(0.95))
+                    .fixedSize(horizontal: false, vertical: true)
+                if let url = updateChecker.appStoreURL {
+                    Link(destination: url) {
+                        Text(NSLocalizedString("App Store で更新", comment: ""))
+                            .font(.footnote.weight(.bold))
+                            .foregroundColor(Brand.primary)
+                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .background(Capsule().fill(Color.white))
+                    }
+                    .accessibilityIdentifier("appUpdateButton")
+                }
+            }
+            .padding(.vertical, 4)
+            .listRowBackground(Brand.primary)
+        }
+    }
+
     private func noticeSection(_ notice: RemoteConfig.Notice) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 6) {
@@ -318,37 +352,45 @@ struct HomeView: View {
     // MARK: - Web borrow inbox entry
 
     private var webBorrowSection: some View {
-        Section {
+        let hasPending = webBorrow.pendingCount > 0
+        return Section {
             NavigationLink(destination: WebBorrowInboxView()) {
                 HStack(spacing: 12) {
                     Image(systemName: "tray.and.arrow.down.fill")
                         .font(.title3.weight(.semibold))
                         .foregroundColor(.white)
                         .frame(width: 36, height: 36)
-                        .background(Circle().fill(Color.orange))
+                        .background(Circle().fill(hasPending ? Color.orange : Color.secondary))
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(NSLocalizedString("Web借用リクエスト", comment: ""))
                             .font(.headline)
-                        Text(String(format: NSLocalizedString("%d 件の承認待ち — タップで確認", comment: ""), webBorrow.pendingCount))
+                        Text(hasPending
+                             ? String(format: NSLocalizedString("%d 件の承認待ち — タップで確認", comment: ""), webBorrow.pendingCount)
+                             : NSLocalizedString("承認待ちはありません（タップで受信箱へ）", comment: ""))
                             .font(.caption).foregroundColor(.secondary)
                     }
                     Spacer()
-                    Text("\(webBorrow.pendingCount)")
-                        .font(.callout.weight(.bold))
-                        .padding(.horizontal, 9).padding(.vertical, 3)
-                        .background(Capsule().fill(Color.red))
-                        .foregroundColor(.white)
+                    if hasPending {
+                        Text("\(webBorrow.pendingCount)")
+                            .font(.callout.weight(.bold))
+                            .padding(.horizontal, 9).padding(.vertical, 3)
+                            .background(Capsule().fill(Color.red))
+                            .foregroundColor(.white)
+                    }
                 }
                 .padding(.vertical, 6)
             }
             .accessibilityIdentifier("webBorrowInboxButton")
-            // Tint the whole row so a waiting request stands out from the plain
-            // list rows — the reported "気づかない / 階層が深い" problem.
-            .listRowBackground(Color.orange.opacity(0.12))
+            // Tint the whole row only when there's something waiting, so a
+            // request stands out (the "気づかない / 階層が深い" problem) while the
+            // empty state stays a calm, always-present entry point.
+            .listRowBackground(hasPending ? Color.orange.opacity(0.12) : nil)
         } header: {
-            Label(NSLocalizedString("要対応", comment: ""), systemImage: "bell.badge.fill")
-                .foregroundColor(.orange)
+            if hasPending {
+                Label(NSLocalizedString("要対応", comment: ""), systemImage: "bell.badge.fill")
+                    .foregroundColor(.orange)
+            }
         }
     }
 
