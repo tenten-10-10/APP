@@ -160,6 +160,11 @@ struct HomeView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .refreshable {
+            // Pull-to-refresh re-checks the Web borrow inbox so a new request
+            // surfaces on Home without digging into 設定 › Web借用.
+            if !AppConfig.isRunningTests { await webBorrow.refresh() }
+        }
         .navigationTitle(NSLocalizedString("ホーム", comment: ""))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -317,26 +322,33 @@ struct HomeView: View {
             NavigationLink(destination: WebBorrowInboxView()) {
                 HStack(spacing: 12) {
                     Image(systemName: "tray.and.arrow.down.fill")
-                        .font(.title2)
-                        .foregroundColor(Brand.primary)
-                        .frame(width: 28)
+                        .font(.title3.weight(.semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(Color.orange))
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(NSLocalizedString("Web借用リクエスト", comment: ""))
-                            .font(.subheadline.weight(.semibold))
-                        Text(String(format: NSLocalizedString("%d 件の承認待ち", comment: ""), webBorrow.pendingCount))
+                            .font(.headline)
+                        Text(String(format: NSLocalizedString("%d 件の承認待ち — タップで確認", comment: ""), webBorrow.pendingCount))
                             .font(.caption).foregroundColor(.secondary)
                     }
                     Spacer()
                     Text("\(webBorrow.pendingCount)")
-                        .font(.caption.weight(.bold))
-                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .font(.callout.weight(.bold))
+                        .padding(.horizontal, 9).padding(.vertical, 3)
                         .background(Capsule().fill(Color.red))
                         .foregroundColor(.white)
                 }
-                .padding(.vertical, 2)
+                .padding(.vertical, 6)
             }
             .accessibilityIdentifier("webBorrowInboxButton")
+            // Tint the whole row so a waiting request stands out from the plain
+            // list rows — the reported "気づかない / 階層が深い" problem.
+            .listRowBackground(Color.orange.opacity(0.12))
+        } header: {
+            Label(NSLocalizedString("要対応", comment: ""), systemImage: "bell.badge.fill")
+                .foregroundColor(.orange)
         }
     }
 

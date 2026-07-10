@@ -11,6 +11,10 @@ struct RootTabView: View {
     @State private var shareFeedback: CloudSharingService.AcceptFeedback?
     @State private var selection: Tab = .home
     @AppStorage("pcWebEnabled") private var pcWebEnabled = false
+    /// Periodically re-check the Web borrow inbox while the app is open so a new
+    /// request lights up the Home card / tab badge without the user having to
+    /// background-and-foreground the app or open the inbox manually.
+    private let inboxRefreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     private enum Tab: Hashable { case home, projects, scan, activity, settings }
 
@@ -95,6 +99,19 @@ struct RootTabView: View {
                 if pcWebEnabled {
                     Task { try? await PCWebService.shared.pushSnapshot(container: container) }
                 }
+            }
+        }
+        .onChange(of: selection) { tab in
+            // Switching TO the Home tab re-checks the inbox, so opening Home to
+            // "see if anything came in" always shows a fresh count.
+            if tab == .home && !AppConfig.isRunningTests {
+                Task { await container.webBorrow.refresh() }
+            }
+        }
+        .onReceive(inboxRefreshTimer) { _ in
+            // Gentle background poll while active (the inbox has no push channel).
+            if scenePhase == .active && !AppConfig.isRunningTests {
+                Task { await container.webBorrow.refresh() }
             }
         }
     }
