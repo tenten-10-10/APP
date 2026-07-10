@@ -78,6 +78,11 @@ struct HomeView: View {
     var onSwitchToScan: () -> Void = {}
 
     @State private var showSearch = false
+    // Programmatic pushes driven by toolbar / summary-card taps. Hidden
+    // NavigationLinks (see `hiddenNavigationLinks`) do the actual navigation so
+    // no List-row chevron is drawn inside the custom cards.
+    @State private var showInbox = false
+    @State private var showLoans = false
     // Pre-print (blank QR) flow driven from the Home hero.
     @State private var prePrintProject: Project?
     @State private var showCreateProjectForPrePrint = false
@@ -149,9 +154,6 @@ struct HomeView: View {
             if let newVersion = updateChecker.availableVersion { updateBanner(newVersion) }
             if let notice = remoteConfig.notice { noticeSection(notice) }
             startHubSection
-            // Always show the borrow-inbox entry (calm when empty) so it's a
-            // known place on Home, and lights up as an alert when a request lands.
-            webBorrowSection
             summaryCard
             if hasAlerts {
                 lowStockSection
@@ -172,7 +174,8 @@ struct HomeView: View {
         }
         .navigationTitle(NSLocalizedString("ホーム", comment: ""))
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                inboxBellButton
                 Button {
                     showSearch = true
                 } label: {
@@ -181,6 +184,7 @@ struct HomeView: View {
                 .accessibilityLabel(Text(NSLocalizedString("検索", comment: "")))
             }
         }
+        .background(hiddenNavigationLinks)
         .sheet(isPresented: $showSearch) {
             SearchView()
         }
@@ -349,49 +353,43 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Web borrow inbox entry
+    // MARK: - Web borrow inbox entry (toolbar bell)
 
-    private var webBorrowSection: some View {
-        let hasPending = webBorrow.pendingCount > 0
-        return Section {
-            NavigationLink(destination: WebBorrowInboxView()) {
-                HStack(spacing: 12) {
-                    Image(systemName: "tray.and.arrow.down.fill")
-                        .font(.title3.weight(.semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(hasPending ? Color.orange : Color.secondary))
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(NSLocalizedString("Web借用リクエスト", comment: ""))
-                            .font(.headline)
-                        Text(hasPending
-                             ? String(format: NSLocalizedString("%d 件の承認待ち — タップで確認", comment: ""), webBorrow.pendingCount)
-                             : NSLocalizedString("承認待ちはありません（タップで受信箱へ）", comment: ""))
-                            .font(.caption).foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    if hasPending {
+    /// Bell in the navigation bar: the always-there entry to the borrow-request
+    /// inbox. Shows a red count bubble while requests are waiting — one tap to
+    /// the inbox, zero Home real estate when idle (the old inline card cluttered
+    /// the dashboard).
+    private var inboxBellButton: some View {
+        Button { showInbox = true } label: {
+            Image(systemName: webBorrow.pendingCount > 0 ? "bell.fill" : "bell")
+                .overlay(alignment: .topTrailing) {
+                    if webBorrow.pendingCount > 0 {
                         Text("\(webBorrow.pendingCount)")
-                            .font(.callout.weight(.bold))
-                            .padding(.horizontal, 9).padding(.vertical, 3)
-                            .background(Capsule().fill(Color.red))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white)
+                            .padding(.horizontal, 4).padding(.vertical, 1)
+                            .background(Capsule().fill(Color.red))
+                            .offset(x: 10, y: -8)
                     }
                 }
-                .padding(.vertical, 6)
-            }
-            .accessibilityIdentifier("webBorrowInboxButton")
-            // Tint the whole row only when there's something waiting, so a
-            // request stands out (the "気づかない / 階層が深い" problem) while the
-            // empty state stays a calm, always-present entry point.
-            .listRowBackground(hasPending ? Color.orange.opacity(0.12) : nil)
-        } header: {
-            if hasPending {
-                Label(NSLocalizedString("要対応", comment: ""), systemImage: "bell.badge.fill")
-                    .foregroundColor(.orange)
-            }
         }
+        .accessibilityIdentifier("webBorrowInboxButton")
+        .accessibilityLabel(Text(webBorrow.pendingCount > 0
+            ? String(format: NSLocalizedString("借用リクエスト %d件の承認待ち", comment: ""), webBorrow.pendingCount)
+            : NSLocalizedString("借用リクエスト受信箱", comment: "")))
+    }
+
+    /// Chevron-free programmatic pushes for the toolbar bell and the summary
+    /// card metrics. A visible NavigationLink inside a List row draws its own
+    /// disclosure chevron — which is exactly the stray "›" that cluttered the
+    /// gradient card — so navigation happens through these hidden links instead.
+    private var hiddenNavigationLinks: some View {
+        Group {
+            NavigationLink(destination: WebBorrowInboxView(), isActive: $showInbox) { EmptyView() }
+            NavigationLink(destination: LoansView(), isActive: $showLoans) { EmptyView() }
+        }
+        .opacity(0)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Summary card
@@ -415,9 +413,12 @@ struct HomeView: View {
                         label: NSLocalizedString("製品", comment: "")
                     )
                     divider
-                    // 貸出中: tap to open the loans list. Replaces 低在庫 here —
-                    // low stock is still surfaced in the alerts section below.
-                    NavigationLink(destination: LoansView()) {
+                    // 貸出中 / 期限超過: tap to open the loans list. Plain buttons
+                    // driving a hidden NavigationLink — an inline NavigationLink
+                    // draws a List chevron INSIDE the gradient card (the stray "›"
+                    // clutter). Replaces 低在庫 here — low stock is still surfaced
+                    // in the alerts section below.
+                    Button { showLoans = true } label: {
                         metricCell(
                             value: "\(totalOnLoanCount)",
                             label: NSLocalizedString("貸出中", comment: "")
@@ -426,7 +427,7 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("onLoanMetric")
                     divider
-                    NavigationLink(destination: LoansView()) {
+                    Button { showLoans = true } label: {
                         metricCell(
                             value: "\(totalOverdueCount)",
                             label: NSLocalizedString("期限超過", comment: "")
@@ -436,7 +437,9 @@ struct HomeView: View {
                 }
                 .padding(.vertical, 18)
             }
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            // Zero row insets so the gradient card spans exactly the same width
+            // as the white cards above it (the extra 16pt made it look narrower).
+            .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
         }
     }
