@@ -369,6 +369,11 @@ GitHub Actions + 最小バックエンド(Supabase/Vercel)」の型を組めば�
     （既存共有の管理は止めない）。
   - `notice` {title?, message, url?}: ホーム最上部のお知らせバナー。
     障害・メンテ告知用。null で非表示。
+  - `handyEnabled` (既定 true): ハンディモード（ベータ）の入口の
+    キルスイッチ。重大な不具合時に false で即時非表示。
+  - `handyPremium` (既定 false): true にするとハンディモードの無料ベータを
+    終了し、チームプラン加入者のみ利用可へ切り替え（アプリ更新不要。
+    EntitlementService.handyPremium が参照）。
 - 原則: リモートで変えられるのは「すでに審査を通った挙動のON/OFF」だけ。
   コード配信や価格変更に使わない（審査規約違反）。
 

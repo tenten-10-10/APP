@@ -10,6 +10,11 @@ struct ScannerView: View {
     /// stopped and no scans are delivered, so a second QR entering the frame
     /// can't replace the result the user is reading.
     var paused: Bool = false
+    /// Also detect 1D barcodes (JAN/EAN, UPC-A, ITF-14). ハンディモード only —
+    /// the normal QR tab keeps its exact current behavior.
+    var oneDimensional: Bool = false
+    /// Continuous-mode window before the SAME code may fire again.
+    var debounce: TimeInterval = 2.0
     var onScan: (String) -> Void
     var onError: (String) -> Void
 
@@ -19,6 +24,7 @@ struct ScannerView: View {
         } else {
             CameraScannerRepresentable(torchOn: $torchOn, zoom: $zoom,
                                        continuous: continuous, paused: paused,
+                                       oneDimensional: oneDimensional, debounce: debounce,
                                        onScan: onScan, onError: onError)
         }
     }
@@ -29,6 +35,8 @@ private struct CameraScannerRepresentable: UIViewControllerRepresentable {
     @Binding var zoom: CGFloat
     var continuous: Bool
     var paused: Bool
+    var oneDimensional: Bool
+    var debounce: TimeInterval
     var onScan: (String) -> Void
     var onError: (String) -> Void
 
@@ -37,6 +45,8 @@ private struct CameraScannerRepresentable: UIViewControllerRepresentable {
         controller.onScan = onScan
         controller.onSessionError = onError
         controller.allowsRepeatAfterDebounce = continuous
+        controller.detectsOneDimensional = oneDimensional
+        controller.debounceInterval = debounce
         controller.setPaused(paused)
         return controller
     }

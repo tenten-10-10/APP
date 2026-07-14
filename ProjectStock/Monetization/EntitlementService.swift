@@ -24,6 +24,20 @@ final class EntitlementService: ObservableObject {
         RemoteConfig.shared.bool("teamPlanEnabled", default: false)
     }
 
+    /// ハンディモード（連続バーコードスキャン）の公開キルスイッチ。既定 ON —
+    /// ベータとして無料開放中。重大な不具合が出たら app-config.json の
+    /// `handyEnabled: false` で即時に入口を隠せる。
+    static var handyEnabled: Bool {
+        RemoteConfig.shared.bool("handyEnabled", default: true)
+    }
+
+    /// ベータ終了後にハンディモードをチームプラン特典へ切り替えるフラグ。
+    /// `handyPremium: true` を配信すると、以後は購読者のみ利用可（アプリ更新
+    /// 不要）。既定 OFF = 無料ベータ。
+    static var handyPremium: Bool {
+        RemoteConfig.shared.bool("handyPremium", default: false)
+    }
+
     static let monthlyID = "com.tenten.tanamiru.team.monthly"
     static let yearlyID  = "com.tenten.tanamiru.team.yearly"
     static let productIDs: Set<String> = [monthlyID, yearlyID]

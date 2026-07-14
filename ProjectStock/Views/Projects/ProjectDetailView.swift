@@ -517,7 +517,8 @@ struct ProjectDetailView: View {
 struct ProductRow: View {
     @ObservedObject var product: Product
     var body: some View {
-        HStack {
+        HStack(spacing: 10) {
+            ProductThumbnail(data: product.photoThumbnail)
             VStack(alignment: .leading, spacing: 3) {
                 Text(product.displayName).font(.body).lineLimit(1)
                 HStack(spacing: 6) {

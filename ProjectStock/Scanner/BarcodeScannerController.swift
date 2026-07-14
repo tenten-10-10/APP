@@ -20,10 +20,16 @@ final class BarcodeScannerController: UIViewController {
     // Duplicate suppression (spec §8: 同一コードの連続発火防止).
     private var lastAcceptedCode: String?
     private var lastAcceptedAt: Date = .distantPast
-    private let debounceInterval: TimeInterval = 2.0
+    /// Seconds before the SAME code may fire again in continuous mode. ハンディ
+    /// uses a shorter window (rapid deliberate re-scans of one shelf item).
+    var debounceInterval: TimeInterval = 2.0
     /// When true, the same code can re-fire after the debounce window
     /// (continuous stocktake mode); when false the same code fires once.
     var allowsRepeatAfterDebounce: Bool = true
+    /// When true, also detect 1D retail/logistics barcodes (JAN/EAN, UPC-A,
+    /// ITF-14). Off for the normal QR tab so its behavior is unchanged; the
+    /// ハンディモード scanner opts in. Must be set before the view loads.
+    var detectsOneDimensional: Bool = false
 
     private var isConfigured = false
     /// Set synchronously on the main thread the first time configuration is
@@ -101,6 +107,12 @@ final class BarcodeScannerController: UIViewController {
         var desired: [AVMetadataObject.ObjectType] = [.qr]
         if #available(iOS 15.4, *) {
             desired.append(.microQR)
+        }
+        if detectsOneDimensional {
+            // JAN = EAN-13/EAN-8; UPC-A arrives as .ean13 with a leading zero;
+            // ITF-14 has its own type, plus .interleaved2of5 for printers that
+            // encode the 14 digits as plain ITF.
+            desired.append(contentsOf: [.ean13, .ean8, .itf14, .interleaved2of5])
         }
         // Only request types the output actually supports to avoid a crash.
         let available = metadataOutput.availableMetadataObjectTypes

@@ -20,6 +20,8 @@ struct ScanTabView: View {
     @State private var pcMessage: String?
     @State private var pcSucceeded = false
     @State private var pcBusy = false
+    // ハンディモード（ベータ）: バーコード連続スキャンの全画面モード。
+    @State private var showHandy = false
 
     // The body is split into layered computed properties, and every inline
     // Binding(get:set:) / alert builder is hoisted into its own typed member.
@@ -40,6 +42,7 @@ struct ScanTabView: View {
                                 actions: pcDialogActions,
                                 message: pcDialogMessage)
             .background(pcAlertLayer)
+            .fullScreenCover(isPresented: $showHandy) { HandyModeView() }
     }
 
     /// Base scanner surface plus navigation chrome — no presentations.
@@ -188,6 +191,7 @@ struct ScanTabView: View {
 
             VStack {
                 Spacer()
+                if EntitlementService.handyEnabled { handyButton }
                 HStack(spacing: 24) {
                     Button { torchOn.toggle() } label: {
                         Image(systemName: torchOn ? "bolt.fill" : "bolt.slash")
@@ -207,6 +211,25 @@ struct ScanTabView: View {
                 .padding(.bottom, 28)
             }
         }
+    }
+
+    /// ハンディモード（連続バーコードスキャン）への入口。JAN/ITFを扱う現場向け。
+    private var handyButton: some View {
+        Button { showHandy = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "barcode.viewfinder").font(.body.weight(.semibold))
+                Text(NSLocalizedString("ハンディ", comment: "")).font(.body.weight(.bold))
+                Text(NSLocalizedString("ベータ", comment: ""))
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .background(Capsule().fill(Color.orange))
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .background(Capsule().fill(.ultraThinMaterial))
+        }
+        .accessibilityIdentifier("handyModeButton")
+        .padding(.bottom, 10)
     }
 
     private func permissionPrompt(message: String, action: String, perform: @escaping () -> Void) -> some View {

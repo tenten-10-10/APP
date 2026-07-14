@@ -543,10 +543,14 @@ private struct LowStockRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "shippingbox.fill")
-                .foregroundColor(.orange)
-                .frame(width: 24)
-                .accessibilityHidden(true)
+            if product.photoThumbnail != nil {
+                ProductThumbnail(data: product.photoThumbnail, size: 36)
+            } else {
+                Image(systemName: "shippingbox.fill")
+                    .foregroundColor(.orange)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: 3) {
                 Text(product.displayName)
                     .font(.subheadline).bold()

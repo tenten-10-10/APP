@@ -147,10 +147,14 @@ private struct ProductSearchRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "shippingbox")
-                .foregroundColor(.accentColor)
-                .frame(width: 24)
-                .accessibilityHidden(true)
+            if product.photoThumbnail != nil {
+                ProductThumbnail(data: product.photoThumbnail, size: 36)
+            } else {
+                Image(systemName: "shippingbox")
+                    .foregroundColor(.accentColor)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: 3) {
                 Text(product.displayName)
                     .font(.subheadline).bold()
