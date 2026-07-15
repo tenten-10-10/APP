@@ -1,0 +1,242 @@
+{
+  "identifier" : "42E25884-3839-476B-B0E1-219A84982FDF",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "480",
+      "familyShareable" : false,
+      "internalID" : "20CCA433-2DEA-4BCC-8000-334426C47FE2",
+      "localizations" : [
+        {
+          "description" : "AIクレジット100（無期限）",
+          "displayName" : "クレジット100",
+          "locale" : "ja_JP"
+        }
+      ],
+      "productID" : "com.plotname.ai.credits.small",
+      "referenceName" : "Credits Small (100)",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "1200",
+      "familyShareable" : false,
+      "internalID" : "117D4EE0-8256-4AC9-91BB-D94452ECA215",
+      "localizations" : [
+        {
+          "description" : "AIクレジット300（無期限）",
+          "displayName" : "クレジット300",
+          "locale" : "ja_JP"
+        }
+      ],
+      "productID" : "com.plotname.ai.credits.medium",
+      "referenceName" : "Credits Medium (300)",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "3000",
+      "familyShareable" : false,
+      "internalID" : "67405251-2CE8-4B60-AB08-181789B7573C",
+      "localizations" : [
+        {
+          "description" : "AIクレジット900（無期限）",
+          "displayName" : "クレジット900",
+          "locale" : "ja_JP"
+        }
+      ],
+      "productID" : "com.plotname.ai.credits.large",
+      "referenceName" : "Credits Large (900)",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "9800",
+      "familyShareable" : false,
+      "internalID" : "0F449A85-8411-48A0-81EB-253E37EB4CA5",
+      "localizations" : [
+        {
+          "description" : "AIクレジット3500（無期限）",
+          "displayName" : "スタジオパック3500",
+          "locale" : "ja_JP"
+        }
+      ],
+      "productID" : "com.plotname.ai.credits.studio",
+      "referenceName" : "Credits Studio Pack (3500)",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "ja_JP",
+    "_storefront" : "JPN"
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "A2A17CC9-B41B-4855-AB2E-E94DD54ED328",
+      "localizations" : [
+        {
+          "description" : "プロットネームAIのプラン",
+          "displayName" : "PlotName AI Plans",
+          "locale" : "ja_JP"
+        }
+      ],
+      "name" : "PlotName AI Plans",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "980",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6D304E12-6659-4158-A388-DE46B1451BA5",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "プロジェクト無制限・月200回生成・透かしなしPDF",
+              "displayName" : "Plus（月額）",
+              "locale" : "ja_JP"
+            }
+          ],
+          "productID" : "com.plotname.ai.plus.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Plus Monthly",
+          "subscriptionGroupID" : "A2A17CC9-B41B-4855-AB2E-E94DD54ED328",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "7800",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "42A35853-AAF9-44EC-904E-E6B68EA7D3C6",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Plusの年額プラン（約2か月分お得）",
+              "displayName" : "Plus（年額）",
+              "locale" : "ja_JP"
+            }
+          ],
+          "productID" : "com.plotname.ai.plus.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Plus Yearly",
+          "subscriptionGroupID" : "A2A17CC9-B41B-4855-AB2E-E94DD54ED328",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2980",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "46EE56C1-2E8D-4815-98D2-54E0003253B3",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "iPadネームキャンバス・AIラフ月500クレジット",
+              "displayName" : "Pro（月額）",
+              "locale" : "ja_JP"
+            }
+          ],
+          "productID" : "com.plotname.ai.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro Monthly",
+          "subscriptionGroupID" : "A2A17CC9-B41B-4855-AB2E-E94DD54ED328",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "24800",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "145274B1-E698-471E-89C8-8D39AB95C972",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Proの年額プラン（約2か月分お得）",
+              "displayName" : "Pro（年額）",
+              "locale" : "ja_JP"
+            }
+          ],
+          "productID" : "com.plotname.ai.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Yearly",
+          "subscriptionGroupID" : "A2A17CC9-B41B-4855-AB2E-E94DD54ED328",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "6800",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "99D6BEAD-5C27-4DC0-8201-3A35AF9AFA19",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "チーム共有・編集者モード・優先キュー",
+              "displayName" : "Studio（月額）",
+              "locale" : "ja_JP"
+            }
+          ],
+          "productID" : "com.plotname.ai.studio.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Studio Monthly",
+          "subscriptionGroupID" : "A2A17CC9-B41B-4855-AB2E-E94DD54ED328",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "59800",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "18894D1D-828E-419B-A8FF-C194E5729099",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Studioの年額プラン（約2か月分お得）",
+              "displayName" : "Studio（年額）",
+              "locale" : "ja_JP"
+            }
+          ],
+          "productID" : "com.plotname.ai.studio.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Studio Yearly",
+          "subscriptionGroupID" : "A2A17CC9-B41B-4855-AB2E-E94DD54ED328",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

@@ -1,0 +1,21 @@
+# App Store screenshots for プロットネームAI (fastlane snapshot).
+# One 6.9" iPhone + one 13" iPad in Japanese — the app is universal (iPhone
+# plot design + iPad name canvas), so both device families need screenshots.
+
+# 注意: デバイス名はランナーのXcodeに実在するシミュレータ名に合わせること。
+# （Xcode更新でシミュレータ一覧が変わり "not in list of available simulators" で失敗する）
+devices([
+  "iPhone 17 Pro Max",
+  "iPad Pro 13-inch (M5)"
+])
+languages(["ja-JP"])
+
+scheme("PlotNameAI")
+output_directory("./fastlane/screenshots")
+clear_previous_screenshots(true)
+
+# Run only the screenshot UI test (PlotNameAIUITests target in project.yml).
+only_testing("PlotNameAIUITests/ScreenshotUITests")
+
+concurrent_simulators(false)
+stop_after_first_error(true)

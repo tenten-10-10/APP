@@ -1,0 +1,25 @@
+{
+  "name": "plotname-ai-backend",
+  "version": "0.1.0",
+  "description": "Backend for PlotName AI - AI manga plot/storyboard (ネーム) generation using the FABLE pipeline.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "demo": "tsx src/demo.ts",
+    "serve": "tsx src/server.ts",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "@types/node": "^22.9.0"
+  },
+  "optionalDependencies": {
+    "openai": "^4.73.0"
+  }
+}

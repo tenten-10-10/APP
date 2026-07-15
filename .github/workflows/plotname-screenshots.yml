@@ -1,0 +1,90 @@
+name: PlotName AI Screenshots
+
+# シミュレータで PlotName AI のスクリーンショットを撮影し、
+# 実行したブランチにコミットして返す（レビュー・UI調整ループ用）。
+# 署名・証明書は不要。
+# workflow_dispatch はデフォルトブランチにファイルが乗るまで API から呼べないため、
+# .screenshot-request（センチネル）の push でも発火できるようにしている。
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".screenshot-request"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plotname-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: PlotNameAI/ios
+        run: xcodegen generate
+
+      - name: Install Ruby dependencies
+        run: |
+          rm -f Gemfile.lock
+          bundle install
+
+      # fastlane は SnapshotHelper.swift が gem 同梱版と一致しないと拒否するため同期する。
+      - name: Sync SnapshotHelper with installed fastlane
+        run: |
+          HELPER="$(bundle show fastlane)/snapshot/lib/assets/SnapshotHelper.swift"
+          echo "Copying $HELPER"
+          cp "$HELPER" PlotNameAI/ios/PlotNameAIUITests/SnapshotHelper.swift
+
+      - name: Capture screenshots
+        working-directory: PlotNameAI/ios
+        run: bundle exec fastlane screenshots
+
+      - name: Upload screenshots artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plotname-screenshots
+          path: PlotNameAI/ios/fastlane/screenshots/**/*.png
+          if-no-files-found: ignore
+
+      # 撮影結果をブランチへコミット（このリポジトリ上で目視レビューするため）。
+      - name: Commit screenshots to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f PlotNameAI/ios/fastlane/screenshots
+          if git diff --cached --quiet; then
+            echo "No screenshot changes."
+          else
+            git commit -m "スクショ: PlotName AI シミュレータ撮影結果 [skip ci]"
+            # bundle install が Gemfile.lock を書き換える等の未ステージ変更で
+            # rebase が拒否されるため、コミット済みのスクショ以外は破棄してから取り込む。
+            git checkout -- . 2>/dev/null || true
+            git clean -fd Gemfile.lock 2>/dev/null || true
+            # 競合に強い push: 失敗したら fetch→rebase→再push を数回試す。
+            for i in 1 2 3 4 5; do
+              git fetch origin "${{ github.ref_name }}"
+              git rebase "origin/${{ github.ref_name }}" || { git rebase --abort 2>/dev/null || true; }
+              if git push origin "HEAD:${{ github.ref_name }}"; then
+                echo "pushed screenshots"; break
+              fi
+              echo "push retry $i"; sleep 3
+            done
+          fi

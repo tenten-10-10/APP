@@ -1,0 +1,43 @@
+name: PlotName AI Backend CI
+
+# PlotNameAI/backend のみを対象にした軽量 CI。
+# typecheck と node:test を実行する。iOS の TestFlight ビルドとは独立。
+on:
+  pull_request:
+    paths:
+      - "PlotNameAI/backend/**"
+      - ".github/workflows/plotname-backend.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "PlotNameAI/backend/**"
+      - ".github/workflows/plotname-backend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: PlotNameAI/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: PlotNameAI/backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
