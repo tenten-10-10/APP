@@ -1,0 +1,15 @@
+# App Store screenshots for タナミル (fastlane snapshot).
+# One 6.9" device + Japanese is enough — App Store reuses 6.9" for smaller sizes.
+
+devices(["iPhone 17 Pro Max"])
+languages(["ja"])
+
+scheme("ProjectStock")
+output_directory("./fastlane/screenshots")
+clear_previous_screenshots(true)
+
+# Run only the screenshot UI test, not the functional UI tests.
+only_testing("ProjectStockUITests/ScreenshotUITests")
+
+concurrent_simulators(false)
+stop_after_first_error(true)

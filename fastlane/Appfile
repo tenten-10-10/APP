@@ -1,0 +1,5 @@
+app_identifier("com.tenten.tanamiru")
+
+# Authentication uses an App Store Connect API key (see Fastfile / .env), so no
+# Apple ID or itc_team_id is required here. The signing team is supplied at build
+# time via the TANAMIRU_TEAM_ID environment variable.

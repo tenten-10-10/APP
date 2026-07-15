@@ -1,0 +1,52 @@
+name: Review Status (read-only)
+
+# 手動実行のみ。App Store の審査ステータスを読み取って表示するだけ。
+# 何も変更しない（審査にもTestFlightにも一切触れない）。
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: review-status-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  status:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Write App Store Connect API key (.p8)
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Write fastlane/.env
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TANAMIRU_TEAM_ID: ${{ secrets.TANAMIRU_TEAM_ID }}
+        run: |
+          cat > fastlane/.env <<EOF
+          ASC_KEY_ID=${ASC_KEY_ID}
+          ASC_ISSUER_ID=${ASC_ISSUER_ID}
+          ASC_KEY_PATH=${HOME}/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          TANAMIRU_TEAM_ID=${TANAMIRU_TEAM_ID}
+          EOF
+
+      - name: Install Ruby dependencies
+        run: |
+          rm -f Gemfile.lock
+          bundle install
+
+      - name: Print review status
+        run: bundle exec fastlane review_status

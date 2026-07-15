@@ -1,0 +1,160 @@
+import SwiftUI
+import CoreData
+
+/// Create or edit a project (spec §12.2). Read-only projects never reach the
+/// edit path because the caller hides the entry point.
+struct ProjectFormView: View {
+    @EnvironmentObject private var container: ServiceContainer
+    @EnvironmentObject private var settings: AppSettings
+    @Environment(\.dismiss) private var dismiss
+
+    var project: Project?
+    /// Called with the freshly created project so the caller can navigate
+    /// straight into it (only fired on create, not edit).
+    var onCreated: ((Project) -> Void)? = nil
+
+    @State private var name: String = ""
+    @State private var note: String = ""
+    @State private var color: ProjectColor = .olive
+    @State private var defaultMode: TrackingMode = .quantity
+    @State private var error: PresentableError?
+
+    private var isEditing: Bool { project != nil }
+
+    var body: some View {
+        NavigationView {
+            Form {
+                if !isEditing {
+                    Section {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label(NSLocalizedString("プロジェクトとは?", comment: ""), systemImage: "lightbulb.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(Brand.primary)
+                            Text(NSLocalizedString("在庫を管理する「場所・目的」のまとまりです。倉庫・工房・店舗・現場など、単位ごとに1つ作ります。あとから製品やQRラベルを追加していきます。", comment: ""))
+                                .font(.caption).foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+                Section {
+                    TextField(NSLocalizedString("プロジェクト名", comment: ""), text: $name)
+                        .accessibilityIdentifier("projectNameField")
+                } header: {
+                    Text(NSLocalizedString("基本情報", comment: ""))
+                } footer: {
+                    if !isEditing {
+                        Text(NSLocalizedString("例: 第1倉庫 / 試作品置き場 / 〇〇店バックヤード", comment: ""))
+                    }
+                }
+                Section(NSLocalizedString("メモ", comment: "")) {
+                    MultilineTextField(text: $note,
+                                       placeholder: NSLocalizedString("メモ（任意）", comment: ""))
+                        .frame(minHeight: 80)
+                }
+                Section(NSLocalizedString("色", comment: "")) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 44))], spacing: 12) {
+                        ForEach(ProjectColor.allCases) { option in
+                            Circle()
+                                .fill(option.color)
+                                .frame(width: 32, height: 32)
+                                .overlay(Circle().stroke(Color.primary, lineWidth: color == option ? 3 : 0))
+                                .onTapGesture { color = option }
+                                .accessibilityLabel(Text(option.localizedTitle))
+                                .accessibilityAddTraits(color == option ? [.isSelected] : [])
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Section {
+                    ForEach(TrackingMode.allCases) { mode in
+                        Button { defaultMode = mode } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: mode.systemImageName)
+                                    .font(.title3).frame(width: 28)
+                                    .foregroundColor(defaultMode == mode ? Brand.primary : .secondary)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(mode.localizedTitle).foregroundColor(.primary)
+                                    Text(mode.explanation).font(.caption).foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: defaultMode == mode ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(defaultMode == mode ? Brand.primary : Color(.tertiaryLabel))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("projectMode_\(mode.rawValue)")
+                        .accessibilityAddTraits(defaultMode == mode ? [.isSelected] : [])
+                    }
+                } header: {
+                    Text(NSLocalizedString("主に扱うもの", comment: ""))
+                } footer: {
+                    // 編集時も変更可能に（新規製品の初期値のみに効く安全な設定
+                    // なのに、作成後は一切変えられなかった）。
+                    Text(isEditing
+                            ? NSLocalizedString("新しい製品の初期値になります。既存の製品には影響しません。", comment: "")
+                            : NSLocalizedString("新しい製品の初期値になります。製品ごとにあとで変更できます。", comment: ""))
+                }
+            }
+            .navigationTitle(isEditing ? NSLocalizedString("プロジェクトを編集", comment: "") : NSLocalizedString("新規プロジェクト", comment: ""))
+            .keyboardDoneBar()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(NSLocalizedString("保存", comment: "")) { save() }
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityIdentifier("saveProjectButton")
+                }
+            }
+            .onAppear(perform: loadIfEditing)
+            .errorAlert($error)
+        }
+    }
+
+    private func loadIfEditing() {
+        guard let project else { return }
+        name = project.displayName
+        note = project.note ?? ""
+        color = project.color
+        defaultMode = project.defaultTrackingMode
+    }
+
+    private func save() {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNote = note
+        let chosen = color
+        let mode = defaultMode
+        let owner = settings.effectiveOperatorName
+        let editingID = project?.objectID
+
+        var createdID: NSManagedObjectID?
+        let result = container.performWrite { ctx in
+            if let editingID, let existing = try? ctx.existingObject(with: editingID) as? Project {
+                existing.name = trimmedName
+                existing.note = trimmedNote
+                existing.color = chosen
+                existing.defaultTrackingMode = mode
+                existing.touch()
+            } else {
+                let created = container.projects.createProject(name: trimmedName, ownerDisplayName: owner,
+                                                               color: chosen, defaultMode: mode, in: ctx)
+                created.note = trimmedNote
+                try ctx.obtainPermanentIDs(for: [created])
+                createdID = created.objectID
+            }
+        }
+        switch result {
+        case .success:
+            dismiss()
+            if let createdID, let onCreated,
+               let proj = try? container.viewContext.existingObject(with: createdID) as? Project {
+                onCreated(proj)
+            }
+        case .failure(let err): error = PresentableError(err)
+        }
+    }
+}

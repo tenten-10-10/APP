@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タナミル for PC（閲覧）</title>
+<link rel="icon" type="image/png" href="/appicon.png">
+<link rel="apple-touch-icon" href="/appicon.png">
+<style>
+  :root{
+    --olive:#4c5a2e;--olive2:#3c4826;--ink:#1d2417;--muted:#5b6450;
+    --paper:#fbfbf7;--line:#e6e8dd;--bg:#f2f3ec;--card:#fff;
+    --red:#b3261e;--orange:#c06a00;--green:#3f7d20;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--paper:#171a12;--bg:#101208;--card:#1e2216;--ink:#eef0e6;--muted:#9aa389;--line:#2c3121;}
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;
+       color:var(--ink);background:var(--bg);font-size:14px;}
+  a{color:var(--olive);}
+  .hidden{display:none!important;}
+
+  /* --- Pairing --- */
+  #pair{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+        background:linear-gradient(160deg,#6e7c48,#3c4826);}
+  .pcard{background:var(--paper);border-radius:22px;max-width:420px;width:100%;padding:30px 26px;text-align:center;
+         box-shadow:0 18px 50px rgba(0,0,0,.28);}
+  .pcard h1{font-size:20px;margin:0 0 4px;}
+  .pcard p{color:var(--muted);line-height:1.7;margin:6px 0;}
+  #qr{width:240px;height:240px;margin:18px auto;background:#fff;border-radius:14px;padding:12px;display:flex;align-items:center;justify-content:center;}
+  #qr svg{width:100%;height:100%;}
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;letter-spacing:2px;
+        background:var(--bg);border-radius:10px;padding:8px 12px;display:inline-block;margin-top:6px;color:var(--ink);}
+  .steps{text-align:left;font-size:13px;color:var(--muted);margin:16px auto 0;max-width:320px;line-height:1.9;}
+  .badge{width:64px;height:64px;border-radius:16px;margin:0 auto 8px;display:block;}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--olive);
+        border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+
+  /* --- Viewer --- */
+  header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 16px;
+         background:var(--olive);color:#fff;}
+  header .title{font-weight:700;font-size:15px;}
+  header .grow{flex:1;}
+  header button{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;}
+  header button:hover{background:rgba(255,255,255,.28);}
+  header .sync{font-size:12px;opacity:.85;}
+  .layout{display:flex;min-height:calc(100vh - 46px);}
+  .side{width:250px;flex:0 0 250px;border-right:1px solid var(--line);background:var(--card);overflow-y:auto;}
+  .side .p{padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .side .p:hover{background:var(--bg);}
+  .side .p.on{background:var(--bg);border-left:3px solid var(--olive);}
+  .side .p .n{font-weight:600;}
+  .side .p .m{font-size:12px;color:var(--muted);margin-top:2px;}
+  .chip{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:1px;}
+  .chip.shared{background:rgba(76,90,46,.15);color:var(--olive);}
+  .chip.low{background:rgba(192,106,0,.15);color:var(--orange);}
+  .chip.over{background:rgba(179,38,30,.13);color:var(--red);}
+  main{flex:1;padding:18px 22px;overflow-x:auto;}
+  .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .tabs button{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--ink);}
+  .tabs button.on{background:var(--olive);color:#fff;border-color:var(--olive);}
+  input.search{width:100%;max-width:360px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:14px;margin-bottom:12px;}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top;}
+  th{background:var(--bg);color:var(--muted);font-weight:600;position:sticky;top:0;}
+  tr:last-child td{border-bottom:0;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .muted{color:var(--muted);}
+  .empty{color:var(--muted);padding:40px;text-align:center;}
+  .grp{margin:18px 0 6px;font-weight:700;color:var(--olive);}
+  footer{padding:14px;text-align:center;font-size:11px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- ============ PAIRING ============ -->
+<div id="pair">
+  <div class="pcard">
+    <img class="badge" src="/appicon.png" alt="タナミル" width="64" height="64" onerror="this.style.display='none'">
+    <h1>タナミル for PC</h1>
+    <p>スマホの在庫を、このパソコンから閲覧できます。</p>
+    <div id="qr"><span class="muted">準備中…</span></div>
+    <div id="paircode" class="code hidden"></div>
+    <div class="steps">
+      ① スマホでタナミルを開く<br>
+      ② 下タブの「スキャン」を開く<br>
+      ③ このQRコードを読み取る<br>
+      ④ 「PCログインを許可」→ 完了
+    </div>
+    <p id="pairstatus" style="margin-top:16px;"><span class="spin"></span>スキャン待ち…</p>
+    <p id="pairerr" class="hidden" style="color:var(--red)"></p>
+  </div>
+</div>
+
+<!-- ============ VIEWER ============ -->
+<div id="app" class="hidden">
+  <header>
+    <span class="title">タナミル</span>
+    <span id="synced" class="sync"></span>
+    <span class="grow"></span>
+    <button id="reload">更新</button>
+    <button id="logout">ログアウト</button>
+  </header>
+  <div class="layout">
+    <div id="side" class="side"></div>
+    <main>
+      <div class="tabs" id="tabs"></div>
+      <input class="search" id="search" placeholder="製品・個体・場所を検索…">
+      <div id="content"></div>
+    </main>
+  </div>
+  <footer>タナミル for PC ・ 閲覧専用 ・ データはスマホから同期</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+"use strict";
+var SB_URL = "https://lwxpbgbqldhnvcxnyehe.supabase.co";
+var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3eHBiZ2JxbGRobnZjeG55ZWhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzI0MzksImV4cCI6MjA5MjMwODQzOX0.K0sSR_AZ8OeVTAB11pFL3qMohX769xSyes3-_SFNi5Y";
+var LINK_HOST = "t.l0l0.app";              // QR encodes https://t.l0l0.app/pair?c=CODE
+var TOKEN_KEY = "tanamiru_pcweb_token";
+
+async function rpc(name, body){
+  var r = await fetch(SB_URL + "/rest/v1/rpc/" + name, {
+    method:"POST",
+    headers:{apikey:SB_KEY, Authorization:"Bearer "+SB_KEY, "Content-Type":"application/json"},
+    body: JSON.stringify(body||{})
+  });
+  if(!r.ok){ throw new Error("RPC " + name + " " + r.status); }
+  var t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+
+// ---------- Pairing ----------
+var pollTimer = null;
+async function startPairing(){
+  clearInterval(pollTimer);
+  document.getElementById("pairerr").classList.add("hidden");
+  try{
+    var res = await rpc("tanamiru_pcweb_create_pairing", {p_label: navigator.platform + " / " + (navigator.userAgent.match(/(Chrome|Safari|Firefox|Edg)[\/ ]?[\d.]+/)||[""])[0]});
+    var row = Array.isArray(res) ? res[0] : res;
+    if(!row || !row.pair_code){ throw new Error("no code"); }
+    var code = row.pair_code, secret = row.web_secret;
+    renderQR("https://" + LINK_HOST + "/pair?c=" + code);
+    var cc = document.getElementById("paircode"); cc.textContent = code; cc.classList.remove("hidden");
+    var tries = 0;
+    pollTimer = setInterval(async function(){
+      tries++;
+      if(tries > 80){ clearInterval(pollTimer); document.getElementById("pairstatus").textContent = "QRの有効期限が切れました。"; setTimeout(startPairing, 1500); return; }
+      try{
+        var p = await rpc("tanamiru_pcweb_poll", {p_web_secret: secret});
+        var pr = Array.isArray(p) ? p[0] : p;
+        if(pr && pr.status === "authorized" && pr.web_token){
+          clearInterval(pollTimer);
+          localStorage.setItem(TOKEN_KEY, pr.web_token);
+          enterApp();
+        }
+      }catch(e){ /* keep polling */ }
+    }, 2500);
+  }catch(e){
+    var pe = document.getElementById("pairerr");
+    pe.textContent = "接続できませんでした。数秒後に再試行します…（" + e.message + "）";
+    pe.classList.remove("hidden");
+    setTimeout(startPairing, 4000);
+  }
+}
+function renderQR(text){
+  var box = document.getElementById("qr");
+  try{
+    var qr = qrcode(0, "M"); qr.addData(text); qr.make();
+    box.innerHTML = qr.createSvgTag({cellSize:6, margin:0, scalable:true});
+  }catch(e){
+    box.innerHTML = '<span class="muted">QRを表示できません。<br>コードを手入力してください。</span>';
+  }
+}
+
+// ---------- Viewer ----------
+var SNAP = null, curProject = null, curTab = "products", query = "";
+
+async function enterApp(){
+  document.getElementById("pair").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  await loadSnapshot();
+}
+async function loadSnapshot(){
+  var token = localStorage.getItem(TOKEN_KEY);
+  if(!token){ return logout(); }
+  try{
+    var snap = await rpc("tanamiru_pcweb_get_snapshot", {p_web_token: token});
+    if(snap === null){ return logout(); }              // token revoked / invalid
+    SNAP = snap || {};
+    var ps = SNAP.projects || [];
+    if(!curProject || !ps.find(function(p){return p.id===curProject;})){ curProject = ps[0] ? ps[0].id : null; }
+    renderSynced(); renderSide(); renderMain();
+  }catch(e){
+    document.getElementById("content").innerHTML = '<div class="empty">読み込みに失敗しました（'+e.message+'）。「更新」を押してください。</div>';
+  }
+}
+function renderSynced(){
+  var el = document.getElementById("synced");
+  var t = SNAP && SNAP.generatedAt ? new Date(SNAP.generatedAt) : null;
+  el.textContent = t ? ("同期: " + t.toLocaleString("ja-JP")) : "";
+}
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+function renderSide(){
+  var ps = (SNAP.projects)||[];
+  var html = ps.map(function(p){
+    var c = p.counts||{};
+    var chips = "";
+    if(p.shared) chips += '<span class="chip shared">共有</span>';
+    if(c.lowStock) chips += '<span class="chip low">要補充'+c.lowStock+'</span>';
+    if(c.overdue) chips += '<span class="chip over">超過'+c.overdue+'</span>';
+    return '<div class="p'+(p.id===curProject?' on':'')+'" data-id="'+esc(p.id)+'">'+
+      '<div class="n">'+esc(p.name||"(名称なし)")+chips+'</div>'+
+      '<div class="m">製品 '+((p.products||[]).length)+' ・ 個体 '+((p.units||[]).length)+'</div></div>';
+  }).join("");
+  var side = document.getElementById("side");
+  side.innerHTML = html || '<div class="empty">プロジェクトがありません。</div>';
+  Array.prototype.forEach.call(side.querySelectorAll(".p"), function(el){
+    el.onclick = function(){ curProject = el.getAttribute("data-id"); query=""; document.getElementById("search").value=""; renderSide(); renderMain(); };
+  });
+}
+function project(){ return ((SNAP.projects)||[]).find(function(p){return p.id===curProject;}); }
+
+function renderMain(){
+  var p = project();
+  var tabs = document.getElementById("tabs");
+  if(!p){ tabs.innerHTML=""; document.getElementById("content").innerHTML='<div class="empty">プロジェクトを選んでください。</div>'; return; }
+  var defs = [["products","製品",(p.products||[]).length],["units","個体・ロット",(p.units||[]).length],
+              ["locations","場所",(p.locations||[]).length],["loans","貸出中",(p.loans||[]).length]];
+  tabs.innerHTML = defs.map(function(d){
+    return '<button data-t="'+d[0]+'" class="'+(curTab===d[0]?'on':'')+'">'+d[1]+' '+d[2]+'</button>';
+  }).join("");
+  Array.prototype.forEach.call(tabs.querySelectorAll("button"), function(b){
+    b.onclick = function(){ curTab = b.getAttribute("data-t"); renderMain(); };
+  });
+  renderContent(p);
+}
+function match(row){
+  if(!query) return true;
+  return JSON.stringify(row).toLowerCase().indexOf(query.toLowerCase()) >= 0;
+}
+function renderContent(p){
+  var c = document.getElementById("content"), h = "";
+  if(curTab==="products"){
+    var rows = (p.products||[]).filter(match);
+    if(!rows.length){ c.innerHTML='<div class="empty">製品がありません。</div>'; return; }
+    // group by folder
+    var byF = {}; rows.forEach(function(r){ var k=r.folder||""; (byF[k]=byF[k]||[]).push(r); });
+    Object.keys(byF).sort().forEach(function(k){
+      if(k) h += '<div class="grp">'+esc(k)+'</div>';
+      h += '<table><tr><th>製品</th><th>管理</th><th class="num">在庫</th><th class="num">最低</th><th>状態</th></tr>';
+      byF[k].forEach(function(r){
+        h += '<tr><td>'+esc(r.name)+'</td><td class="muted">'+esc(r.mode||"")+'</td>'+
+             '<td class="num">'+esc(r.qty!=null?r.qty:"")+ (r.unit?(' '+esc(r.unit)):'') +'</td>'+
+             '<td class="num muted">'+esc(r.minStock!=null?r.minStock:"")+'</td>'+
+             '<td>'+(r.low?'<span class="chip low">要補充</span>':'')+'</td></tr>';
+      });
+      h += '</table>';
+    });
+  } else if(curTab==="units"){
+    var u = (p.units||[]).filter(match);
+    if(!u.length){ c.innerHTML='<div class="empty">個体・ロットがありません。</div>'; return; }
+    h += '<table><tr><th>個体/ロット</th><th>製品</th><th>種類</th><th>状態</th><th>場所</th><th>期限</th></tr>';
+    u.forEach(function(r){
+      h += '<tr><td>'+esc(r.title)+'</td><td class="muted">'+esc(r.product||"")+'</td>'+
+           '<td class="muted">'+esc(r.kind==="lot"?"ロット":"個体")+'</td>'+
+           '<td>'+esc(r.status||"")+'</td><td class="muted">'+esc(r.location||"")+'</td>'+
+           '<td class="muted">'+esc(r.expires||"")+'</td></tr>';
+    });
+    h += '</table>';
+  } else if(curTab==="locations"){
+    var l = (p.locations||[]).filter(match);
+    if(!l.length){ c.innerHTML='<div class="empty">場所がありません。</div>'; return; }
+    h += '<table><tr><th>場所</th></tr>';
+    l.forEach(function(r){ h += '<tr><td>'+esc(r.path||r.name)+'</td></tr>'; });
+    h += '</table>';
+  } else {
+    var ln = (p.loans||[]).filter(match);
+    if(!ln.length){ c.innerHTML='<div class="empty">貸出中のものはありません。</div>'; return; }
+    h += '<table><tr><th>個体</th><th>製品</th><th>貸出先</th><th>貸出日</th><th>返却期限</th></tr>';
+    ln.forEach(function(r){
+      var due = r.due ? (r.overdue?'<span class="chip over">超過</span> ':'') + esc(r.due) : '<span class="muted">なし</span>';
+      h += '<tr><td>'+esc(r.title)+'</td><td class="muted">'+esc(r.product||"")+'</td>'+
+           '<td>'+esc(r.borrower||"")+'</td><td class="muted">'+esc(r.since||"")+'</td><td>'+due+'</td></tr>';
+    });
+    h += '</table>';
+  }
+  c.innerHTML = h;
+}
+
+function logout(){
+  localStorage.removeItem(TOKEN_KEY);
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("pair").classList.remove("hidden");
+  document.getElementById("pairstatus").innerHTML = '<span class="spin"></span>スキャン待ち…';
+  startPairing();
+}
+
+document.getElementById("reload").onclick = loadSnapshot;
+document.getElementById("logout").onclick = logout;
+document.getElementById("search").oninput = function(e){ query = e.target.value; renderContent(project()); };
+
+// boot
+if(localStorage.getItem(TOKEN_KEY)){ enterApp(); } else { startPairing(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+# macOS / Xcode
+.DS_Store
+*.swp
+*~.nib
+
+# Xcode build
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+Packages/
+.swiftpm/
+
+# CocoaPods / Carthage (not used, but ignore defensively)
+Pods/
+Carthage/Build/
+
+# Secrets / local configuration — copy Config.xcconfig.example to Config.xcconfig
+Config.xcconfig
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+# …but DO track the finished App Store marketing screenshots (ja).
+!fastlane/screenshots/ja/*.png
+fastlane/test_output
+
+# Vine review tool — ログイン情報・生成物を含むためgit管理外
+vine-review/data/
+vine-review/__pycache__/
+
+# Misc
+*.log
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+timeline.xctimeline
+playground.xcworkspace
+fastlane/.env
+*.p8
+link-site/.vercel/

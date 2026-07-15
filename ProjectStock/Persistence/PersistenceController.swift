@@ -1,0 +1,350 @@
+import CoreData
+import CloudKit
+import Combine
+import os.log
+
+/// Owns the `NSPersistentCloudKitContainer` and its three SQLite stores:
+///
+/// * **Private store** — mirrors the user's own CloudKit private database
+///   (`.private` scope). Projects the user owns live here.
+/// * **Shared store** — mirrors records shared *to* the user via CKShare
+///   (`.shared` scope). Projects others shared with this user live here.
+/// * **Local store** — never mirrored to CloudKit. Demo/お試し data lives
+///   here so it doesn't consume the user's iCloud quota, can't collide with
+///   real synced data, and never re-appears on other devices after deletion.
+///
+/// All stores use the same managed object model / default configuration, so
+/// the same entities work in any of them. New child objects must be assigned
+/// (`context.assign(_:to:)`) to the SAME store the owning Project lives in —
+/// that routing is done by `StoreRouter`.
+final class PersistenceController {
+
+    static let shared = PersistenceController()
+
+    let container: NSPersistentCloudKitContainer
+
+    /// Resolved persistent stores, populated after `loadPersistentStores`.
+    private(set) var privateStore: NSPersistentStore?
+    private(set) var sharedStore: NSPersistentStore?
+    private(set) var localStore: NSPersistentStore?
+
+    /// Whether CloudKit mirroring is active. Disabled for tests / previews and
+    /// when running unsigned where the iCloud entitlement is unavailable.
+    let cloudKitEnabled: Bool
+
+    /// True when a CloudKit-backed store failed to load and was re-added as a
+    /// plain local store. Sharing must not be offered in this state — the
+    /// mirroring metadata isn't there and share() fails with a file error.
+    private(set) var cloudKitFallbackActive = false
+
+    /// The actual error from the CloudKit store that failed to load, kept so the
+    /// diagnostics screen can show WHY sync isn't running (otherwise it's
+    /// swallowed once the local fallback succeeds).
+    private(set) var cloudKitLoadError: Error?
+
+    /// Human-readable report of every CloudKit store that failed to load, with
+    /// its scope (private/shared) and the full nested error — this is what
+    /// pinpoints a generic 134060.
+    private(set) var cloudKitFailureReport: String?
+
+    /// CloudKit is compiled in AND every store actually loaded with mirroring.
+    var cloudKitActive: Bool { cloudKitEnabled && !cloudKitFallbackActive }
+
+    private let logger = Logger(subsystem: "ProjectStock", category: "Persistence")
+
+    // MARK: - Init
+
+    /// - Parameters:
+    ///   - inMemory: use in-memory stores (tests / SwiftUI previews).
+    ///   - cloudKitEnabled: attach CloudKit options to the store descriptions.
+    init(inMemory: Bool = false, cloudKitEnabled: Bool = true) {
+        self.cloudKitEnabled = cloudKitEnabled && !inMemory
+
+        // Let the container load the model from the (versioned) .momd itself: it
+        // resolves the current version AND keeps the older version available as a
+        // lightweight-migration source for existing stores. (We do NOT force an
+        // explicit single NSManagedObjectModel here — that would strand the v1
+        // migration source. The launch crash that looked like a double-model
+        // problem is actually fixed by building every @FetchRequest by entity
+        // NAME; see the views.)
+        container = NSPersistentCloudKitContainer(name: "ProjectStock")
+
+        guard let privateDescription = container.persistentStoreDescriptions.first else {
+            fatalError("ProjectStock: missing default store description")
+        }
+
+        if inMemory {
+            configureInMemory(privateDescription)
+        } else {
+            configureOnDisk(privateDescription)
+        }
+
+        loadStores()
+        configureViewContext()
+    }
+
+    // MARK: - Store configuration
+
+    private func configureInMemory(_ privateDescription: NSPersistentStoreDescription) {
+        // Two distinct in-memory stores so StoreRouter can be exercised even in
+        // tests. History tracking is not available for in-memory stores.
+        privateDescription.type = NSInMemoryStoreType
+        privateDescription.url = URL(fileURLWithPath: "/dev/null/private")
+        privateDescription.configuration = nil   // implicit default configuration (all entities)
+        privateDescription.cloudKitContainerOptions = nil
+
+        let sharedDescription = privateDescription.copy() as! NSPersistentStoreDescription
+        sharedDescription.url = URL(fileURLWithPath: "/dev/null/shared")
+
+        let localDescription = privateDescription.copy() as! NSPersistentStoreDescription
+        localDescription.url = URL(fileURLWithPath: "/dev/null/local")
+
+        container.persistentStoreDescriptions = [privateDescription, sharedDescription, localDescription]
+    }
+
+    private func configureOnDisk(_ privateDescription: NSPersistentStoreDescription) {
+        let storeFolder = privateDescription.url!.deletingLastPathComponent()
+        privateDescription.url = storeFolder.appendingPathComponent("private.sqlite")
+        // Use the IMPLICIT default configuration (nil), NOT the name "Default".
+        // The model has no configuration literally named "Default"; passing that
+        // string makes NSPersistentCloudKitContainer fail EVERY store load with
+        // NSCocoaErrorDomain 134060 "Unable to find a configuration named
+        // 'Default' in the specified managed object model." — which is what has
+        // silently disabled iCloud sync/sharing all along. Apple's canonical
+        // two-store sample passes nil here.
+        privateDescription.configuration = nil
+
+        let sharedDescription = privateDescription.copy() as! NSPersistentStoreDescription
+        sharedDescription.url = storeFolder.appendingPathComponent("shared.sqlite")
+
+        // Local-only store for demo/お試し data — never attached to CloudKit.
+        let localDescription = privateDescription.copy() as! NSPersistentStoreDescription
+        localDescription.url = storeFolder.appendingPathComponent("local.sqlite")
+
+        // Persistent history + remote-change notifications are required for
+        // CloudKit mirroring and to keep the stores merged. Automatic
+        // lightweight migration is required so existing stores (model v1, with
+        // the old external-binary `photoData`) migrate to v2 (inline
+        // `photoThumbnail`) on launch — the v1 model is kept in the .momd as the
+        // migration source, so the store always opens instead of failing.
+        for description in [privateDescription, sharedDescription, localDescription] {
+            description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+            description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+            description.shouldMigrateStoreAutomatically = true
+            description.shouldInferMappingModelAutomatically = true
+        }
+
+        if cloudKitEnabled {
+            let containerID = AppConfig.cloudKitContainerIdentifier
+
+            let privateOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: containerID)
+            privateOptions.databaseScope = .private
+            privateDescription.cloudKitContainerOptions = privateOptions
+
+            let sharedOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: containerID)
+            sharedOptions.databaseScope = .shared
+            sharedDescription.cloudKitContainerOptions = sharedOptions
+        } else {
+            privateDescription.cloudKitContainerOptions = nil
+            sharedDescription.cloudKitContainerOptions = nil
+        }
+        localDescription.cloudKitContainerOptions = nil
+
+        container.persistentStoreDescriptions = [privateDescription, sharedDescription, localDescription]
+    }
+
+    private func loadStores() {
+        var failed: [(description: NSPersistentStoreDescription, error: Error)] = []
+        container.loadPersistentStores { [weak self] description, error in
+            guard let self else { return }
+            if let error = error {
+                self.logger.error("Store '\(description.url?.lastPathComponent ?? "?", privacy: .public)' failed to load: \(error.localizedDescription, privacy: .public). Falling back to local-only storage.")
+                failed.append((description, error))
+            } else {
+                self.mapStore(description)
+            }
+        }
+
+        // If a CloudKit-backed store failed to load — no iCloud account, the
+        // container isn't provisioned yet, offline, or an entitlement mismatch —
+        // retry it as a plain local store. This guarantees there is ALWAYS a
+        // usable store, so a write never hits a coordinator with zero / ambiguous
+        // stores. (That would raise an uncatchable Obj-C exception on save, not a
+        // Swift error, which is exactly the create/sample-data crash.)
+        var reportLines: [String] = []
+        for (description, error) in failed {
+            if let options = description.cloudKitContainerOptions {
+                cloudKitFallbackActive = true
+                // Keep the real reason sync isn't running so Diagnostics can
+                // show it (and record it into the shared bag the UI already reads).
+                if cloudKitLoadError == nil { cloudKitLoadError = error }
+                let scope = options.databaseScope == .shared ? "shared" : "private"
+                reportLines.append("[\(scope) / \(description.url?.lastPathComponent ?? "?")]")
+                reportLines.append(CloudKitErrorMapper.rawDescription(for: error))
+                StoreLoadFailure.shared.record(error)
+            }
+            description.cloudKitContainerOptions = nil
+            do {
+                let store = try container.persistentStoreCoordinator.addPersistentStore(
+                    ofType: description.type,
+                    configurationName: description.configuration,
+                    at: description.url,
+                    options: description.options)
+                assignStore(store, for: description)
+            } catch {
+                StoreLoadFailure.shared.record(error)
+                // Last resort: the on-disk store can't be opened even as a plain
+                // local store (corrupt, or a model change that can't migrate the
+                // existing file). Attach an in-memory store for this slot so the
+                // coordinator ALWAYS has a store for every entity — otherwise the
+                // first @FetchRequest hits a coordinator with no store and throws
+                // an uncatchable Obj-C exception, crash-looping the app on launch.
+                // The on-disk file is left untouched, so no data is lost and a
+                // later launch (or app update) can still recover it.
+                attachInMemoryFallback(for: description)
+            }
+        }
+        if !reportLines.isEmpty { cloudKitFailureReport = reportLines.joined(separator: "\n") }
+
+        // Absolute guarantee against the confirmed launch crash
+        // (NSInvalidArgumentException "executeFetchRequest: A fetch request must
+        // have an entity."): if EVERY store failed and none of the fallbacks
+        // attached, the coordinator has no store, the model's entities aren't
+        // resolvable, and the first @FetchRequest crashes the app on launch.
+        // Never allow that — attach one in-memory store so the app always opens.
+        if container.persistentStoreCoordinator.persistentStores.isEmpty {
+            let fallbackDescription = container.persistentStoreDescriptions.first
+                ?? NSPersistentStoreDescription()
+            attachInMemoryFallback(for: fallbackDescription)
+        }
+    }
+
+    /// Absolute last-resort store so the coordinator is never left without a
+    /// backing store for an entity (which makes the first fetch throw). Uses the
+    /// same "Default" configuration (all entities) so every entity is covered.
+    /// In-memory stores don't support history tracking, so pass no options.
+    private func attachInMemoryFallback(for description: NSPersistentStoreDescription) {
+        do {
+            let store = try container.persistentStoreCoordinator.addPersistentStore(
+                ofType: NSInMemoryStoreType,
+                configurationName: description.configuration,
+                at: nil,
+                options: nil)
+            assignStore(store, for: description)
+        } catch {
+            StoreLoadFailure.shared.record(error)
+        }
+    }
+
+    /// Map an already-loaded store (looked up by URL) to the private/shared slot.
+    private func mapStore(_ description: NSPersistentStoreDescription) {
+        guard let url = description.url,
+              let store = container.persistentStoreCoordinator.persistentStore(for: url) else { return }
+        assignStore(store, for: description)
+    }
+
+    /// Record a store as private, shared, or local — by CloudKit scope or
+    /// store filename (the filename fallback also covers the CloudKit-failed →
+    /// re-added-as-plain-store path, where options were already stripped).
+    private func assignStore(_ store: NSPersistentStore, for description: NSPersistentStoreDescription) {
+        if description.url?.lastPathComponent.contains("local") ?? false {
+            localStore = store
+        } else if description.cloudKitContainerOptions?.databaseScope == .shared
+            || (description.url?.lastPathComponent.contains("shared") ?? false) {
+            sharedStore = store
+        } else {
+            privateStore = store
+        }
+    }
+
+    private func configureViewContext() {
+        let viewContext = container.viewContext
+        viewContext.automaticallyMergesChangesFromParent = true
+        viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+        viewContext.transactionAuthor = "viewContext"
+        viewContext.name = "viewContext"
+        // NOTE: deliberately NOT pinned to a query generation. A pinned WAL
+        // snapshot can be invalidated by checkpoints from the CloudKit
+        // mirroring writer (or any large write batch), after which reads —
+        // including NSPersistentCloudKitContainer.share() — fail with
+        // NSCocoaErrorDomain 256 「ファイル "private.sqlite" を開けませんでした」.
+    }
+
+    // MARK: - Contexts
+
+    /// A background context configured for writes. Always do mutations on a
+    /// background context and let `automaticallyMergesChangesFromParent` fold
+    /// the changes back into the view context.
+    func newTaskContext(author: String = "app") -> NSManagedObjectContext {
+        let context = container.newBackgroundContext()
+        context.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+        context.transactionAuthor = author
+        context.automaticallyMergesChangesFromParent = true
+        return context
+    }
+
+    var viewContext: NSManagedObjectContext { container.viewContext }
+
+    // MARK: - Store routing helpers
+
+    /// The persistent store backing a given object, if known.
+    func store(for object: NSManagedObject) -> NSPersistentStore? {
+        object.objectID.persistentStore
+    }
+
+    /// Whether an object lives in the shared store (i.e. it was shared TO us).
+    func isInSharedStore(_ object: NSManagedObject) -> Bool {
+        guard let shared = sharedStore else { return false }
+        return object.objectID.persistentStore === shared
+    }
+
+    /// Whether an object lives in the local (never-synced) store.
+    func isInLocalStore(_ object: NSManagedObject) -> Bool {
+        guard let local = localStore else { return false }
+        return object.objectID.persistentStore === local
+    }
+
+#if DEBUG
+    /// DEBUG-only: push the current model's schema to the CloudKit **Development**
+    /// environment. A Debug build run from Xcode uses the Development
+    /// environment, where `initializeCloudKitSchema` is allowed to CREATE all
+    /// `CD_<Entity>` record types + fields (Production forbids that — hence the
+    /// "Cannot create new type … in production" error on TestFlight). Run this
+    /// ONCE from Xcode, then deploy Development → Production in the CloudKit
+    /// Dashboard. Compiled out of Release/TestFlight/App Store builds.
+    func initializeCloudKitSchemaForDevelopment() throws {
+        try container.initializeCloudKitSchema(options: [])
+    }
+#endif
+}
+
+// MARK: - Preview / test factories
+
+extension PersistenceController {
+    /// In-memory controller with no CloudKit, seeded with one sample project —
+    /// for SwiftUI previews.
+    static var preview: PersistenceController = {
+        let controller = PersistenceController(inMemory: true)
+        let context = controller.viewContext
+        let device = DeviceIdentity.shared
+        let services = ServiceContainer(persistence: controller, device: device)
+        _ = try? services.sampleData.makeSampleProject(in: context)
+        try? context.save()
+        return controller
+    }()
+
+    /// In-memory controller with empty stores — for unit tests.
+    static func makeInMemory() -> PersistenceController {
+        PersistenceController(inMemory: true)
+    }
+}
+
+/// Records a non-fatal store-load failure so the UI can offer recovery instead
+/// of the app crashing on launch (spec §14: no data-losing `fatalError`).
+final class StoreLoadFailure: ObservableObject {
+    static let shared = StoreLoadFailure()
+    @Published private(set) var lastError: Error?
+    func record(_ error: Error) {
+        DispatchQueue.main.async { self.lastError = error }
+    }
+}

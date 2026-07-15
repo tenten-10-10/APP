@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "updatedAt": "2026-07-06",
+  "_comment": "タナミル アプリのリモート設定。このファイルを編集してpushすると約1分で全端末に反映される（アプリ更新不要）。キーの意味は docs/DEV_NOTES_JA.md §10 参照。",
+  "teamPlanEnabled": false,
+  "deleteEnabled": true,
+  "sharingEnabled": true,
+  "notice": null
+}

@@ -1,0 +1,319 @@
+import SwiftUI
+import UIKit
+
+struct ScanTabView: View {
+    @EnvironmentObject private var container: ServiceContainer
+    @EnvironmentObject private var settings: AppSettings
+    @StateObject private var permission = CameraPermission()
+
+    @State private var torchOn = false
+    @State private var zoom: CGFloat = 1
+    @State private var outcome: ScanOutcomeBox?
+    @State private var foreignValue: String?
+    // A scanned invite QR (share link) is handled in place, not routed as an
+    // inventory code.
+    @State private var joining = false
+    @State private var joinMessage: String?
+    @State private var joinSucceeded = false
+    // A scanned PC login QR (t.l0l0.app/pair?c=…) asks to authorize a PC session.
+    @State private var pcPairCode: String?
+    @State private var pcMessage: String?
+    @State private var pcSucceeded = false
+    @State private var pcBusy = false
+    // ハンディモード（ベータ）: バーコード連続スキャンの全画面モード。
+    @State private var showHandy = false
+
+    // The body is split into layered computed properties, and every inline
+    // Binding(get:set:) / alert builder is hoisted into its own typed member.
+    // iOS 15's type-checker times out on one long modifier chain that mixes
+    // sheet + three alerts + a confirmationDialog with inferred closure types
+    // (DEV_NOTES §4). Layering gives each stage its own small inference scope.
+    var body: some View {
+        scannerScaffold
+            .sheet(item: $outcome) { box in ScanResultSheet(outcome: box.outcome) }
+            .alert(item: foreignAlertBinding, content: foreignAlertContent)
+            // The join-result alert lives on a SEPARATE (background) view node, so
+            // it never contends with the "対象外" alert above — iOS 15 can silently
+            // drop one of two alerts attached to the same view.
+            .background(joinAlertLayer)
+            .confirmationDialog(NSLocalizedString("このパソコンのログインを許可しますか？", comment: ""),
+                                isPresented: pcDialogBinding,
+                                titleVisibility: .visible,
+                                actions: pcDialogActions,
+                                message: pcDialogMessage)
+            .background(pcAlertLayer)
+            .fullScreenCover(isPresented: $showHandy) { HandyModeView() }
+    }
+
+    /// Base scanner surface plus navigation chrome — no presentations.
+    private var scannerScaffold: some View {
+        ZStack {
+            switch permission.status {
+            case .authorized:
+                scannerLayer
+            case .notDetermined:
+                permissionPrompt(message: NSLocalizedString("QRをスキャンするにはカメラの許可が必要です。", comment: ""),
+                                 action: NSLocalizedString("カメラを許可", comment: "")) { permission.request() }
+            case .denied, .restricted:
+                permissionPrompt(message: NSLocalizedString("カメラへのアクセスが拒否されています。設定アプリから許可してください。", comment: ""),
+                                 action: NSLocalizedString("設定を開く", comment: "")) { openSettings() }
+            case .unavailable:
+                EmptyStateView(systemImage: "camera.metering.unknown",
+                               title: NSLocalizedString("カメラを利用できません", comment: ""),
+                               message: NSLocalizedString("この端末ではスキャンできません。手動でコードを入力してください。", comment: ""))
+            }
+        }
+        .navigationTitle(NSLocalizedString("スキャン", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                NavigationLink(destination: LoansView()) {
+                    Label(NSLocalizedString("貸出中", comment: ""), systemImage: "person.crop.circle.badge.arrow.up")
+                }
+                .accessibilityIdentifier("loansButton")
+                NavigationLink(destination: StocktakeStartView()) {
+                    Label(NSLocalizedString("棚卸し", comment: ""), systemImage: "list.clipboard")
+                }
+            }
+        }
+        .onAppear { permission.refresh() }
+    }
+
+    // MARK: Presentation helpers (hoisted out of the body to cut type-check cost)
+
+    private var foreignAlertBinding: Binding<PresentableError?> {
+        Binding(get: { foreignValue.map { PresentableError(message: $0) } },
+                set: { _ in foreignValue = nil })
+    }
+
+    private func foreignAlertContent(_ presentable: PresentableError) -> Alert {
+        Alert(title: Text(NSLocalizedString("対象外のQR", comment: "")),
+              message: Text(NSLocalizedString("このQRはタナミルのコードではありません。", comment: "")),
+              primaryButton: .default(Text(NSLocalizedString("コピー", comment: ""))) {
+                  UIPasteboard.general.string = presentable.message
+              },
+              secondaryButton: .cancel(Text(NSLocalizedString("閉じる", comment: ""))))
+    }
+
+    private var joinAlertBinding: Binding<PresentableError?> {
+        Binding(get: { joinMessage.map { PresentableError(message: $0) } },
+                set: { _ in joinMessage = nil })
+    }
+
+    private var joinAlertLayer: some View {
+        Color.clear
+            .alert(item: joinAlertBinding) { presentable in
+                Alert(title: Text(joinSucceeded
+                                  ? NSLocalizedString("共有に参加しました", comment: "")
+                                  : NSLocalizedString("共有に参加できませんでした", comment: "")),
+                      message: Text(presentable.message),
+                      dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+            }
+    }
+
+    private var pcDialogBinding: Binding<Bool> {
+        Binding(get: { pcPairCode != nil },
+                set: { if !$0 { pcPairCode = nil } })
+    }
+
+    @ViewBuilder private func pcDialogActions() -> some View {
+        Button(NSLocalizedString("許可する", comment: "")) { authorizePC() }
+        Button(NSLocalizedString("キャンセル", comment: ""), role: .cancel) { pcPairCode = nil }
+    }
+
+    private func pcDialogMessage() -> some View {
+        Text(NSLocalizedString("許可すると、このパソコンから在庫を閲覧できるようになります（閲覧のみ・書き換えはできません）。", comment: ""))
+    }
+
+    private var pcAlertBinding: Binding<PresentableError?> {
+        Binding(get: { pcMessage.map { PresentableError(message: $0) } },
+                set: { _ in pcMessage = nil })
+    }
+
+    private var pcAlertLayer: some View {
+        Color.clear
+            .alert(item: pcAlertBinding) { presentable in
+                Alert(title: Text(pcSucceeded
+                                  ? NSLocalizedString("パソコンと連携しました", comment: "")
+                                  : NSLocalizedString("連携に失敗しました", comment: "")),
+                      message: Text(presentable.message),
+                      dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+            }
+    }
+
+    private func authorizePC() {
+        guard let code = pcPairCode else { return }
+        pcPairCode = nil
+        pcBusy = true
+        Task {
+            do {
+                try await PCWebService.shared.authorize(pairCode: code, container: container)
+                pcSucceeded = true
+                Haptics.success()
+                pcMessage = NSLocalizedString("このパソコンで在庫を閲覧できるようになりました。少し待つと最新の内容が表示されます。", comment: "")
+            } catch {
+                pcSucceeded = false
+                Haptics.warning()
+                pcMessage = error.localizedDescription
+            }
+            pcBusy = false
+        }
+    }
+
+    /// A result is on screen — the camera must not keep scanning behind it.
+    private var resultShowing: Bool {
+        outcome != nil || foreignValue != nil || joining || joinMessage != nil
+            || pcPairCode != nil || pcMessage != nil || pcBusy
+    }
+
+    private var scannerLayer: some View {
+        ZStack {
+            ScannerView(torchOn: $torchOn, zoom: $zoom, continuous: false,
+                        paused: resultShowing,
+                        onScan: handleScan, onError: { _ in })
+                .ignoresSafeArea(edges: .bottom)
+
+            // Reticle.
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.9), lineWidth: 3)
+                .frame(width: 220, height: 220)
+                .accessibilityHidden(true)
+
+            // Plain-language guidance at the top.
+            VStack {
+                Text(NSLocalizedString("QRコードを枠の中に入れてください", comment: ""))
+                    .font(.headline).foregroundColor(.white).multilineTextAlignment(.center)
+                    .padding(.horizontal, 18).padding(.vertical, 10)
+                    .background(Capsule().fill(.ultraThinMaterial))
+                    .padding(.top, 16)
+                Spacer()
+            }
+
+            VStack {
+                Spacer()
+                if EntitlementService.handyEnabled { handyButton }
+                HStack(spacing: 24) {
+                    Button { torchOn.toggle() } label: {
+                        Image(systemName: torchOn ? "bolt.fill" : "bolt.slash")
+                            .font(.title2).padding(14)
+                            .background(Circle().fill(.ultraThinMaterial))
+                    }
+                    .accessibilityLabel(Text(NSLocalizedString("トーチ", comment: "")))
+
+                    VStack {
+                        Image(systemName: "plus.magnifyingglass").font(.caption)
+                        Slider(value: $zoom, in: 1...6).frame(width: 140)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Capsule().fill(.ultraThinMaterial))
+                    .accessibilityLabel(Text(NSLocalizedString("ズーム", comment: "")))
+                }
+                .padding(.bottom, 28)
+            }
+        }
+    }
+
+    /// ハンディモード（連続バーコードスキャン）への入口。JAN/ITFを扱う現場向け。
+    private var handyButton: some View {
+        Button { showHandy = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "barcode.viewfinder").font(.body.weight(.semibold))
+                Text(NSLocalizedString("ハンディ", comment: "")).font(.body.weight(.bold))
+                Text(NSLocalizedString("ベータ", comment: ""))
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .background(Capsule().fill(Color.orange))
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .background(Capsule().fill(.ultraThinMaterial))
+        }
+        .accessibilityIdentifier("handyModeButton")
+        .padding(.bottom, 10)
+    }
+
+    private func permissionPrompt(message: String, action: String, perform: @escaping () -> Void) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "qrcode.viewfinder").font(.system(size: 56)).foregroundColor(.secondary)
+            Text(message).multilineTextAlignment(.center).padding(.horizontal)
+            Button(action, action: perform).buttonStyle(.borderedProminent)
+        }
+        .padding()
+    }
+
+    private func handleScan(_ raw: String) {
+        // Belt and braces: a frame already in flight when the session pauses
+        // must not replace the result the user is looking at.
+        guard !resultShowing else { return }
+        // A PC login QR (t.l0l0.app/pair?c=…): ask before authorizing that PC to
+        // view this account's inventory.
+        if let code = PCWebService.pairCode(from: raw) {
+            pcPairCode = code
+            return
+        }
+        // An invite QR (t.l0l0.app/join?s=… or a raw icloud.com/share link) is a
+        // share invitation, not an inventory code — so scanning it with タナミル's
+        // OWN reader joins the shared project instead of showing "対象外".
+        if let shareURL = joinShareURL(from: raw) {
+            joining = true
+            container.sharing.joinShare(from: shareURL) { result in
+                joining = false
+                switch result {
+                case .success:
+                    joinSucceeded = true
+                    Haptics.success()
+                    joinMessage = NSLocalizedString("共有プロジェクトに参加しました。同期が終わると「プロジェクト」一覧に表示されます。", comment: "")
+                case .failure(let err):
+                    joinSucceeded = false
+                    Haptics.warning()
+                    joinMessage = err.localizedDescription
+                }
+            }
+            return
+        }
+        let result = container.scanRouter.route(rawValue: raw, in: container.viewContext)
+        switch result {
+        case .known(let alias), .unassigned(let alias), .retired(let alias):
+            registerScan(alias)
+            Haptics.success()
+            outcome = ScanOutcomeBox(outcome: result)
+        case .unknownAppCode:
+            Haptics.warning()
+            outcome = ScanOutcomeBox(outcome: result)
+        case .foreign(let value):
+            Haptics.warning()
+            foreignValue = value
+        }
+    }
+
+    /// If the scanned string is a share invitation — our own wrapper link
+    /// (`t.l0l0.app/join?s=…`) or a raw `icloud.com/share/…` link — return the
+    /// iCloud share URL to accept. Inventory codes (`t.l0l0.app/<code>`) return
+    /// nil and route normally.
+    private func joinShareURL(from raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: trimmed), let inner = RootTabView.shareURL(fromJoinLink: url) {
+            return inner
+        }
+        return CloudSharingService.extractShareURL(from: trimmed)
+    }
+
+    private func registerScan(_ alias: CodeAlias) {
+        let aliasID = alias.objectID
+        _ = container.performWrite { ctx in
+            guard let a = try ctx.existingObject(with: aliasID) as? CodeAlias else { return }
+            container.aliases.registerScan(alias: a)
+        }
+    }
+
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+}
+
+/// Identifiable wrapper so a `ScanOutcome` can drive `.sheet(item:)`.
+struct ScanOutcomeBox: Identifiable {
+    let id = UUID()
+    let outcome: ScanOutcome
+}

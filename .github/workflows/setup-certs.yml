@@ -1,0 +1,68 @@
+name: Set up signing certs (match)
+
+# 一度だけ手動実行（Actions → "Run workflow"）。
+# fastlane match で共有の配布証明書＋プロビジョニングプロファイルを作成し、
+# 専用のプライベート certs リポジトリへ暗号化保存します。以降の TestFlight
+# ビルドはこれを使い回すので、ビルド毎に証明書が増えて Apple の上限に達する
+# 問題（毎回 Revoke が必要）が解消されます。
+#
+# 必要な GitHub Secrets:
+#   ASC_KEY_P8_BASE64 / ASC_KEY_ID / ASC_ISSUER_ID / TANAMIRU_TEAM_ID  （既存）
+#   MATCH_PASSWORD                  証明書を暗号化するパスフレーズ
+#   MATCH_GIT_BASIC_AUTHORIZATION   base64("user:PAT")  certs リポジトリへの認証
+#   MATCH_GIT_URL                   （任意）certs リポジトリ URL。未設定なら既定値
+on:
+  workflow_dispatch:
+
+jobs:
+  certs:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Configure git identity (for the match commit)
+        run: |
+          git config --global user.email "ci@tenten.local"
+          git config --global user.name "Tanamiru CI"
+
+      - name: Write App Store Connect API key (.p8)
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Write fastlane/.env
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TANAMIRU_TEAM_ID: ${{ secrets.TANAMIRU_TEAM_ID }}
+        run: |
+          cat > fastlane/.env <<EOF
+          ASC_KEY_ID=${ASC_KEY_ID}
+          ASC_ISSUER_ID=${ASC_ISSUER_ID}
+          ASC_KEY_PATH=${HOME}/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          TANAMIRU_TEAM_ID=${TANAMIRU_TEAM_ID}
+          EOF
+
+      - name: Install Ruby dependencies
+        run: |
+          rm -f Gemfile.lock
+          bundle install
+
+      - name: Create + store signing assets (match)
+        # Do NOT pass MATCH_GIT_URL here: an unset secret arrives as "" and the
+        # env var overrides the Matchfile, making match clone '' (empty path).
+        # The repo URL is defined in fastlane/Matchfile instead.
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+        run: bundle exec fastlane certs

@@ -1,0 +1,293 @@
+import SwiftUI
+import UIKit
+import MessageUI
+import UniformTypeIdentifiers
+import LinkPresentation
+
+/// Generic empty-state placeholder.
+struct EmptyStateView: View {
+    let systemImage: String
+    let title: String
+    var message: String? = nil
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 44))
+                .foregroundColor(.secondary)
+            Text(title).font(.headline).multilineTextAlignment(.center)
+            if let message {
+                Text(message).font(.subheadline).foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(32)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A labelled metric used across detail headers; wraps so it never clips on a
+/// 320pt-wide screen (spec §15).
+struct MetricView: View {
+    let title: String
+    let value: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.caption2).foregroundColor(.secondary)
+            Text(value).font(.headline).minimumScaleFactor(0.7).lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(title) + Text(": ") + Text(value))
+    }
+}
+
+/// iOS 15-safe key/value row (avoids iOS 16's `LabeledContent`).
+struct LabeledRow: View {
+    let title: String
+    let value: String
+    var body: some View {
+        HStack {
+            Text(title).foregroundColor(.primary)
+            Spacer()
+            Text(value).foregroundColor(.secondary).multilineTextAlignment(.trailing)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(title) + Text(": ") + Text(value))
+    }
+}
+
+/// Adds a 「閉じる」 bar above the keyboard so inputs whose keyboards have no
+/// return key (number / decimal pads) can always be dismissed. Apply ONCE per
+/// screen (Form / List root); SwiftUI shows it for every field on that screen.
+struct KeyboardDoneBar: ViewModifier {
+    func body(content: Content) -> some View {
+        content.toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button(NSLocalizedString("閉じる", comment: "")) {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                                    to: nil, from: nil, for: nil)
+                }
+            }
+        }
+    }
+}
+
+extension View {
+    func keyboardDoneBar() -> some View { modifier(KeyboardDoneBar()) }
+}
+
+/// iOS 15-safe multiline text input (avoids iOS 16's `TextField(axis:)`).
+struct MultilineTextField: View {
+    @Binding var text: String
+    var placeholder: String
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            if text.isEmpty {
+                Text(placeholder)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 8)
+                    .padding(.leading, 4)
+                    .allowsHitTesting(false)
+            }
+            TextEditor(text: $text)
+                .frame(minHeight: 60)
+        }
+    }
+}
+
+/// Supplies an exported file to the share sheet WITH its concrete type (UTI)
+/// and a display name. Passing a bare `URL` leaves AirDrop to infer the type,
+/// which fails intermittently ("AirDropを実行できませんでした") for files in the
+/// app's temp directory; declaring the type up front makes the hand-off to
+/// AirDrop / Files / Mail reliable.
+final class FileShareItemSource: NSObject, UIActivityItemSource {
+    let url: URL
+    init(url: URL) { self.url = url }
+
+    func activityViewControllerPlaceholderItem(_ controller: UIActivityViewController) -> Any { url }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                itemForActivityType activityType: UIActivity.ActivityType?) -> Any? { url }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
+        (UTType(filenameExtension: url.pathExtension) ?? .data).identifier
+    }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
+        url.deletingPathExtension().lastPathComponent
+    }
+
+    func activityViewControllerLinkMetadata(_ controller: UIActivityViewController) -> LPLinkMetadata? {
+        let metadata = LPLinkMetadata()
+        metadata.title = url.lastPathComponent
+        metadata.originalURL = url
+        return metadata
+    }
+}
+
+/// `UIActivityViewController` wrapper for sharing exported files (spec §16:
+/// files come from a temp directory). File URLs are wrapped in a
+/// `FileShareItemSource` so their type is declared (reliable AirDrop); other
+/// items (e.g. an invitation string) pass through unchanged.
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let activityItems: [Any] = items.map { item in
+            if let url = item as? URL, url.isFileURL { return FileShareItemSource(url: url) }
+            return item
+        }
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        // iPad: an activity controller shown as a popover must have an anchor or
+        // it crashes. `.sheet` hosting normally ignores this, but set it
+        // defensively so sharing can never bring the app down on iPad.
+        if let popover = controller.popoverPresentationController {
+            popover.sourceView = controller.view
+            popover.sourceRect = CGRect(x: controller.view.bounds.midX,
+                                        y: controller.view.bounds.maxY,
+                                        width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        return controller
+    }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
+
+/// Identifiable wrapper so a `URL` can drive a `.sheet(item:)`.
+struct ShareableFile: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+/// `MFMailComposeViewController` wrapper for emailing an exported file straight
+/// out of the app — the simplest way to get a QR label onto a Windows PC.
+/// Check `MailComposeView.canSend` before presenting; fall back to `ShareSheet`
+/// when no Mail account is configured.
+struct MailComposeView: UIViewControllerRepresentable {
+    let subject: String
+    let body: String
+    var recipients: [String] = []
+    var attachmentURL: URL? = nil
+    var onFinish: () -> Void = {}
+
+    static var canSend: Bool { MFMailComposeViewController.canSendMail() }
+
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let vc = MFMailComposeViewController()
+        vc.mailComposeDelegate = context.coordinator
+        vc.setSubject(subject)
+        vc.setMessageBody(body, isHTML: false)
+        if !recipients.isEmpty { vc.setToRecipients(recipients) }
+        if let url = attachmentURL, let data = try? Data(contentsOf: url) {
+            vc.addAttachmentData(data, mimeType: Self.mimeType(for: url), fileName: url.lastPathComponent)
+        }
+        return vc
+    }
+
+    func updateUIViewController(_ controller: MFMailComposeViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+
+    private static func mimeType(for url: URL) -> String {
+        switch url.pathExtension.lowercased() {
+        case "png": return "image/png"
+        case "pdf": return "application/pdf"
+        case "svg": return "image/svg+xml"
+        case "eps": return "application/postscript"
+        default:    return "application/octet-stream"
+        }
+    }
+
+    final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        let onFinish: () -> Void
+        init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+        func mailComposeController(_ controller: MFMailComposeViewController,
+                                   didFinishWith result: MFMailComposeResult, error: Error?) {
+            controller.dismiss(animated: true, completion: onFinish)
+        }
+    }
+}
+
+/// iOS 15-safe rename dialog: a compact sheet with one text field. Alert
+/// TextFields only render on iOS 16+, so every "名前を変更" flow (unit, folder,
+/// lot, …) presents this instead — same pattern everywhere.
+struct RenameSheet: View {
+    let title: String
+    var placeholder: String = ""
+    var initialText: String = ""
+    var footer: String? = nil
+    var onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section {
+                    TextField(placeholder, text: $text)
+                        .focused($focused)
+                        .submitLabel(.done)
+                        .onSubmit(save)
+                        .accessibilityIdentifier("renameField")
+                } footer: {
+                    if let footer { Text(footer) }
+                }
+            }
+            .navigationTitle(title)
+            .keyboardDoneBar()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(NSLocalizedString("キャンセル", comment: "")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(NSLocalizedString("保存", comment: "")) { save() }
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .onAppear {
+                text = initialText
+                // Focus after the sheet finishes presenting; setting it in the
+                // same runloop tick is silently ignored.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { focused = true }
+            }
+        }
+    }
+
+    private func save() {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        onSave(trimmed)
+        dismiss()
+    }
+}
+
+/// Identifiable error wrapper for `.alert(item:)`.
+struct PresentableError: Identifiable {
+    let id = UUID()
+    let message: String
+    let detail: String?
+    init(_ error: Error) {
+        self.message = error.localizedDescription
+        self.detail = (error as NSError).domain.isEmpty ? nil : CloudKitErrorMapper.rawDescription(for: error)
+    }
+    init(message: String, detail: String? = nil) {
+        self.message = message
+        self.detail = detail
+    }
+}
+
+extension View {
+    /// Standard error alert with an optional details line.
+    func errorAlert(_ error: Binding<PresentableError?>) -> some View {
+        alert(item: error) { presentable in
+            Alert(title: Text(NSLocalizedString("エラー", comment: "")),
+                  message: Text(presentable.message),
+                  dismissButton: .default(Text(NSLocalizedString("OK", comment: ""))))
+        }
+    }
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>プライバシーポリシー｜タナミル</title>
+<style>
+  :root { --olive: #4c5a2e; --ink: #1d2417; --muted: #5b6450; --paper: #fbfbf7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+         color: var(--ink); background: var(--paper); line-height: 1.8; }
+  header { background: var(--olive); color: #fff; padding: 28px 20px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+  header .wrap { padding: 0 20px; }
+  h1 { margin: 0; font-size: 22px; }
+  header p { margin: 6px 0 0; opacity: .85; font-size: 14px; }
+  main { padding: 28px 0 64px; }
+  h2 { color: var(--olive); font-size: 17px; margin-top: 32px; border-bottom: 2px solid #e6e8dd; padding-bottom: 6px; }
+  code { background: #eef0e6; padding: 1px 6px; border-radius: 4px; font-size: .92em; }
+  a { color: var(--olive); }
+  .muted { color: var(--muted); font-size: 14px; }
+  footer { border-top: 1px solid #e6e8dd; padding: 24px 0; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>プライバシーポリシー</h1><p>タナミル（QR 在庫管理アプリ）</p></div></header>
+<main class="wrap">
+  <p class="muted">最終更新日: 2026-07-01</p>
+  <p>タナミル（以下「本アプリ」）は、利用者のプライバシーを尊重し、収集する情報を最小限に保つよう設計されています。本アプリはログインや会員登録を必要とせず、在庫データを開発者のサーバーに保存することはありません。ただし、任意でご利用いただける「Web からの借用申請」機能に限り、申請内容を持ち主のアプリへ届けるための中継サーバーを使用します（第 5 項）。</p>
+
+  <h2>1. 収集・保存する情報</h2>
+  <p>本アプリが扱うデータ（プロジェクト、フォルダ、製品、保管場所、在庫イベント、QRラベル、製品写真、貸出先（借り手名）、ロット番号・有効期限など）は、次のいずれかに保存されます。貸出先などの入力欄は利用者が任意に入力する自由記述であり、入力された内容も下記の保存先以外（開発者サーバー等）へ送信されることはありません（「Web からの借用申請」を利用した場合の取り扱いは第 5 項に定めます）。</p>
+  <ul>
+    <li><strong>お使いの端末内</strong>（オフライン時もすべて閲覧・編集できます）</li>
+    <li><strong>お使いの iCloud アカウント</strong>（Apple の CloudKit。プライベートデータベース、および共有した場合は共有データベース）</li>
+  </ul>
+  <p>これらのデータは <strong>本アプリの開発者のサーバーには送信されません。</strong> iCloud 上のデータの取り扱いは Apple のプライバシーポリシーに従います。</p>
+
+  <h2>2. カメラ</h2>
+  <p>QRコードの読み取りにのみカメラを使用します。<strong>カメラ映像を保存・送信することはありません。</strong> カメラの利用を拒否しても、在庫の閲覧・編集や QR ラベルの書き出しなど、スキャン以外の機能は利用できます。</p>
+
+  <h2>3. 写真</h2>
+  <p>製品に写真を添付する場合のみ、写真ライブラリへアクセスします。選択した写真は縮小・圧縮のうえ、上記のデータと同じく端末内および iCloud に保存されます。</p>
+
+  <h2>4. QRコードの内容</h2>
+  <p>本アプリが生成する QR コードには、<strong>商品名・数量・価格・利用者名・CloudKit Record ID などは一切含まれません。</strong> 格納されるのは当アプリのリンク用ドメイン上の URL（<code>https://t.l0l0.app/IQ…</code>）で、そのパスは <code>IQ</code> で始まる18文字の<strong>短い不透明な識別子</strong>のみです。識別子と対象物の対応は端末内 / iCloud のデータベースでのみ解決されます。アプリ未導入の端末でこの QR を読み取ると App Store の入手ページへ案内されます。</p>
+
+  <h2>5. Web からの借用申請（任意機能）</h2>
+  <p>持ち主が現物を貸し出す運用のために、QR を読み取った方が <strong>アプリを導入せずに</strong> Web フォーム（<code>https://t.l0l0.app/…</code>）から借用を申請できる機能を用意しています。この機能を<strong>実際に利用（送信）した場合に限り</strong>、フォームに入力された内容が中継サーバーに保存されます。保存される項目は次のとおりです。</p>
+  <ul>
+    <li>入力者が記入した <strong>氏名・借用期間・貸出先/用途・メモ</strong>（いずれも申請者が任意に入力する自由記述）</li>
+    <li>読み取った QR の<strong>不透明な識別子</strong>（第 4 項の <code>IQ…</code>。商品名や個人情報は含まれません）</li>
+  </ul>
+  <p>中継サーバーには Supabase（Supabase 社、データ保管リージョン: 米国）を利用します。保存された申請は、当該 QR を保有する持ち主のアプリが自身のコード分のみを取得し、貸出として記録（承認または自動反映）した時点で「処理済み」として印が付きます。<strong>商品名・数量・価格・在庫状況・iCloud のデータが中継サーバーへ送信されることはありません。</strong> この機能を使わない場合、本アプリから中継サーバーへ申請内容が送られることはありません。フォームは会員登録・ログインを必要としません（QR を読み取れる方であれば申請できる設計です）。保存された申請内容の削除をご希望の場合は第 11 項の連絡先までお問い合わせください。</p>
+
+  <h2>6. 端末識別子</h2>
+  <p>在庫イベントの操作端末を区別するため、本アプリは<strong>アプリ内で生成した UUID</strong> を端末識別子として使用します。<strong>広告識別子（IDFA）等は使用しません。</strong> この UUID は端末内（必要に応じて Keychain）に保存され、外部送信されません。</p>
+
+  <h2>7. 解析・広告</h2>
+  <p>本アプリは<strong>第三者の解析 SDK・広告 SDK・トラッキングを一切使用していません。</strong> 利用状況の収集やプロファイリングも行いません。</p>
+
+  <h2>8. iCloud 共有</h2>
+  <p>プロジェクトを iCloud 共有した場合、招待した相手は当該プロジェクトのデータを権限（閲覧のみ / 編集可）に応じて参照・編集できます。共有は CloudKit の仕組みを利用し、共有相手の Apple ID とのみ行われます。</p>
+
+  <h2>9. データの書き出し</h2>
+  <p>利用者の操作で在庫データを JSON 等に書き出せます。書き出したファイルは一時領域に作成され、共有後に一定時間で自動削除されます。診断ログには製品名やメモを含めません。</p>
+
+  <h2>10. データの削除</h2>
+  <p>プロジェクトや製品を削除すると、関連データは端末および iCloud から削除されます（同期反映には時間がかかる場合があります）。アプリの削除や iCloud からのサインアウトによってもローカルデータは失われます。重要なデータは事前に書き出してください。「Web からの借用申請」で中継サーバーに保存された内容の削除については第 5 項・第 11 項をご覧ください。</p>
+
+  <h2>11. 通知</h2>
+  <p>返却期限や有効期限のお知らせには、<strong>端末内で完結するローカル通知</strong>のみを使用します。通知のスケジュールや内容が外部へ送信されることはありません。通知の許可は任意で、許可しなくても本アプリのすべての機能を利用できます。</p>
+
+  <h2>12. お問い合わせ</h2>
+  <p>本ポリシーに関するお問い合わせは下記までご連絡ください。</p>
+  <ul>
+    <li>連絡先: <a href="mailto:cless@planter.jp">cless@planter.jp</a></li>
+  </ul>
+</main>
+<footer class="wrap">© 2026 PLANter — タナミル</footer>
+</body>
+</html>

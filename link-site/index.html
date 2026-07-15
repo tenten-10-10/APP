@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タナミルで借りる</title>
+<meta name="apple-itunes-app" content="app-id=6784470155">
+<link rel="icon" type="image/png" href="/appicon.png">
+<link rel="apple-touch-icon" href="/appicon.png">
+<!-- t.l0l0.app: QR借用リンク＋共有招待(/join)の受け皿。iCloud.comへは飛ばさない。 -->
+<style>
+  :root { --olive:#4c5a2e; --olive2:#3c4826; --ink:#1d2417; --muted:#5b6450; --paper:#fbfbf7; --line:#e6e8dd; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+         color:var(--ink); background:linear-gradient(160deg,#6e7c48,#3c4826); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .card { background:var(--paper); border-radius:22px; max-width:440px; width:100%; padding:26px 22px; box-shadow:0 18px 50px rgba(0,0,0,.25); }
+  .badge { width:80px; height:80px; border-radius:18px; display:block; margin:0 auto 14px;
+           box-shadow:0 6px 16px rgba(0,0,0,.12); }
+  h1 { font-size:21px; margin:0 0 6px; text-align:center; }
+  p.lead { color:var(--muted); margin:0 0 18px; line-height:1.7; font-size:14px; text-align:center; }
+  label { display:block; font-size:13px; font-weight:600; margin:12px 0 4px; }
+  input, textarea { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px; font-size:16px; font-family:inherit; background:#fff; color:var(--ink); }
+  textarea { min-height:60px; resize:vertical; }
+  .row { display:flex; gap:10px; }
+  /* min-width:0 lets the columns shrink below the date input's intrinsic
+     width — without it iOS Safari overflows/overlaps the two boxes on SE. */
+  .row > div { flex:1 1 0; min-width:0; }
+  input[type="date"] { min-width:0; min-height:46px; -webkit-appearance:none; appearance:none; text-align:left; }
+  input[type="date"]::-webkit-date-and-time-value { text-align:left; }
+  @media (max-width: 339px) { .row { flex-direction:column; gap:0; } }
+  button { width:100%; margin-top:18px; background:var(--olive); color:#fff; border:0; font-weight:700; font-size:16px; padding:15px; border-radius:12px; }
+  button:active { background:var(--olive2); }
+  button:disabled { opacity:.6; }
+  #msg { margin:14px 0 0; text-align:center; font-size:14px; line-height:1.7; }
+  #msg.ok { color:var(--olive); font-weight:700; }
+  #msg.err { color:#b3261e; }
+  hr { border:0; border-top:1px solid var(--line); margin:20px 0 12px; }
+  .small { font-size:13px; color:var(--muted); text-align:center; margin:0; }
+  .small a { color:var(--olive); }
+  footer { text-align:center; margin-top:14px; font-size:11px; color:var(--muted); }
+  .req { color:#b3261e; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <img class="badge" src="/appicon.png" alt="タナミル" width="80" height="80">
+    <h1>この現物を借りる</h1>
+    <p class="lead">必要事項を入力して送信すると、貸出として記録されます。<br>アプリの登録・インストールは不要です。</p>
+
+    <form id="f">
+      <label>お名前 <span class="req">*</span></label>
+      <input name="borrower_name" required maxlength="100" autocomplete="name" placeholder="例: 田中 太郎">
+
+      <label>貸出先・用途</label>
+      <input name="destination" maxlength="200" placeholder="例: ○○商事さん 打合せ用">
+
+      <div class="row">
+        <div>
+          <label>借りる日</label>
+          <input type="date" name="borrow_from">
+        </div>
+        <div>
+          <label>返す予定</label>
+          <input type="date" name="borrow_until">
+        </div>
+      </div>
+
+      <label>メモ</label>
+      <textarea name="note" maxlength="500" placeholder="任意"></textarea>
+
+      <button type="submit" id="btn">借りる（送信）</button>
+    </form>
+
+    <p id="msg"></p>
+
+    <hr>
+    <p class="small">アプリで管理する方は <a href="https://apps.apple.com/app/id6784470155">App Store でタナミルを入手</a></p>
+    <footer>© 2026 PLANter — タナミル</footer>
+  </main>
+
+  <script>
+    var SB_URL = "https://lwxpbgbqldhnvcxnyehe.supabase.co";
+    var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3eHBiZ2JxbGRobnZjeG55ZWhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzI0MzksImV4cCI6MjA5MjMwODQzOX0.K0sSR_AZ8OeVTAB11pFL3qMohX769xSyes3-_SFNi5Y";
+
+    var path = location.pathname.replace(/^\/+|\/+$/g, "");
+    var code = decodeURIComponent(path);
+    var f = document.getElementById("f");
+    var msg = document.getElementById("msg");
+    var btn = document.getElementById("btn");
+
+    // Share-invite fallback: `/join` renders here ONLY when the app isn't
+    // installed (with タナミル installed, the Universal Link opens the app and
+    // this page never shows). Guide them to install — NEVER redirect to
+    // icloud.com, so the invite can't dead-end on the iCloud web sign-in.
+    if (path.toLowerCase().indexOf("join") === 0) {
+      document.querySelector("h1").textContent = "共有プロジェクトへの招待";
+      document.querySelector("p.lead").innerHTML =
+        "参加するには iPhone に「タナミル」アプリが必要です。<br>下から入手し、<b>招待メールのリンク（またはQRコード）を iPhone でもう一度開いて</b>ください。";
+      f.style.display = "none";
+      msg.innerHTML =
+        '<a href="https://apps.apple.com/app/id6784470155" style="display:inline-block;margin-top:4px;background:#4c5a2e;color:#fff;padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;">App Store でタナミルを入手</a>';
+    } else {
+      if (!code || code.indexOf(".") >= 0) {
+        f.style.display = "none";
+        msg.textContent = "このリンクからは借用フォームを開けません。QRコードをもう一度読み取ってください。";
+      }
+
+      f.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        btn.disabled = true;
+        msg.className = "";
+        msg.textContent = "送信中…";
+        var d = Object.fromEntries(new FormData(f).entries());
+        var body = {
+          code: code,
+          borrower_name: (d.borrower_name || "").trim(),
+          destination: (d.destination || "").trim() || null,
+          borrow_from: d.borrow_from || null,
+          borrow_until: d.borrow_until || null,
+          note: (d.note || "").trim() || null,
+          status: "pending"
+        };
+        try {
+          var r = await fetch(SB_URL + "/rest/v1/tanamiru_borrow_requests", {
+            method: "POST",
+            headers: {
+              "apikey": SB_KEY,
+              "Authorization": "Bearer " + SB_KEY,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify(body)
+          });
+          if (r.ok) {
+            f.style.display = "none";
+            msg.className = "ok";
+            msg.textContent = "✅ 借用リクエストを送信しました。担当者に反映されます。ありがとうございました。";
+          } else {
+            var t = await r.text();
+            msg.className = "err";
+            msg.textContent = "送信に失敗しました。時間をおいて再度お試しください。(" + r.status + ")";
+            btn.disabled = false;
+          }
+        } catch (err) {
+          msg.className = "err";
+          msg.textContent = "通信エラーが発生しました。電波の良い場所で再度お試しください。";
+          btn.disabled = false;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

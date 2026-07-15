@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タナミル 使い方ガイド｜QRを貼って、かざすだけ。</title>
+<meta name="description" content="QR在庫管理アプリ「タナミル」の使い方ガイド。空のQRを印刷して貼り、スキャンして登録するまでを図解で説明します。フリーランス・中小企業向け。">
+<meta property="og:title" content="タナミル 使い方ガイド">
+<meta property="og:description" content="QRを貼って、かざすだけ。サンプル・在庫・ロットをまるっと管理。">
+<link rel="icon" type="image/png" href="appicon.png">
+<link rel="apple-touch-icon" href="appicon.png">
+<style>
+:root{
+  --olive:#4c5a2e; --olive-2:#6e7c48; --olive-deep:#3c4826;
+  --paper:#fbfbf7; --card:#ffffff; --ink:#1d2417; --muted:#5b6450;
+  --line:#e6e8dd; --accent:#a8b878; --good:#3e7d3e; --warn:#b25b2a;
+  --radius:18px; --shadow:0 18px 50px -18px rgba(44,54,26,.28);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  color:var(--ink);background:var(--paper);line-height:1.9;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--olive)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+section{padding:88px 0;scroll-margin-top:64px}
+section.alt{background:#f3f4ec}
+
+/* ---------- motion ---------- */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.08s}.rv.d2{transition-delay:.16s}.rv.d3{transition-delay:.24s}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  .qrsvg rect.d,.tap::before,.float,.scanline{animation:none!important}
+  .phone{transform:none!important}
+}
+
+/* ---------- QR (real structure: finder/timing/alignment) ---------- */
+.qrsvg{display:block;width:100%;height:100%}
+.qrsvg rect{fill:var(--olive-deep)}
+.qrsvg.anim rect.d{animation:cell 4.2s ease-in-out infinite}
+.qrsvg.anim rect.d:nth-of-type(3n){animation-delay:.7s}
+.qrsvg.anim rect.d:nth-of-type(4n){animation-delay:1.4s}
+.qrsvg.anim rect.d:nth-of-type(5n){animation-delay:2.1s}
+.qrsvg.anim rect.d:nth-of-type(7n){animation-delay:2.8s}
+@keyframes cell{0%,100%{opacity:1}50%{opacity:.28}}
+.qrlabel{width:min(320px,64vw);background:#fff;border-radius:22px;box-shadow:var(--shadow);
+  padding:8.5%;margin:0 auto}
+.qrlabel .code{text-align:center;font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.14em;color:var(--ink);margin-top:10px}
+.scanwrap{position:relative}
+.scanline{position:absolute;left:5%;right:5%;height:3px;border-radius:3px;top:8%;
+  background:linear-gradient(90deg,transparent,#eaf3d0,transparent);box-shadow:0 0 18px 4px rgba(234,243,208,.8);
+  animation:scan 3.2s ease-in-out infinite;pointer-events:none}
+@keyframes scan{0%,100%{top:8%}50%{top:90%}}
+.float{animation:float 7s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(-1.5deg)}}
+
+/* ---------- site header ---------- */
+.site-head{background:var(--olive-deep);color:#fff;position:relative;z-index:60}
+.site-head .wrap{display:flex;align-items:center;justify-content:space-between;padding:12px 22px}
+.hbrand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:800;letter-spacing:.05em;font-size:16px}
+.hbrand img{width:30px;height:30px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.35);display:block}
+.hcta{color:#fff;text-decoration:none;font-size:13px;font-weight:700;border:1.5px solid rgba(255,255,255,.55);border-radius:999px;padding:6px 16px;transition:.25s}
+.hcta:hover{background:#fff;color:var(--olive-deep)}
+.pill{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:4px 16px;font-size:13px;font-weight:700;letter-spacing:.1em}
+
+/* ---------- hero ---------- */
+header.hero{position:relative;color:#fff;overflow:hidden;
+  background:linear-gradient(135deg,var(--olive-2),var(--olive-deep));}
+header.hero::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(1200px 500px at 85% -10%,rgba(255,255,255,.14),transparent 60%);}
+.hero-in{position:relative;z-index:2;padding:76px 0 100px;display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.06em}
+.brand .mark{width:44px;height:44px;border-radius:11px;box-shadow:0 8px 24px rgba(0,0,0,.3);display:block}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.35;margin:26px 0 14px;font-weight:800}
+.hero p.lead{font-size:clamp(15px,2.2vw,18px);opacity:.94;margin:0 auto 30px;max-width:34em}
+.cta{display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--olive-deep);
+  font-weight:700;padding:14px 26px;border-radius:999px;text-decoration:none;box-shadow:0 10px 30px rgba(0,0,0,.25);
+  transition:transform .25s,box-shadow .25s}
+.cta:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(0,0,0,.3)}
+.cta.ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.7);box-shadow:none;margin-left:10px}
+
+/* ---------- sticky nav ---------- */
+nav.steps{position:sticky;top:0;z-index:50;background:rgba(251,251,247,.86);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line)}
+nav.steps .wrap{display:flex;gap:4px;overflow-x:auto;padding:10px 22px;scrollbar-width:none}
+nav.steps .wrap::-webkit-scrollbar{display:none}
+nav.steps a{flex:none;font-size:13px;font-weight:700;color:var(--muted);text-decoration:none;
+  padding:8px 14px;border-radius:999px;transition:.25s}
+nav.steps a:hover,nav.steps a.on{background:var(--olive);color:#fff}
+#bar{position:absolute;left:0;bottom:-1px;height:2px;background:var(--olive);width:0;transition:width .15s linear}
+
+/* ---------- headings / cards ---------- */
+.kicker{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:800;letter-spacing:.14em;color:var(--olive)}
+.kicker::before{content:"";width:26px;height:2px;background:var(--olive)}
+h2{font-size:clamp(24px,3.6vw,34px);margin:10px 0 8px;line-height:1.4}
+p.sub{color:var(--muted);margin:0 0 40px;max-width:40em}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.trio .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:30px 26px;
+  box-shadow:0 8px 26px -14px rgba(44,54,26,.18);transition:transform .3s,box-shadow .3s}
+.trio .card:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
+.trio .num{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.2em}
+.trio h3{margin:8px 0 6px;font-size:19px}
+.trio p{margin:0;font-size:14px;color:var(--muted)}
+.trio .ico{margin-bottom:10px;color:var(--olive)}
+.trio .ico svg{width:30px;height:30px}
+/* inline icon (絵文字の代替。テキスト内で1em角) */
+.icx{display:inline-block;width:1em;height:1em;vertical-align:-.12em}
+.icx svg{display:block;width:100%;height:100%}
+
+/* ---------- step layout ---------- */
+.step{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;padding:72px 0;border-bottom:1px dashed var(--line)}
+.step:last-of-type{border-bottom:none}
+.step.rev .txt{order:2}.step.rev .vis{order:1}
+.badge{display:inline-grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--olive);
+  color:#fff;font-weight:800;font-size:20px;box-shadow:0 10px 24px -8px rgba(60,72,38,.5)}
+.step h3{font-size:clamp(20px,2.8vw,26px);margin:16px 0 10px}
+.step p{color:var(--muted);font-size:15px;margin:0 0 14px}
+.point{background:#eef1e2;border-left:4px solid var(--olive);border-radius:0 12px 12px 0;padding:12px 16px;font-size:14px;margin-top:16px}
+.point b{color:var(--olive-deep)}
+ol.mini{margin:14px 0 0;padding-left:1.3em;font-size:15px}
+ol.mini li{margin:8px 0}
+.ui{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:8px;padding:1px 10px;
+  font-weight:700;font-size:13.5px;color:var(--olive-deep);box-shadow:0 2px 6px -2px rgba(0,0,0,.12)}
+
+/* ---------- iPhone mockup v2 ---------- */
+.vis{perspective:1400px}
+.phone{width:min(272px,74vw);margin:0 auto;position:relative;border-radius:52px;padding:9px;
+  background:linear-gradient(150deg,#4a5040,#171a11 55%,#2b3023);
+  box-shadow:0 34px 70px -26px rgba(20,26,10,.55),0 10px 26px -14px rgba(20,26,10,.4);
+  transform:rotateY(-7deg) rotateX(1.2deg);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.step.rev .phone{transform:rotateY(7deg) rotateX(1.2deg)}
+.phone:hover{transform:rotateY(0) rotateX(0)}
+.phone::before{content:"";position:absolute;inset:2px;border-radius:50px;pointer-events:none;
+  border:1px solid rgba(255,255,255,.22)}
+.phone .side{position:absolute;background:linear-gradient(90deg,#585e4c,#23271b);border-radius:3px;z-index:-1}
+.phone .side.v1{left:-2.5px;top:118px;width:3.5px;height:30px}
+.phone .side.v2{left:-2.5px;top:158px;width:3.5px;height:56px}
+.phone .side.pw{right:-2.5px;top:150px;width:3.5px;height:74px}
+.screen{aspect-ratio:9/19.4;background:#f4f4ee;border-radius:44px;overflow:hidden;position:relative;
+  display:flex;flex-direction:column;font-size:12.5px;line-height:1.5}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:44px;
+  background:linear-gradient(112deg,transparent 42%,rgba(255,255,255,.09) 47%,rgba(255,255,255,.02) 56%,transparent 60%)}
+.sb{display:flex;align-items:center;justify-content:space-between;padding:12px 24px 2px;font-weight:700;font-size:12px}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:80px;height:23px;background:#0b0d08;border-radius:999px;
+  box-shadow:inset 0 0 3px rgba(255,255,255,.12)}
+.sig{display:inline-flex;align-items:flex-end;gap:1.5px;margin-right:5px}
+.sig i{width:2.5px;background:#1d2417;border-radius:1px;display:block}
+.sig i:nth-child(1){height:4px}.sig i:nth-child(2){height:6px}.sig i:nth-child(3){height:8px}.sig i:nth-child(4){height:10px}
+.batt{display:inline-block;width:20px;height:10px;border:1.5px solid #1d2417;border-radius:3px;position:relative;vertical-align:-1px}
+.batt::before{content:"";position:absolute;inset:1.5px;right:5px;background:#1d2417;border-radius:1px}
+.batt::after{content:"";position:absolute;right:-4px;top:2.5px;width:2px;height:4px;background:#1d2417;border-radius:0 1px 1px 0}
+.nav{padding:8px 16px 4px;font-weight:800;font-size:17px;letter-spacing:.01em;position:relative}
+.nav .r{float:right;color:var(--olive);font-weight:700;font-size:15px}
+.content{flex:1;overflow:hidden;padding:4px 12px 10px;display:flex;flex-direction:column;gap:9px}
+.row{background:#fff;border-radius:13px;padding:11px 13px;box-shadow:0 2px 8px -4px rgba(0,0,0,.1);position:relative;flex:none}
+.row.hd{background:transparent;box-shadow:none;padding:4px 3px 0;color:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:.06em}
+.row .r{float:right;color:var(--muted)}
+.row small{color:var(--muted)}
+.search{background:#e8e9df;border-radius:11px;padding:8px 12px;color:#8a927c;font-size:12px;flex:none}
+.btnp{background:var(--olive);color:#fff;text-align:center;font-weight:800;border-radius:13px;padding:12px;position:relative;flex:none;
+  box-shadow:0 6px 16px -6px rgba(76,90,46,.55)}
+.btns{background:#eef1e2;color:var(--olive-deep);text-align:center;font-weight:700;border-radius:13px;padding:11px;position:relative;flex:none}
+.chip{display:inline-block;background:#eef1e2;color:var(--olive-deep);font-size:10px;font-weight:700;border-radius:999px;padding:1.5px 8px;margin-left:6px;vertical-align:1px}
+.ok{color:var(--good);font-weight:700}
+.grow{flex:1}
+.tabbar{display:flex;justify-content:space-around;background:rgba(255,255,255,.92);border-top:1px solid var(--line);
+  padding:7px 4px 2px;font-size:9px;color:#9aa18c;text-align:center;font-weight:700;flex:none}
+.tabbar b{color:var(--olive)}
+.tabbar span{display:block;font-size:16px;margin-bottom:0}
+.tabbar svg{display:block;width:17px;height:17px;margin:0 auto 2.5px}
+.homebar{height:4.5px;width:36%;min-height:4.5px;background:#14160f;border-radius:4px;margin:5px auto 7px;flex:none}
+.cam{height:44%;min-height:170px;flex:none;background:
+  radial-gradient(150px 100px at 55% 42%,rgba(255,255,255,.09),transparent),
+  linear-gradient(160deg,#2a2f22,#151810);position:relative;display:grid;place-items:center}
+.cam .torch{position:absolute;top:10px;right:14px;color:rgba(255,255,255,.8)}
+.cam .torch svg{width:15px;height:15px}
+.cam .hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;color:rgba(255,255,255,.75);font-size:10px}
+.frame{width:118px;height:118px;position:relative}
+.frame .qbox{position:absolute;inset:12px;background:#f6f6f0;border-radius:6px;padding:7px}
+.frame .c{position:absolute;width:26px;height:26px;border:3px solid #eaf3d0;border-radius:6px}
+.frame .c.tl{top:0;left:0;border-right:none;border-bottom:none}
+.frame .c.tr{top:0;right:0;border-left:none;border-bottom:none}
+.frame .c.bl{bottom:0;left:0;border-right:none;border-top:none}
+.frame .c.br{bottom:0;right:0;border-left:none;border-top:none}
+
+/* tap indicator */
+.tap{position:absolute;width:30px;height:30px;z-index:5;pointer-events:none}
+.tap::before{content:"";position:absolute;inset:0;border-radius:50%;background:rgba(178,91,42,.45);
+  box-shadow:0 0 0 3px rgba(178,91,42,.55);animation:tapp 2s ease-out infinite}
+@keyframes tapp{0%{transform:scale(.55);opacity:0}30%{opacity:1}100%{transform:scale(1.5);opacity:0}}
+.callout{position:absolute;background:var(--warn);color:#fff;font-size:11px;font-weight:800;border-radius:999px;
+  padding:4px 12px;white-space:nowrap;z-index:6;box-shadow:0 6px 18px -6px rgba(178,91,42,.7)}
+
+/* printed sheet */
+.sheet{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+  width:min(300px,72vw);aspect-ratio:210/297;margin:0 auto;padding:7%;display:grid;
+  grid-template-columns:repeat(3,1fr);grid-auto-rows:min-content;gap:10px;transform:rotate(-2deg)}
+.sheet .cell{border:1px solid #dfe2d0}
+.sheet .cell .code{font:600 5.5px/1 ui-monospace,Menlo,monospace;text-align:center;color:#6b7360;padding:2px 0 3px;letter-spacing:.05em}
+.sheet .cell .qwrap{padding:8% 14% 0}
+
+/* teaser */
+.more{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.more .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px;
+  transition:transform .3s,box-shadow .3s;position:relative;overflow:hidden}
+.more .card:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
+.more .card::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;
+  background:radial-gradient(circle,#eef1e2,transparent 70%)}
+.more h3{margin:6px 0 8px;font-size:18px}
+.more p{margin:0;font-size:14px;color:var(--muted)}
+.more .ico{color:var(--olive)}
+.more .ico svg{width:28px;height:28px}
+
+details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:12px}
+details summary{cursor:pointer;font-weight:700;color:var(--olive-deep)}
+footer{background:var(--olive-deep);color:#dfe3d0;padding:48px 0 60px;font-size:14px}
+footer a{color:#fff}
+footer .foot-brand{font-weight:800;font-size:17px;color:#fff;margin-bottom:8px}
+
+@media (max-width:820px){
+  .wrap{padding:0 30px}
+  .site-head .wrap{padding:12px 30px}
+  nav.steps .wrap{padding:10px 30px}
+  .hero-in{grid-template-columns:1fr;padding:52px 0 62px;text-align:center}
+  .hero .qrwrap{order:-1}
+  .cta{margin:8px 4px 0}
+  .cta.ghost{margin-left:4px}
+  .step{grid-template-columns:1fr;gap:36px;padding:52px 0}
+  .step.rev .txt{order:1}.step.rev .vis{order:2}
+  .step .txt{text-align:left}
+  .trio{grid-template-columns:1fr}
+  .more{grid-template-columns:1fr}
+  .phone{transform:rotateY(-4deg)}
+  .step.rev .phone{transform:rotateY(4deg)}
+  section{padding:64px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="site-head">
+  <div class="wrap">
+    <a class="hbrand" href="#"><img src="appicon.png" alt="タナミル">タナミル</a>
+    <a class="hcta" href="https://apps.apple.com/app/id6784470155" target="_blank" rel="noopener">App Store</a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <span class="pill">使い方ガイド</span>
+      <h1>QRを貼って、<br>かざすだけ。</h1>
+      <p class="lead">サンプル・部品・備品・消耗品——「どこに何がいくつあるか」を、印刷したQRラベルとiPhoneひとつで管理。このページでは、<b>最初のサンプル管理</b>を始めるまでを順番に説明します。</p>
+      <a class="cta" href="https://apps.apple.com/app/id6784470155" target="_blank" rel="noopener"> App Store で入手</a>
+      <a class="cta ghost" href="#step1">使い方を見る ↓</a>
+    </div>
+    <div class="qrwrap float">
+      <div class="qrlabel scanwrap">
+        <span data-qr="25" data-seed="7" data-anim="1"></span>
+        <div class="code">TNM-7K3D-Q8XF</div>
+        <div class="scanline"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="steps" id="stepnav">
+  <div class="wrap">
+    <a href="#concept">しくみ</a>
+    <a href="#step1">1. プロジェクト</a>
+    <a href="#step2">2. QRを印刷</a>
+    <a href="#step3">3. 貼る</a>
+    <a href="#step4">4. 登録</a>
+    <a href="#step5">5. ふだんの操作</a>
+    <a href="#share">チームで使う</a>
+    <a href="#more">もっとできること</a>
+  </div>
+  <div id="bar"></div>
+</nav>
+
+<section id="concept">
+  <div class="wrap">
+    <span class="kicker rv">HOW IT WORKS</span>
+    <h2 class="rv">しくみは、3つだけ。</h2>
+    <p class="sub rv">バーコードの登録も、商品マスタの準備もいりません。<b>先にQRを刷って、貼って、あとから「これは○○」と教える</b>——現場のスピードに合わせた順番です。</p>
+    <div class="trio">
+      <div class="card rv"><div class="ico" data-ic="printer"></div><div class="num">STEP A</div><h3>空のQRをまとめて印刷</h3><p>中身が決まっていなくてOK。A4に敷き詰めて一気に発行します。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="tag"></div><div class="num">STEP B</div><h3>現物・棚・箱に貼る</h3><p>届いたサンプル、置き場所、通い箱。貼る場所は自由です。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="phone"></div><div class="num">STEP C</div><h3>スキャンして登録</h3><p>かざして「これは○○」と名前を付けるだけ。以後はかざせば入出庫。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="step1">
+  <div class="wrap">
+    <span class="kicker rv">GETTING STARTED</span>
+    <h2 class="rv">サンプル管理を始める</h2>
+    <p class="sub rv">初回起動時に<b>操作者名</b>（あなたの名前）を入れておくと、履歴に「誰がやったか」が残ります。ここからは5分で終わります。</p>
+
+    <!-- STEP 1 -->
+    <div class="step">
+      <div class="txt rv">
+        <span class="badge">1</span>
+        <h3>プロジェクトを作る</h3>
+        <p>「プロジェクト」は管理のまとまりです。まずは <b>「サンプル」</b> という名前でひとつ作りましょう。取引先ごと・案件ごとに分けるのもおすすめです。</p>
+        <ol class="mini">
+          <li>下のタブで <span class="ui">プロジェクト</span> を開く</li>
+          <li>右上の <span class="ui">＋</span> をタップ</li>
+          <li>名前を入れて <span class="ui">作成</span></li>
+        </ol>
+      </div>
+      <div class="vis rv d1">
+        <div class="phone">
+          <span class="side v1"></span><span class="side v2"></span><span class="side pw"></span>
+          <div class="screen">
+            <i class="island"></i>
+            <div class="sb"><span>9:41</span><span><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
+            <div class="nav">プロジェクト <span class="r">＋</span>
+              <span class="tap" style="top:3px;right:11px"></span>
+              <span class="callout" style="top:36px;right:4px">① ここをタップ</span>
+            </div>
+            <div class="content">
+              <div class="search"><span class="icx" data-ic="search"></span> 検索</div>
+              <div class="row hd">ピン留め</div>
+              <div class="row"><b>サンプル</b><span class="chip">製品 12</span><br><small>今日 9:12 更新 ・ <span class="icx" data-ic="cloud"></span> 同期済み</small></div>
+              <div class="row hd">すべて</div>
+              <div class="row"><b>備品・消耗品</b><span class="chip">製品 8</span><br><small>昨日 更新</small></div>
+              <div class="row"><b>展示会 2026春</b><span class="chip">製品 24</span><br><small>3日前 更新 ・ <span class="icx" data-ic="people"></span> 共有中</small></div>
+              <div class="grow"></div>
+            </div>
+            <div class="tabbar"><i><span data-ti="home"></span>ホーム</i><b><span data-ti="folder-f"></span>プロジェクト</b><i><span data-ti="scan"></span>スキャン</i><i><span data-ti="act"></span>活動</i><i><span data-ti="gear"></span>設定</i></div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step rev">
+      <div class="txt rv">
+        <span class="badge">2</span>
+        <h3>空のQRをまとめて発行 → 印刷</h3>
+        <p>プロジェクトを開き、メニュー（…）から <b>「空のQRをまとめて発行」</b>。枚数を決めて <b>「作成して書き出す」</b> を押すと、A4のラベルシート（PDF）ができます。そのままAirPrintやコンビニ印刷でOK。</p>
+        <ol class="mini">
+          <li><span class="ui">A4いっぱいに敷き詰める</span> で一気に量産</li>
+          <li>間隔0mm＋枠線が初期設定。<b>カッターで直線に切るだけ</b>で切り離せます</li>
+          <li>発行したQRは一意に予約済み。<b>同じシートの刷り直し</b>もボタン一つ</li>
+        </ol>
+        <div class="point"><span class="icx" data-ic="bulb"></span> <b>普通のコピー用紙＋透明テープ</b>でも十分使えます。ラベルシールを使う場合はサイズと間隔を用紙に合わせて調整。</div>
+      </div>
+      <div class="vis rv d1">
+        <div class="phone">
+          <span class="side v1"></span><span class="side v2"></span><span class="side pw"></span>
+          <div class="screen">
+            <i class="island"></i>
+            <div class="sb"><span>9:41</span><span><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
+            <div class="nav" style="font-size:14px">空のQRをまとめて発行 <span class="r" style="font-size:13px">閉じる</span></div>
+            <div class="content">
+              <div class="row"><span class="icx" data-ic="bulb"></span> <b>これは何?</b><br><small>品物が届く前でも空のQRを発行できます。先に貼って、あとで登録。</small></div>
+              <div class="row">12 種類のQRを作成 <span class="r">−　＋</span></div>
+              <div class="row">同じQRを 1 枚ずつ <span class="r">−　＋</span></div>
+              <div class="row" style="color:var(--olive-deep);font-weight:700"><span class="icx" data-ic="grid"></span> A4いっぱいに敷き詰める（合計 120 枚）</div>
+              <div class="row">ラベルサイズ: 16 mm<br><small>◦───────●───◦</small></div>
+              <div class="row">切り取り線 <span class="r"><b style="color:var(--olive-deep)">枠線</b> ・ トンボ ・ なし</span></div>
+              <div class="grow"></div>
+              <div class="btnp"><span class="icx" data-ic="printer"></span> 作成して書き出す
+                <span class="tap" style="top:50%;right:16px;margin-top:-15px"></span>
+                <span class="callout" style="top:-36px;left:50%;transform:translateX(-50%)">② これで発行</span>
+              </div>
+            </div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step">
+      <div class="txt rv">
+        <span class="badge">3</span>
+        <h3>現物・棚・箱に貼る</h3>
+        <p>印刷したQRを、<b>届いたサンプルそのもの</b>や、置き場所の棚・保管箱に貼ります。この時点ではQRはまだ「空」——<b>どれに何を貼ったか覚えておく必要はありません</b>。あとでスキャンして登録すれば、そのQRに中身が紐づきます。</p>
+        <div class="point"><span class="icx" data-ic="bulb"></span> モノに貼るか、場所に貼るかは自由。<b>「モノに1枚・置き場所に1枚」</b>が、あとで移動管理まで効く鉄板パターンです。</div>
+      </div>
+      <div class="vis rv d1">
+        <div class="sheet" id="sheetqr"></div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step rev">
+      <div class="txt rv">
+        <span class="badge">4</span>
+        <h3>スキャンして「これは○○」と登録</h3>
+        <p>下のタブの <span class="ui">スキャン</span> でQRにかざすと、空のQRなら割当画面が開きます。<b>「このQRに品物を登録」</b> をタップして名前を入れるだけ。</p>
+        <ol class="mini">
+          <li>かざす → <span class="ui">このQRに品物を登録</span></li>
+          <li>名前（例:「試作基板 Rev.B」）を入力 → <span class="ui">作成して割り当て</span></li>
+          <li>そのまま <span class="ui">続けて次のQRをスキャン</span> で連続登録</li>
+        </ol>
+        <div class="point"><span class="icx" data-ic="bulb"></span> 登録済みの製品・場所への割り当てもここから。<b>棚に貼ったQRは「保管場所」として登録</b>しておくと移動管理に使えます。</div>
+      </div>
+      <div class="vis rv d1">
+        <div class="phone">
+          <span class="side v1"></span><span class="side v2"></span><span class="side pw"></span>
+          <div class="screen">
+            <div class="cam scanwrap">
+              <span class="torch" data-ic="torch"></span>
+              <div class="frame">
+                <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+                <div class="qbox"><span data-qr="21" data-seed="11"></span></div>
+                <div class="scanline"></div>
+              </div>
+              <div class="hint">枠内にQRを合わせてください</div>
+            </div>
+            <div class="content" style="padding-top:10px">
+              <div class="row hd">ラベルを割り当て　·　TNM-7K3D-Q8XF</div>
+              <div class="btnp">⊞ このQRに品物を登録
+                <span class="tap" style="top:50%;right:16px;margin-top:-15px"></span>
+                <span class="callout" style="top:-32px;right:0">③ ここをタップ</span>
+              </div>
+              <div class="btns">既存の製品へ割り当て</div>
+              <div class="btns">保管場所・コンテナへ割り当て</div>
+              <div class="grow"></div>
+            </div>
+            <div class="tabbar"><i><span data-ti="home"></span>ホーム</i><i><span data-ti="folder"></span>プロジェクト</i><b><span data-ti="scan"></span>スキャン</b><i><span data-ti="act"></span>活動</i><i><span data-ti="gear"></span>設定</i></div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step">
+      <div class="txt rv">
+        <span class="badge">5</span>
+        <h3>ふだんは、かざして「持ち出し・返却」</h3>
+        <p>登録が済んだQRにかざすと、そのサンプルの「今」——名前・置き場所・状態——が即座に開きます。あとは日々こう回すだけです。</p>
+        <ol class="mini">
+          <li><b>確認</b>：かざす → どこにある・誰が持っているかが一目で分かる</li>
+          <li><b>持ち出し</b>：客先や展示会へ持って行くときは <span class="ui">貸出</span>（誰が・いつまで。期限を過ぎたら通知）</li>
+          <li><b>戻ったら</b>：かざして <span class="ui">返却</span>。置き場所が変わったら <span class="ui">場所を移動</span></li>
+        </ol>
+        <p style="margin-top:12px">操作はすべて履歴（活動タブ）に「いつ・誰が・何を」で自動記録。<b>「あのサンプル、いまどこ？」</b>がなくなります。</p>
+        <div class="point"><span class="icx" data-ic="bulb"></span> 配布して減っていくサンプル（試供品・ノベルティなど）は <b>入庫／出庫</b> で数を管理。名前から探したいときはホームの<b>検索</b>が最速です。</div>
+      </div>
+      <div class="vis rv d1">
+        <div class="phone">
+          <span class="side v1"></span><span class="side v2"></span><span class="side pw"></span>
+          <div class="screen">
+            <i class="island"></i>
+            <div class="sb"><span>9:41</span><span><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
+            <div class="nav" style="font-size:15px">スキャン結果 <span class="r" style="font-size:13px">閉じる</span></div>
+            <div class="content">
+              <div class="row ok"><span class="icx" data-ic="check"></span> 貸出を記録しました</div>
+              <div class="row"><b>展示用サンプル 003</b><span class="chip">個体管理</span><br><small><span class="icx" data-ic="pin"></span> 棚A-2 ・ 状態: 貸出中</small></div>
+              <div class="row">貸出先 <span class="r" style="color:var(--ink)"><b>山田（〜7/20）</b></span></div>
+              <div class="btnp"><span class="icx" data-ic="back"></span> 返却
+                <span class="tap" style="top:50%;right:16px;margin-top:-15px"></span>
+              </div>
+              <div class="btns"><span class="icx" data-ic="move"></span> 場所を移動</div>
+              <div class="row hd">最近の履歴</div>
+              <div class="row"><small>今日 9:41 ・ 田中 ・ 山田へ貸出（7/20まで）</small></div>
+              <div class="row"><small>6/28 14:05 ・ 田中 ・ 返却</small></div>
+              <div class="row"><small>6/21 10:12 ・ 田中 ・ 展示会場へ移動</small></div>
+              <div class="grow"></div>
+            </div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- share -->
+<section id="share">
+  <div class="wrap">
+    <span class="kicker rv">TEAM</span>
+    <h2 class="rv">チームで、同じ在庫を見る。</h2>
+    <p class="sub rv">プロジェクトは<b>招待リンク</b>で共有できます。プロジェクトの「共有」タブから <b>「招待リンクを送る」</b> — アプリの入手先と参加リンクがひとつのメッセージになって送られるので、相手はリンクを開いて参加するだけ。入出庫・貸出・棚卸しが全員にリアルタイムで反映され、履歴には「誰がやったか」も残ります。メンバーごとに「編集可／閲覧のみ」を選べます。</p>
+    <div class="trio">
+      <div class="card rv"><div class="ico" data-ic="mail"></div><h3>招待はリンク1本</h3><p>LINEでもメールでもOK。アプリ未導入の相手には入手先も一緒に届きます。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="sync"></div><h3>自動で同期</h3><p>「今すぐ同期」ボタンはありません。変更は自動で全員に反映されます。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="eye"></div><h3>権限を選べる</h3><p>編集できる人と、見るだけの人を分けられます。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- more -->
+<section class="alt" id="more">
+  <div class="wrap">
+    <span class="kicker rv">AND MORE</span>
+    <h2 class="rv">サンプル管理の先に。</h2>
+    <p class="sub rv">サンプル管理とまったく同じ「貼って、かざす」の操作のまま、在庫・ロット・棚卸しまで広がります。どれも追加設定は数タップ。</p>
+    <div class="more">
+      <div class="card rv"><div class="ico" data-ic="box"></div><h3>在庫管理・要補充アラート</h3><p>製品に「最低在庫」を設定しておくと、下回った瞬間に「要補充」表示。発注のタイミングを逃しません。</p></div>
+      <div class="card rv d1"><div class="ico" data-ic="tag"></div><h3>ロット・使用期限の管理</h3><p>同じ製品でも入荷ロットごとにQRを分けて、使用期限を登録。期限切れ・期限間近をホームで一覧できます。</p></div>
+      <div class="card rv d2"><div class="ico" data-ic="checkc"></div><h3>棚卸し</h3><p>連続スキャンで実数をどんどん数えて、期待との差分をワンタップで確定。差分ゼロなら「完了」を押すだけです。</p></div>
+      <div class="card rv d3"><div class="ico" data-ic="chart"></div><h3>履歴・書き出し</h3><p>すべての入出庫が追記型の台帳に記録され、CSVで書き出せます。監査にも棚卸しにも。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- faq -->
+<section id="faq">
+  <div class="wrap">
+    <span class="kicker rv">FAQ</span>
+    <h2 class="rv">よくある質問</h2>
+    <details class="rv"><summary>QRコードに商品情報は入っていますか？</summary><p>入っていません。QRには短い識別子だけが入っており、名前や数量などのデータはお使いのiCloudにのみ保存されます。外部に漏れる心配はありません。</p></details>
+    <details class="rv"><summary>アカウント登録は必要ですか？</summary><p>不要です。インストールしてすぐ使えます。データはiPhoneとあなたのiCloudに保存されます。</p></details>
+    <details class="rv"><summary>印刷はどんなプリンタでも大丈夫？</summary><p>A4が刷れれば大丈夫です。家庭用インクジェット・コンビニのマルチコピー機でも読み取りテスト済みです。かすれた場合はQRサイズを大きめに調整してください。</p></details>
+    <details class="rv"><summary>オフラインでも使えますか？</summary><p>使えます。電波のない倉庫でもスキャン・記録でき、オンラインに戻ったときに自動で同期されます。</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-brand">タナミル</div>
+    <p>サンプル・在庫・ロットを、QRでまるっと管理。<br>
+    お問い合わせ: <a href="mailto:cless@planter.jp">cless@planter.jp</a> ／ <a href="../index.html">サポート</a> ／ <a href="../privacy.html">プライバシーポリシー</a></p>
+    <p style="opacity:.7">© 2026 tanamiru</p>
+  </div>
+</footer>
+
+<script>
+/* Real-structured QR: finder patterns (3 corners), timing rows, alignment
+   pattern, quiet-zone separators. Data area is deterministic pseudo-random. */
+function qrSVG(n, seed, anim){
+  let s = seed;
+  const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  const m = Array.from({length:n}, () => Array(n).fill(0));
+  function finder(r,c){
+    for(let y=0;y<7;y++)for(let x=0;x<7;x++){
+      m[r+y][c+x] = (y===0||y===6||x===0||x===6||(y>=2&&y<=4&&x>=2&&x<=4)) ? 1 : 0;
+    }
+  }
+  finder(0,0); finder(0,n-7); finder(n-7,0);
+  for(let i=8;i<n-8;i++){ m[6][i]=(i%2===0)?1:0; m[i][6]=(i%2===0)?1:0; }
+  if(n>=25){ const r=n-7,c=n-7;
+    for(let y=-2;y<=2;y++)for(let x=-2;x<=2;x++){
+      m[r+y][c+x] = (Math.max(Math.abs(x),Math.abs(y))!==1)?1:0; } }
+  const reserved=(y,x)=> (y<8&&x<8)||(y<8&&x>=n-8)||(y>=n-8&&x<8)||y===6||x===6||
+    (n>=25 && y>=n-10&&y<=n-4 && x>=n-10&&x<=n-4);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){ if(!reserved(y,x)) m[y][x]=rnd()<0.47?1:0; }
+  let rects='';
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){ if(m[y][x]){
+    const fixed=(y<7&&x<7)||(y<7&&x>=n-7)||(y>=n-7&&x<7)||y===6||x===6||
+      (n>=25 && y>=n-9&&y<=n-5 && x>=n-9&&x<=n-5);
+    rects+='<rect class="'+(fixed?'f':'d')+'" x="'+x+'" y="'+y+'" width="1" height="1"/>'; } }
+  return '<svg class="qrsvg'+(anim?' anim':'')+'" viewBox="-1 -1 '+(n+2)+' '+(n+2)+'" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">'+rects+'</svg>';
+}
+document.querySelectorAll('[data-qr]').forEach(el=>{
+  el.innerHTML = qrSVG(parseInt(el.dataset.qr,10), parseInt(el.dataset.seed||'7',10), el.dataset.anim==='1');
+});
+/* タブバーアイコン: 実アプリのSF Symbols(house/folder/qrcode.viewfinder/clock.arrow.circlepath/gearshape)を模した線画 */
+const TI={
+  home:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 10.4 10 4.2l6.8 6.2M5.3 9.6V16h9.4V9.6"/></svg>',
+  folder:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2.8 6.2c0-.8.6-1.4 1.4-1.4h3l1.6 1.7h6.6c.8 0 1.4.6 1.4 1.4v5.9c0 .8-.6 1.4-1.4 1.4H4.2c-.8 0-1.4-.6-1.4-1.4z"/></svg>',
+  'folder-f':'<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2.8 6.2c0-.8.6-1.4 1.4-1.4h3l1.6 1.7h6.6c.8 0 1.4.6 1.4 1.4v5.9c0 .8-.6 1.4-1.4 1.4H4.2c-.8 0-1.4-.6-1.4-1.4z"/></svg>',
+  scan:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5.9V4.6c0-1 .8-1.8 1.8-1.8h1.3M14.1 2.8h1.3c1 0 1.8.8 1.8 1.8v1.3M17.2 14.1v1.3c0 1-.8 1.8-1.8 1.8h-1.3M5.9 17.2H4.6c-1 0-1.8-.8-1.8-1.8v-1.3"/><g fill="currentColor" stroke="none"><rect x="6.1" y="6.1" width="3" height="3" rx=".7"/><rect x="10.9" y="6.1" width="3" height="3" rx=".7"/><rect x="6.1" y="10.9" width="3" height="3" rx=".7"/><rect x="11.5" y="11.5" width="1.9" height="1.9" rx=".5"/></g></svg>',
+  act:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 5.1a6.5 6.5 0 1 1-1.2 5.4"/><path d="M4.7 2.4v3h3"/><path d="M10 7.3v3.1l2.3 1.5"/></svg>',
+  gear:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="10" cy="10" r="5" stroke-width="1.6"/><circle cx="10" cy="10" r="1.9" stroke-width="1.4"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4" stroke-width="1.8"/></svg>'
+};
+document.querySelectorAll('[data-ti]').forEach(el=>{el.innerHTML=TI[el.dataset.ti]||'';});
+/* サイト共通アイコン（絵文字は使わない方針）: 20x20線画・currentColor */
+const IC={
+  pin:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.2s5.2-4.9 5.2-8.9a5.2 5.2 0 1 0-10.4 0c0 4 5.2 8.9 5.2 8.9z"/><circle cx="10" cy="8.2" r="1.9"/></svg>',
+  check:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 10.6 8 14.8 16.2 5.6"/></svg>',
+  printer:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 6.3V3h8.4v3.3"/><path d="M5.8 13.1H4.4c-.9 0-1.6-.7-1.6-1.6V7.9c0-.9.7-1.6 1.6-1.6h11.2c.9 0 1.6.7 1.6 1.6v3.6c0 .9-.7 1.6-1.6 1.6h-1.4"/><rect x="5.8" y="10.9" width="8.4" height="6.1" rx=".9"/><circle cx="14.5" cy="8.7" r=".8" fill="currentColor" stroke="none"/></svg>',
+  tag:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2.9 3.9c0-.6.4-1 1-1h5.2c.4 0 .8.2 1 .4l6.6 6.6c.6.6.6 1.5 0 2.1l-4.7 4.7c-.6.6-1.5.6-2.1 0L3.3 10.1a1.4 1.4 0 0 1-.4-1z"/><circle cx="6.9" cy="6.9" r="1.2"/></svg>',
+  phone:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.4" y="2.6" width="9.2" height="14.8" rx="2.2"/><rect x="7.7" y="6.2" width="4.6" height="4.6" rx=".8"/><circle cx="10" cy="8.5" r=".7" fill="currentColor" stroke="none"/><path d="M8.6 14.6h2.8"/></svg>',
+  gift:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="7.3" width="13.6" height="3.1" rx=".8"/><path d="M4.5 10.4v5.2c0 .7.6 1.3 1.3 1.3h8.4c.7 0 1.3-.6 1.3-1.3v-5.2M10 7.3v9.6"/><path d="M10 7.3S7.3 7 6.5 5.7c-.6-1 .1-2.3 1.3-2.3 1.8 0 2.2 3.9 2.2 3.9zm0 0s2.7-.3 3.5-1.6c.6-1-.1-2.3-1.3-2.3-1.8 0-2.2 3.9-2.2 3.9z"/></svg>',
+  box:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.3 10 2.9l7 3.4v7.4l-7 3.4-7-3.4z"/><path d="m3 6.3 7 3.3 7-3.3M10 9.6v7.5"/></svg>',
+  loan:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.8" cy="6.1" r="2.6"/><path d="M3 16.6c.5-2.9 2.4-4.5 4.8-4.5.9 0 1.8.2 2.5.7"/><circle cx="14.1" cy="13.5" r="3.5"/><path d="M14.1 11.8v1.9l1.4.9"/></svg>',
+  checkc:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="m6.8 10.3 2.2 2.2 4.4-4.8"/></svg>',
+  chart:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 3.4v13.2h13.2"/><path d="M6.8 13.2V9.6M10.2 13.2V6.4M13.6 13.2v-2.6"/></svg>',
+  mail:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="4.6" width="14.4" height="10.8" rx="1.8"/><path d="m3.6 6 6.4 4.9L16.4 6"/></svg>',
+  sync:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 8.3a6 6 0 0 1 10.1-2.5M15.7 11.7a6 6 0 0 1-10.1 2.5"/><path d="M14.7 2.6v3.4h-3.4M5.3 17.4V14h3.4"/></svg>',
+  eye:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 10S5.4 5.2 10 5.2 17.4 10 17.4 10 14.6 14.8 10 14.8 2.6 10 2.6 10z"/><circle cx="10" cy="10" r="2.2"/></svg>',
+  noacct:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="6.9" r="2.9"/><path d="M4.7 16.8c.6-3 2.7-4.6 5.3-4.6s4.7 1.6 5.3 4.6"/><path d="m3.6 3.6 12.8 12.8"/></svg>',
+  cloud:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15.2h8.3a3 3 0 0 0 .6-5.9 4.6 4.6 0 0 0-9-1.1A3.5 3.5 0 0 0 6 15.2z"/></svg>',
+  offline:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.9 7.6a10.6 10.6 0 0 1 9.4-2.7M16 6.9c.4.2.8.5 1.1.7M5.5 10.6a7 7 0 0 1 5.4-1.6M8.1 13.5c.7-.5 1.7-.7 2.6-.5"/><circle cx="10" cy="15.7" r="1.1" fill="currentColor" stroke="none"/><path d="m3.6 3.6 12.8 12.8"/></svg>',
+  lock:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="8.8" width="10.8" height="8" rx="1.8"/><path d="M6.9 8.8V6.4a3.1 3.1 0 0 1 6.2 0v2.4"/><circle cx="10" cy="12.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  book:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.9C8.6 3.7 6.6 3.3 3.4 3.4v12.1c3.2-.1 5.2.3 6.6 1.5 1.4-1.2 3.4-1.6 6.6-1.5V3.4c-3.2-.1-5.2.3-6.6 1.5z"/><path d="M10 4.9V17"/></svg>',
+  search:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.2"/><path d="m12.7 12.7 4.2 4.2"/></svg>',
+  people:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.3" cy="7.2" r="2.5"/><path d="M2.9 16c.5-2.6 2.2-4.1 4.4-4.1s3.9 1.5 4.4 4.1"/><circle cx="13.9" cy="7.8" r="2.1"/><path d="M13.4 12.1c1.9.2 3.3 1.5 3.8 3.9"/></svg>',
+  bulb:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.9a4.7 4.7 0 0 1 2.6 8.6c-.5.4-.8.9-.8 1.5v.4H8.2v-.4c0-.6-.3-1.1-.8-1.5A4.7 4.7 0 0 1 10 2.9z"/><path d="M8.5 15.8h3M9.2 17.6h1.6"/></svg>',
+  torch:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.9h6v2.2l-1.6 2.2v9c0 .5-.4.9-.9.9H9.5c-.5 0-.9-.4-.9-.9v-9L7 5.1z"/><path d="M8.6 9.4h2.8"/></svg>',
+  back:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.2 4.8 4.4 8.6l3.8 3.8"/><path d="M4.4 8.6h7.2a3.9 3.9 0 0 1 0 7.8H9.2"/></svg>',
+  move:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m13.6 4.2 3 3-3 3M16.6 7.2H5.4M6.4 9.8l-3 3 3 3M3.4 12.8h11.2"/></svg>',
+  grid:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="3.4" y="3.4" width="13.2" height="13.2" rx="1.4"/><path d="M3.4 7.8h13.2M3.4 12.2h13.2M7.8 3.4v13.2M12.2 3.4v13.2"/></svg>'
+};
+document.querySelectorAll('[data-ic]').forEach(el=>{el.innerHTML=IC[el.dataset.ic]||'';});
+// printed A4 sheet: 9 labels, each a real-looking QR + code caption
+const sheet=document.getElementById('sheetqr');
+if(sheet){
+  const codes=['7K3D','9FQ2','B4XN','C8ML','D2RW','E6TK','F1PZ','G5VH','H9SJ'];
+  for(let k=0;k<9;k++){
+    const cell=document.createElement('div'); cell.className='cell';
+    const w=document.createElement('div'); w.className='qwrap';
+    w.innerHTML=qrSVG(21, k*17+3, false);
+    const c=document.createElement('div'); c.className='code'; c.textContent='TNM-'+codes[k];
+    cell.appendChild(w); cell.appendChild(c); sheet.appendChild(cell);
+  }
+}
+// reveal on scroll
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.14});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+// progress bar + active nav
+const bar=document.getElementById('bar');
+const links=[...document.querySelectorAll('nav.steps a')];
+const targets=links.map(a=>document.querySelector(a.getAttribute('href')));
+addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  bar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+  let cur=0;
+  targets.forEach((t,i)=>{if(t&&t.getBoundingClientRect().top<140)cur=i;});
+  links.forEach((a,i)=>a.classList.toggle('on',i===cur));
+},{passive:true});
+</script>
+</body>
+</html>

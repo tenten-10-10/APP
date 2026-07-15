@@ -1,0 +1,269 @@
+default_platform(:ios)
+
+PROJECT = "ProjectStock.xcodeproj"
+SCHEME  = "ProjectStock"
+APP_ID  = "com.tenten.tanamiru"
+
+platform :ios do
+  # Build a Release archive and upload it to TestFlight.
+  #
+  # Required environment variables (see fastlane/.env.example):
+  #   ASC_KEY_ID        App Store Connect API key id
+  #   ASC_ISSUER_ID     App Store Connect API issuer id
+  #   ASC_KEY_PATH      absolute path to the AuthKey_XXXX.p8 file
+  #   TANAMIRU_TEAM_ID  10-char Apple Developer Team ID (for code signing)
+  #
+  # Signing: a SHARED App Store distribution certificate + provisioning profile,
+  # created once by the `certs` lane and reused on every build via fastlane match.
+  # This replaces the old per-build cloud signing, which minted a fresh
+  # certificate on each ephemeral CI run and kept exhausting Apple's certificate
+  # limit (forcing a manual revoke before every build).
+  desc "Build and upload a new build to TestFlight"
+  lane :beta do
+    setup_ci # temporary keychain on CI for match to import the certificate into
+
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    team_id = ENV.fetch("TANAMIRU_TEAM_ID")
+
+    # Install the shared cert + profile from the match repo. readonly: true means
+    # this NEVER creates a new certificate here — if the assets are missing it
+    # fails loudly instead, telling you to run the `certs` lane first.
+    match(
+      api_key:        api_key,
+      type:           "appstore",
+      app_identifier: APP_ID,
+      readonly:       true,
+      team_id:        team_id
+    )
+
+    # Next build number = highest already on TestFlight for this version + 1.
+    # Passed via xcargs so no file is mutated (the project has no agvtool setup).
+    next_build = latest_testflight_build_number(
+      api_key:        api_key,
+      app_identifier: APP_ID,
+      initial_build_number: 0
+    ) + 1
+
+    # Force manual signing with the match profile so xcodebuild uses the shared
+    # certificate instead of trying to cloud-sign (which would mint a new cert).
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  PROJECT,
+      team_id:               team_id,
+      code_sign_identity:    "Apple Distribution",
+      profile_name:          "match AppStore #{APP_ID}",
+      bundle_identifier:     APP_ID,
+      targets:               [SCHEME]
+    )
+
+    build_app(
+      project:          PROJECT,
+      scheme:           SCHEME,
+      configuration:    "Release",
+      export_method:    "app-store",
+      output_directory: "build",
+      clean:            true,
+      export_options: {
+        signingStyle:         "manual",
+        teamID:               team_id,
+        provisioningProfiles: { APP_ID => "match AppStore #{APP_ID}" }
+      },
+      xcargs: "CURRENT_PROJECT_VERSION=#{next_build}"
+    )
+
+    upload_to_testflight(
+      api_key:                          api_key,
+      skip_waiting_for_build_processing: true,
+      distribute_external:              false
+    )
+
+    UI.success("Uploaded build #{next_build} to TestFlight 🚀")
+  end
+
+  # ONE-TIME (run from Actions → "Set up signing certs"): create the shared App
+  # Store distribution certificate + provisioning profile via the App Store
+  # Connect API key and store them, encrypted, in the dedicated match repo.
+  # After this succeeds once, every `beta` build reuses them and no certificate
+  # is ever minted again. Requires one free certificate slot, so revoke a stale
+  # "Apple Distribution" certificate first if the account is at its limit.
+  desc "Create + store the shared signing certificate and profile (match)"
+  lane :certs do
+    setup_ci
+
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    match(
+      api_key:        api_key,
+      type:           "appstore",
+      app_identifier: APP_ID,
+      readonly:       false, # create + store the assets if the repo is empty
+      force:          true,  # regenerate the profile so newly-enabled App ID
+                             # capabilities (e.g. Associated Domains) are included
+                             # — reuses the existing certificate, no new cert
+      team_id:        ENV.fetch("TANAMIRU_TEAM_ID")
+    )
+
+    UI.success("Stored the shared App Store signing assets in the match repo 🔐")
+  end
+
+  # Push App Store metadata (text) and submit the latest processed build for
+  # App Store review. The binary itself is uploaded by the `beta` lane, so this
+  # lane uploads metadata only and then submits for review.
+  #
+  # Prerequisites that must be in place on App Store Connect first (these cannot
+  # be fully automated without assets / one-time answers):
+  #   * At least one build finished processing (run the `beta` lane).
+  #   * Screenshots for the required device sizes (add in ASC, or drop PNGs in
+  #     fastlane/screenshots/ja-JP and set skip_screenshots: false below).
+  #   * Real Support URL / Privacy Policy URL in fastlane/metadata/ja-JP
+  #     (the committed values are placeholders).
+  #   * Age rating questionnaire answered once on App Store Connect.
+  desc "Upload App Store metadata and submit the latest build for review"
+  lane :release do
+    api_key = app_store_connect_api_key(
+      key_id:       ENV.fetch("ASC_KEY_ID"),
+      issuer_id:    ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH")
+    )
+
+    # Pin the build that gets attached to the version. Point deliver at the
+    # latest TestFlight build (the build the `beta` lane just uploaded) so the
+    # exact binary we expect is the one submitted.
+    latest_build = latest_testflight_build_number(
+      api_key:        api_key,
+      app_identifier: APP_ID,
+      initial_build_number: 0
+    )
+
+    # Marketing version for the App Store version being created/edited. Read from
+    # the project (single source of truth: Scripts/generate_pbxproj.py) so a new
+    # update version (e.g. 1.0.1) is created on App Store Connect automatically.
+    app_version = get_version_number(xcodeproj: PROJECT, target: SCHEME)
+
+    deliver(
+      api_key:               api_key,
+      app_identifier:        APP_ID,
+      app_version:           app_version,
+      build_number:          latest_build.to_s,
+      submit_for_review:     true,
+      automatic_release:     true,    # auto-release to the App Store on approval
+      force:                 true,    # skip the interactive HTML preview (CI)
+      skip_binary_upload:    true,    # the build comes from the `beta` lane
+      skip_screenshots:      true,    # screenshots are already uploaded by hand on
+                                      # App Store Connect — do NOT touch them here
+      reject_if_possible:    true,    # if the version is already in review, pull it
+                                      # back so the new build + notes can replace it
+      # Age rating is set once in App Store Connect (Apple's 2025 questionnaire
+      # added required keys that the old rating_config.json doesn't cover).
+      precheck_include_in_app_purchases: false,
+      submission_information: {
+        add_id_info_uses_idfa:                       false,
+        export_compliance_uses_encryption:           false,
+        content_rights_contains_third_party_content: false
+      }
+    )
+
+    UI.success("Submitted the latest build for App Store review 🚀")
+  end
+
+  # Capture RAW simulator screenshots only (no signing, no upload). The raw PNGs
+  # are downloaded, framed + captioned by the local PIL compositor, then the
+  # finished marketing screenshots are uploaded via the `release` lane.
+  # See fastlane/Snapfile and ProjectStockUITests/ScreenshotUITests.
+  desc "Capture raw simulator screenshots (frame/caption + upload happen later)"
+  lane :screenshots do
+    capture_screenshots # reads fastlane/Snapfile
+    UI.success("Captured raw screenshots 📸 — frame/caption locally, then upload via release")
+  end
+
+  # Expire every TestFlight build on a given version "train" (e.g. 1.3.0) so
+  # testers stop seeing it. This is a TestFlight-only operation — it does NOT
+  # touch the App Store review pipeline. Use it to pull an abandoned pre-release
+  # build off TestFlight while a different version is being reviewed.
+  #
+  #   bundle exec fastlane expire_train version:1.3.0
+  desc "Expire all TestFlight builds for a version train (version:X.Y.Z)"
+  lane :expire_train do |options|
+    version = options[:version].to_s.strip
+    UI.user_error!("Pass version:X.Y.Z (the marketing version to expire on TestFlight)") if version.empty?
+
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id:    ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      filepath:  ENV.fetch("ASC_KEY_PATH")
+    )
+
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    UI.user_error!("App #{APP_ID} not found on App Store Connect") if app.nil?
+
+    builds = Spaceship::ConnectAPI::Build.all(
+      app_id:   app.id,
+      includes: "preReleaseVersion",
+      limit:    200,
+      sort:     "-uploadedDate"
+    )
+
+    targets = builds.select do |b|
+      train = b.pre_release_version&.version
+      train == version && !b.expired
+    end
+
+    if targets.empty?
+      UI.important("No active TestFlight builds found on #{version} — nothing to expire.")
+      next
+    end
+
+    targets.each do |b|
+      if b.respond_to?(:expire!)
+        b.expire!
+      else
+        Spaceship::ConnectAPI.patch_builds(build_id: b.id, attributes: { expired: true })
+      end
+      UI.success("Expired TestFlight build #{version} (#{b.version})")
+    end
+    UI.success("Expired #{targets.size} TestFlight build(s) on #{version} 🧹")
+  end
+
+  # READ-ONLY. Print the current App Store review state (the editable version's
+  # state + its attached build's processing state). Touches nothing.
+  desc "Print the current App Store review status (read-only)"
+  lane :review_status do
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id:    ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      filepath:  ENV.fetch("ASC_KEY_PATH")
+    )
+
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    UI.user_error!("App #{APP_ID} not found on App Store Connect") if app.nil?
+
+    live = app.get_live_app_store_version(platform: "IOS")
+    UI.message("LIVE on App Store: #{live&.version_string || '—'}")
+
+    edit = app.get_edit_app_store_version(platform: "IOS")
+    if edit.nil?
+      UI.important("REVIEW_STATE: none (no editable/in-review version)")
+      next
+    end
+
+    build = begin
+      edit.build
+    rescue StandardError
+      nil
+    end
+
+    UI.success("REVIEW_VERSION: #{edit.version_string}")
+    UI.success("REVIEW_STATE: #{edit.app_store_state}")
+    UI.success("REVIEW_BUILD: #{build&.version || '—'} (processing=#{build&.processing_state || '—'})")
+    UI.message("CREATED: #{edit.created_date}") if edit.respond_to?(:created_date)
+  end
+end

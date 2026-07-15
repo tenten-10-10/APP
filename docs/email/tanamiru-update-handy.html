@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<title>タナミル アップデートのお知らせ（ハンディモード）</title>
+</head>
+<body style="margin:0; padding:0; background:#eef0e6; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+
+<!-- プレビュー文（受信一覧に表示。本文には出ません） -->
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; font-size:1px; line-height:1px; color:#eef0e6;">
+「ハンディモード」を追加しました。JAN・ITFなど市販のバーコードもそのまま読み取って、在庫の入庫・出庫がその場で記録できます。無料でお試しいただけます。
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef0e6;">
+<tr>
+<td align="center" style="padding:28px 12px;">
+
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 12px 40px rgba(44,54,26,.12); font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif;">
+
+    <!-- ヘッダー -->
+    <tr>
+    <td style="background:#3c4826; padding:26px 34px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="vertical-align:middle;">
+          <img src="data:image/png;base64,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" width="46" height="46" alt="タナミル" style="display:block; border-radius:11px;">
+        </td>
+        <td style="vertical-align:middle; padding-left:13px;">
+          <div style="color:#ffffff; font-size:20px; font-weight:800; letter-spacing:.04em; line-height:1.2;">タナミル</div>
+          <div style="color:#c9d3ad; font-size:12px; font-weight:700; letter-spacing:.08em; margin-top:3px;">QRを貼って、かざすだけ。</div>
+        </td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+
+    <!-- リード -->
+    <tr>
+    <td style="padding:34px 34px 6px;">
+      <div style="font-size:12px; font-weight:800; letter-spacing:.14em; color:#6e7c48;">アップデートのお知らせ</div>
+      <h1 style="margin:10px 0 0; font-size:23px; line-height:1.55; color:#1d2417; font-weight:800;">
+        タナミルが、<br>バーコードも読めるようになりました。
+      </h1>
+      <p style="margin:16px 0 0; font-size:15px; line-height:1.9; color:#3a4230;">
+        お疲れさまです。商品企画課の麦倉です。<br>
+        先日ご案内した在庫管理アプリ「タナミル」に、新しく <strong style="color:#3c4826;">「ハンディモード」</strong> を追加しました。
+        これまでのQRに加えて、<strong>市販品のバーコード（JAN・ITF）</strong>もそのまま読み取れるようになり、
+        専用のハンディ端末のように使えます。
+      </p>
+      <p style="margin:14px 0 0; font-size:15px; line-height:1.9; color:#3a4230;">
+        <strong style="color:#3c4826;">かざすだけで、その場で入庫・出庫。</strong> 棚での数量チェックや受け入れが、ぐっと楽になります。
+      </p>
+    </td>
+    </tr>
+
+    <!-- 目玉：ハンディモード -->
+    <tr>
+    <td style="padding:24px 34px 6px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3f4ec; border-radius:12px;">
+      <tr><td style="padding:20px 22px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:.14em; color:#6e7c48; margin-bottom:14px;">今回の目玉 ─ ハンディモード（無料ベータ）</div>
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td width="46" valign="top">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td width="34" height="34" align="center" valign="middle" style="background:#4c5a2e; border-radius:17px; color:#ffffff; font-size:15px; font-weight:800; font-family:-apple-system,BlinkMacSystemFont,sans-serif;">1</td>
+              </tr></table>
+            </td>
+            <td valign="top" style="padding:0 0 15px 4px;">
+              <div style="font-size:15px; font-weight:800; color:#1d2417;">連続スキャンで、その場で記録</div>
+              <div style="font-size:13.5px; line-height:1.8; color:#5b6450; margin-top:2px;">スキャン画面の「ハンディ」から起動。バーコードやQRを次々にかざすだけで、確認（照会）・入庫・出庫がその場で終わります。</div>
+            </td>
+          </tr>
+          <tr>
+            <td width="46" valign="top">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td width="34" height="34" align="center" valign="middle" style="background:#4c5a2e; border-radius:17px; color:#ffffff; font-size:15px; font-weight:800; font-family:-apple-system,BlinkMacSystemFont,sans-serif;">2</td>
+              </tr></table>
+            </td>
+            <td valign="top" style="padding:0 0 15px 4px;">
+              <div style="font-size:15px; font-weight:800; color:#1d2417;">未登録の商品も、名前を入れるだけ</div>
+              <div style="font-size:13.5px; line-height:1.8; color:#5b6450; margin-top:2px;">登録されていないバーコードは、商品名を入れればその場で登録。そのまま作業を続けられます。</div>
+            </td>
+          </tr>
+          <tr>
+            <td width="46" valign="top">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td width="34" height="34" align="center" valign="middle" style="background:#4c5a2e; border-radius:17px; color:#ffffff; font-size:15px; font-weight:800; font-family:-apple-system,BlinkMacSystemFont,sans-serif;">3</td>
+              </tr></table>
+            </td>
+            <td valign="top" style="padding:0 0 2px 4px;">
+              <div style="font-size:15px; font-weight:800; color:#1d2417;">まちがえても、1タップで取り消し</div>
+              <div style="font-size:13.5px; line-height:1.8; color:#5b6450; margin-top:2px;">直前の操作はワンタップで取り消し。履歴から個別に戻すこともできます。×5・×10などまとめ入力、ライト点灯にも対応。</div>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+      </table>
+    </td>
+    </tr>
+
+    <!-- そのほかの改善 -->
+    <tr>
+    <td style="padding:24px 34px 4px;">
+      <div style="font-size:12px; font-weight:800; letter-spacing:.14em; color:#6e7c48; margin-bottom:12px;">そのほかの改善</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px; line-height:1.75; color:#2a3120;">
+        <tr><td valign="top" width="18" style="color:#4c5a2e; font-weight:800;">・</td><td style="padding-bottom:8px;">QRを「1点ずつの現物」に直接ひも付けられるように。スキャンからそのまま貸出・返却ができます</td></tr>
+        <tr><td valign="top" style="color:#4c5a2e; font-weight:800;">・</td><td style="padding-bottom:8px;">製品リストに写真を表示（登録している場合）。ひと目で見分けやすくなりました</td></tr>
+        <tr><td valign="top" style="color:#4c5a2e; font-weight:800;">・</td><td style="padding-bottom:8px;">ホーム右上のベルから、借用リクエストの受信箱をすぐ開けるように</td></tr>
+        <tr><td valign="top" style="color:#4c5a2e; font-weight:800;">・</td><td style="padding-bottom:8px;">空QRから登録するとき、フォルダと保管場所をその場で選べるように</td></tr>
+        <tr><td valign="top" style="color:#4c5a2e; font-weight:800;">・</td><td>新しいバージョンが出たとき、ホームでお知らせするように</td></tr>
+      </table>
+    </td>
+    </tr>
+
+    <!-- CTA -->
+    <tr>
+    <td style="padding:26px 34px 8px;" align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+      <tr>
+        <td align="center" bgcolor="#4c5a2e" style="border-radius:999px;">
+          <a href="https://apps.apple.com/app/id6784470155" target="_blank" style="display:inline-block; padding:15px 40px; color:#ffffff; font-size:16px; font-weight:800; text-decoration:none; border-radius:999px; font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;">App Store で最新版に更新</a>
+        </td>
+      </tr>
+      </table>
+      <div style="font-size:12.5px; color:#5b6450; margin-top:12px; line-height:1.7;">
+        すでにお使いの方は、更新するとハンディモードが使えます。<br>
+        使い方は <a href="https://tanamiru.l0l0.app/guide/" target="_blank" style="color:#4c5a2e; font-weight:700; text-decoration:none;">使い方ガイド</a> にまとめています。
+      </div>
+    </td>
+    </tr>
+
+    <!-- お願い（フィードバック） -->
+    <tr>
+    <td style="padding:22px 34px 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #e6e8dd;">
+      <tr><td style="padding-top:20px;">
+        <p style="margin:0; font-size:14px; line-height:1.9; color:#3a4230;">
+          ハンディモードは、当面のあいだ<strong style="color:#3c4826;">無料でお試しいただけるベータ版</strong>です。実際に使ってみて、
+          <strong>「ここが使いにくい」「この商品のバーコードが読めない」</strong>といったお気づきの点をいただけますと、今後の改善にとても助かります。<br>
+          もし興味があれば、<strong>Zoomなどで使い方のご説明</strong>もできますので、どうぞお気軽にお声がけください。
+        </p>
+        <div style="margin-top:24px;">
+          <div style="font-size:11px; color:#9aa18c; line-height:1.3;">Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇 i 〇Ｉ〇Ｉ〇</div>
+          <div style="margin:12px 0 3px; font-size:16px; font-weight:800; color:#1d2417;">麦倉 弘人 <span style="font-size:12px; font-weight:600; color:#5b6450;">（むぎくら ひろと）</span></div>
+          <div style="font-size:13px; color:#3a4230; line-height:1.7;">株式会社 昭和商会　東京支店 営業企画部 商品企画課</div>
+          <div style="font-size:12.5px; color:#5b6450; line-height:1.9; margin-top:6px;">
+            〒141-0031　東京都品川区西五反田１丁目１６−５　西五反田一丁目ビル 4F<br>
+            TEL: 03-6303-9614　FAX: 03-6303-9615<br>
+            Mobile: 070-7813-4847<br>
+            Mail: <a href="mailto:mugikura@showashokai.com" style="color:#4c5a2e; text-decoration:none;">mugikura@showashokai.com</a>
+          </div>
+          <div style="font-size:11px; color:#9aa18c; line-height:1.3; margin-top:12px;">Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇Ｉ〇</div>
+        </div>
+      </td></tr>
+      </table>
+    </td>
+    </tr>
+
+    <!-- フッター -->
+    <tr>
+    <td style="background:#3c4826; padding:18px 34px; text-align:center;">
+      <div style="font-size:12px; color:#c9d3ad; line-height:1.7;">
+        タナミル ─ iPhone向けQR在庫管理アプリ（App Storeで無料配信中）
+      </div>
+    </td>
+    </tr>
+
+  </table>
+
+  <div style="font-size:11px; color:#9aa18c; margin-top:16px; font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;">
+    このメールはHTML形式です。うまく表示されない場合は、<a href="https://apps.apple.com/app/id6784470155" style="color:#7f8a63;">App Store</a> からご覧ください。
+  </div>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
